@@ -1,8 +1,10 @@
 package com.kedacom.confinterface.service;
 
+import com.kedacom.confadapter.MediaDescription;
 import com.kedacom.confinterface.dao.*;
 import com.kedacom.confinterface.dto.*;
 
+import com.kedacom.confinterface.h323.H323TerminalService;
 import com.kedacom.confinterface.inner.*;
 import com.kedacom.confinterface.restclient.McuRestClientService;
 import com.kedacom.confinterface.restclient.mcu.*;
@@ -844,6 +846,42 @@ public class ConfInterfaceService {
         }
     }
 
+    @Async("confTaskExecutor")
+    public void ctrlDualStream(BaseRequestMsg ctrlDualStreamRequest, String mtE164, boolean dual){
+        String groupId = ctrlDualStreamRequest.getGroupId();
+        GroupConfInfo groupConfInfo = groupConfInfoMap.get(groupId);
+        if (null == groupConfInfo) {
+            ctrlDualStreamRequest.makeErrorResponseMsg(ConfInterfaceResult.GROUP_NOT_EXIST.getCode(), HttpStatus.OK, ConfInterfaceResult.GROUP_NOT_EXIST.getMessage());
+            return;
+        }
+
+        String confId = groupConfInfo.getConfId();
+        TerminalService terminalService;
+        if (mtE164.isEmpty()){
+            terminalService = groupConfInfo.getBroadcastVmtService();
+        } else {
+            terminalService = groupConfInfo.getMtMember(mtE164);
+        }
+
+        if (null == terminalService){
+            ctrlDualStreamRequest.makeErrorResponseMsg(ConfInterfaceResult.TERMINAL_NOT_EXIST.getCode(), HttpStatus.OK, ConfInterfaceResult.TERMINAL_NOT_EXIST.getMessage());
+            return;
+        }
+
+        String dualStreamChannel = getDualStreamChannel(confId);
+        ctrlDualStreamRequest.addWaitMsg(dualStreamChannel);
+        groupConfInfo.addWaitDealTask(dualStreamChannel, ctrlDualStreamRequest);
+
+        McuStatus mcuStatus = mcuRestClientService.ctrlDualStream(confId, terminalService.getMtId(), dual);
+        if (mcuStatus.getValue() == 0) {
+            return;
+        }
+
+        ctrlDualStreamRequest.removeMsg(dualStreamChannel);
+        groupConfInfo.delWaitDealTask(dualStreamChannel);
+        ctrlDualStreamRequest.makeErrorResponseMsg(ConfInterfaceResult.CTRL_DUALSTREAM.getCode(), HttpStatus.OK, mcuStatus.getDescription());
+    }
+
     public boolean inspectionMt(GroupConfInfo groupConfInfo, String mode, String srcMtId, String dstMtId, InspectionRequest inspectionRequest) {
         System.out.println("inspectionMt, mode:"+mode+", srcMtId:"+srcMtId+", dstMtId:"+dstMtId);
 
@@ -1158,6 +1196,16 @@ public class ConfInterfaceService {
         channel.append(mtId);
         channel.append("/");
         channel.append(mode);
+        return channel.toString();
+    }
+
+    private String getDualStreamChannel(String confId){
+        StringBuilder channel = new StringBuilder();
+
+        channel.append("/confs/");
+        channel.append(confId);
+        channel.append("/dualstream");
+
         return channel.toString();
     }
 

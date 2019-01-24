@@ -36,8 +36,8 @@ public class TerminalService {
         this.inspectionStatus.set(InspectionStatusEnum.UNKNOWN.getCode());
         this.inspectedStatus = new AtomicInteger();
         this.inspectedStatus.set(InspectionStatusEnum.UNKNOWN.getCode());
-        this.toBeSpeaker = new AtomicBoolean();
-        this.toBeSpeaker.set(false);
+        this.toBeSpeaker = new AtomicBoolean(false);
+        this.dualStream = new AtomicBoolean(false);
         this.inspectVideoStatus = new AtomicInteger();
         this.inspectVideoStatus.set(InspectionStatusEnum.UNKNOWN.getCode());
         this.inspectAudioStatus = new AtomicInteger();
@@ -226,6 +226,14 @@ public class TerminalService {
 
     public void setToBeSpeaker(boolean toBeSpeaker) {
         this.toBeSpeaker.set(toBeSpeaker);
+    }
+
+    public boolean isDualStream() {
+        return dualStream.get();
+    }
+
+    public void setDualStream(boolean dualStream) {
+        this.dualStream.set(dualStream);
     }
 
     public void setInspectedStatus(InspectionStatusEnum inspected) {
@@ -931,6 +939,7 @@ public class TerminalService {
     protected AtomicInteger inspectionStatus;   //0-未知,1-选看成功，2-选看失败
     protected AtomicInteger inspectedStatus;    //0-未知,1-选看成功，2-选看失败
     protected AtomicBoolean toBeSpeaker;
+    protected AtomicBoolean dualStream;
     protected AtomicInteger inspectVideoStatus;   //0-未知,1-选看成功，2-选看失败
     protected AtomicInteger inspectAudioStatus;
     protected CopyOnWriteArrayList<DetailMediaResouce> forwardChannel;

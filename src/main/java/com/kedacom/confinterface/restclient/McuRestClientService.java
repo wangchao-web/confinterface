@@ -138,11 +138,7 @@ public class McuRestClientService {
         createConferenceParam.setEncrypted_key(mcuRestConfig.getEncryptedKey());
         createConferenceParam.setVideo_formats(mcuRestConfig.getVideoFormat());
         createConferenceParam.setAudio_formats(mcuRestConfig.getAudioFormat());
-
-        List<VideoFormat> videoFormats = createConferenceParam.getVideo_formats();
-        for(VideoFormat videoFormat : videoFormats){
-            System.out.println("CreateConference, video_formats : " + videoFormat.toString());
-        }
+        System.out.println("createConfParam:"+createConferenceParam.toString());
 
         constructUrl(url, "/api/v1/mc/confs");
         McuPostMsg mcuPostMsg = new McuPostMsg(accountToken);
@@ -375,6 +371,34 @@ public class McuRestClientService {
         return McuStatus.OK;
     }
 
+    public String getDualStream(String confId){
+        if (!loginSuccess) {
+            System.out.println("getDualStream, has login out!!!");
+            return null;
+        }
+
+        //url : /api/v1/vc/confs/{conf_id}/dualstream
+        StringBuilder url = new StringBuilder();
+        constructUrl(url, "/api/v1/vc/confs/{conf_id}/dualstream?account_token={account_token}");
+        Map<String, String> args = new HashMap<>();
+        args.put("conf_id", confId);
+        args.put("account_token", accountToken);
+
+        GetDualStreamResponse getDualStreamResponse = restClientService.exchange(url.toString(), HttpMethod.GET, null, urlencodeMediaType, args, GetDualStreamResponse.class);
+        if (null == getDualStreamResponse) {
+            System.out.println("getDualStream, null == getDualStreamResponse");
+            return null;
+        }
+
+        if (!getDualStreamResponse.success()){
+            int errorCode = getDualStreamResponse.getError_code();
+            System.out.println("getDualStream, failed! errcode:"+errorCode+",errmsg:"+ McuStatus.resolve(errorCode).getDescription());
+            return null;
+        }
+
+        return getDualStreamResponse.getMt_id();
+    }
+
     public String getSpeaker(String confId) {
         if (!loginSuccess) {
             System.out.println("getSpeaker, has login out!!!");
@@ -560,6 +584,43 @@ public class McuRestClientService {
         McuPostMsg mcuPostMsg = new McuPostMsg(accountToken);
         mcuPostMsg.setParams(silenceOrMuteParam);
         McuBaseResponse response = restClientService.exchange(url.toString(), HttpMethod.PUT, mcuPostMsg.getMsg(), urlencodeMediaType, args, McuBaseResponse.class);
+        if (null == response)
+            return McuStatus.Unknown;
+
+        if (response.success())
+            return McuStatus.OK;
+
+        return McuStatus.resolve(response.getError_code());
+    }
+
+    public McuStatus ctrlDualStream(String confId, String mtId, boolean dual){
+        if (!loginSuccess) {
+            System.out.println("ctrlDualStream, has login out!!!");
+            return McuStatus.TimeOut;
+        }
+
+        if (dual) {
+            subscribeDual(confId);
+        }
+
+        //url ：/api/v1/vc/confs/{conf_id}/dualstream
+        StringBuilder url = new StringBuilder();
+        constructUrl(url, "/api/v1/vc/confs/{conf_id}/dualstream");
+        Map<String, String> args = new HashMap<>();
+        args.put("conf_id", confId);
+
+        TerminalId terminalId = new TerminalId(mtId);
+        McuPostMsg mcuPostMsg = new McuPostMsg(accountToken);
+        mcuPostMsg.setParams(terminalId);
+
+        McuBaseResponse response;
+
+        if (dual) {
+            response = restClientService.exchange(url.toString(), HttpMethod.PUT, mcuPostMsg.getMsg(), urlencodeMediaType, args, McuBaseResponse.class);
+        } else {
+            response = restClientService.exchange(url.toString(), HttpMethod.DELETE, mcuPostMsg.getMsg(), urlencodeMediaType, args, McuBaseResponse.class);
+        }
+
         if (null == response)
             return McuStatus.Unknown;
 
@@ -775,6 +836,29 @@ public class McuRestClientService {
         subscribeChannel.append("/confs/");
         subscribeChannel.append(confId);
         subscribeChannel.append("/speaker");
+
+        List<String> subscribeChannelList = confSubcribeChannelMap.get(confId);
+        if (null == subscribeChannelList) {
+            subscribeChannelList = Collections.synchronizedList(new ArrayList<>());
+        }
+
+        for (String channel : subscribeChannelList) {
+            if (channel.equals(subscribeChannel.toString()))
+                return;
+        }
+
+        mcuSubscribeClientService.subscribe(subscribeChannel.toString());
+        subscribeChannelList.add(subscribeChannel.toString());
+        confSubcribeChannelMap.put(confId, subscribeChannelList);
+    }
+
+    private void subscribeDual(String confId){
+        //会议双流源通道/confs/{conf_id}/dualstream
+        StringBuilder subscribeChannel = new StringBuilder();
+        subscribeChannel.delete(0, subscribeChannel.length());
+        subscribeChannel.append("/confs/");
+        subscribeChannel.append(confId);
+        subscribeChannel.append("/dualstream");
 
         List<String> subscribeChannelList = confSubcribeChannelMap.get(confId);
         if (null == subscribeChannelList) {

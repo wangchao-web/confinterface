@@ -151,6 +151,22 @@ public class ConfInterfaceController {
         return silenceOrMute(groupId, mtE164, false, muteParam);
     }
 
+    @PostMapping(value = "/dualStream")
+    public DeferredResult<ResponseEntity<StartDualResponse>> startDual(@RequestParam("GroupId") String groupId, @Valid @RequestBody DualStreamParam dualStreamParam){
+        System.out.println("now in startDual, groupId:"+groupId + ", dualStreamParam:" + dualStreamParam);
+        StartDualStreamRequest startDualStreamRequest = new StartDualStreamRequest(groupId, dualStreamParam);
+        confInterfaceService.ctrlDualStream(startDualStreamRequest, dualStreamParam.getMtE164(), true);
+        return startDualStreamRequest.getResponseMsg();
+    }
+
+    @DeleteMapping(value = "/dualStream")
+    public DeferredResult<ResponseEntity<BaseResponseMsg>> stopDual(@RequestParam("GroupId") String groupId, @Valid @RequestBody DualStreamParam dualStreamParam){
+        System.out.println("now in stopDual, groupId:"+groupId + ", dualStreamParam:" + dualStreamParam);
+        CancelDualStreamRequest cancelDualStreamRequest = new CancelDualStreamRequest(groupId, dualStreamParam);
+        confInterfaceService.ctrlDualStream(cancelDualStreamRequest, dualStreamParam.getMtE164(), false);
+        return cancelDualStreamRequest.getResponseMsg();
+    }
+
     private DeferredResult<ResponseEntity<BaseResponseMsg>> silenceOrMute(String groupId, String mtE164, boolean silence, SilenceOrMuteParam silenceOrMuteParam){
         CtrlSilenceOrMuteRequest ctrlSilenceOrMuteRequest = new CtrlSilenceOrMuteRequest(groupId, mtE164, silence, silenceOrMuteParam);
         confInterfaceService.silenceOrMute(ctrlSilenceOrMuteRequest);

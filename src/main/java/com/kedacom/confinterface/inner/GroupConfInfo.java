@@ -57,6 +57,7 @@ public class GroupConfInfo {
     public void setBroadcastVmtService(TerminalService terminalService) {
         if (null != terminalService){
             this.broadcastVmtService = terminalService;
+            this.broadcastVmtService.setDualStream(true);
             return;
         }
 
@@ -70,6 +71,7 @@ public class GroupConfInfo {
                 return;
             }
 
+            this.broadcastVmtService.setDualStream(true);
             freeVmtMembers.remove(broadcastVmtService.getE164());
         }
     }

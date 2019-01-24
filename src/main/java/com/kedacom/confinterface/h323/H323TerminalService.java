@@ -114,7 +114,7 @@ public class H323TerminalService extends TerminalService {
             System.out.println("H323, onOpenLogicalChannel, start add exchange info!! threadName:"+Thread.currentThread().getName());
 
             for (MediaDescription mediaDescription : mediaDescriptions) {
-                System.out.println("MediaType:"+mediaDescription.getMediaType()+", Direction:"+mediaDescription.getDirection()+", ChnlIndx:"+mediaDescription.getChannelIndex()+", Payload:"+mediaDescription.getPayload());
+                System.out.println("MediaType:"+mediaDescription.getMediaType()+", Direction:"+mediaDescription.getDirection()+", StreamIndx:"+mediaDescription.GetStreamIndex()+", Payload:"+mediaDescription.getPayload());
                 System.out.println("Payload:"+mediaDescription.getPayload()+", EncodingName:"+mediaDescription.getEncodingFormat());
                 System.out.println("Rtp["+mediaDescription.getRtpAddress().getIP()+":"+mediaDescription.getRtpAddress().getPort()+"]");
                 System.out.println("Rtcp["+mediaDescription.getRtcpAddress().getIP()+":"+mediaDescription.getRtcpAddress().getPort()+"]");

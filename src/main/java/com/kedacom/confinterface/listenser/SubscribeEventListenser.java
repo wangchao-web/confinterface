@@ -71,6 +71,14 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
             System.out.println("process CancelInspectionRequest..........");
             CancelInspectionRequest cancelInspectionRequest = (CancelInspectionRequest)requestMsg;
             processCancelInspectionRequest(subscribeEvent, groupConfInfo, cancelInspectionRequest);
+        } else if (requestMsg instanceof CancelDualStreamRequest){
+            System.out.println("process CancelDualStreamRequest..........");
+            CancelDualStreamRequest cancelDualStreamRequest = (CancelDualStreamRequest) requestMsg;
+            processCancelDualStreamRequest(subscribeEvent, groupConfInfo, cancelDualStreamRequest);
+        } else if (requestMsg instanceof StartDualStreamRequest){
+            System.out.println("process StartDualStreamRequest..........");
+            StartDualStreamRequest startDualStreamRequest = (StartDualStreamRequest) requestMsg;
+            processStartDualStreamRequest(subscribeEvent, groupConfInfo, startDualStreamRequest);
         }
     }
 
@@ -868,6 +876,66 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
 
             if (bCancelInspection)
                 cancelInspectionRequest.makeSuccessResponseMsg();
+        }
+    }
+
+    private void processStartDualStreamRequest(SubscribeEvent subscribeEvent, GroupConfInfo groupConfInfo, StartDualStreamRequest startDualStreamRequest){
+        //双流源通道 /confs/{conf_id}/dualstream
+        startDualStreamRequest.removeMsg(subscribeEvent.getChannel());
+        groupConfInfo.delWaitDealTask(subscribeEvent.getChannel());
+
+        if (subscribeEvent.getMethod().equals(SubscribeMethodEnum.UPDATE.getName())){
+            //获取双流源
+            String mtId = mcuRestClientService.getDualStream(groupConfInfo.getConfId());
+            String mtE164 = startDualStreamRequest.getDualStreamParam().getMtE164();
+            TerminalService terminalService = groupConfInfo.getBroadcastVmtService();
+            List<DetailMediaResouce> resources;
+            String dualMtId;
+
+            if (mtE164.isEmpty()){
+                //获取广播虚拟终端
+                dualMtId = terminalService.getMtId();
+                resources = terminalService.getForwardChannel();
+            } else {
+                dualMtId = groupConfInfo.getMtMember(mtE164).getMtId();
+                resources = terminalService.getReverseChannel();
+            }
+
+            if (!mtId.equals(dualMtId)){
+                //如果双流源与请求的设备不一致，忽略
+                return;
+            }
+
+            int tryTimes = 10;
+            do {
+                for (DetailMediaResouce detailMediaResouce : resources) {
+                    if (detailMediaResouce.getDual() == 0) {
+                        continue;
+                    }
+
+                    startDualStreamRequest.setResourceId(detailMediaResouce.getId());
+                    startDualStreamRequest.makeSuccessResponseMsg();
+                    return;
+                }
+
+                try {
+                    TimeUnit.MICROSECONDS.sleep(300);
+                } catch (Exception e){
+                }
+
+            }while (--tryTimes > 0);
+
+            startDualStreamRequest.makeErrorResponseMsg(ConfInterfaceResult.CTRL_DUALSTREAM.getCode(), HttpStatus.OK, ConfInterfaceResult.CTRL_DUALSTREAM.getMessage());
+        }
+    }
+
+    private void processCancelDualStreamRequest(SubscribeEvent subscribeEvent, GroupConfInfo groupConfInfo, CancelDualStreamRequest cancelDualStreamRequest){
+        //双流源通道 /confs/{conf_id}/dualstream
+        cancelDualStreamRequest.removeMsg(subscribeEvent.getChannel());
+        groupConfInfo.delWaitDealTask(subscribeEvent.getChannel());
+
+        if (subscribeEvent.getMethod().equals(SubscribeMethodEnum.DELETE.getName())){
+            cancelDualStreamRequest.makeSuccessResponseMsg();
         }
     }
 

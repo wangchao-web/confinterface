@@ -1,6 +1,7 @@
 package com.kedacom.confinterface.service;
 
 import com.kedacom.confinterface.dto.BaseResponseMsg;
+import com.kedacom.confinterface.dto.TerminalStatusNotify;
 import com.kedacom.confinterface.inner.SubscribeMsgTypeEnum;
 import com.kedacom.confinterface.restclient.RestClientService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -25,7 +27,7 @@ public class ConfInterfacePublishService {
         synchronized (this) {
             Map<String, String> groupUrl = subscribeMsgs.get(type);
             if (null == groupUrl) {
-                groupUrl = new HashMap<>();
+                groupUrl = new ConcurrentHashMap<>();
                 subscribeMsgs.put(type, groupUrl);
             }
 
@@ -48,19 +50,26 @@ public class ConfInterfacePublishService {
 
         System.out.println("publishMessage, groupId:"+groupId);
         ResponseEntity<BaseResponseMsg> publishResponse = restClientService.exchangeJson(publishUrl, HttpMethod.POST, publishMsg, null, BaseResponseMsg.class);
+        if (publishResponse.getStatusCode().is2xxSuccessful() && publishResponse.getBody().getCode() == 0) {
+            System.out.println("publishMessage OK! type:"+type.getName()+", publishUrl:"+publishUrl);
+            return;
+        }
+
+        if (!publishFail.containsKey(publishUrl)){
+            publishFail.put(publishUrl, publishMsg);
+        } else {
+            if (type == SubscribeMsgTypeEnum.TERMINAL_STATUS) {
+                TerminalStatusNotify terminalStatusNotify = (TerminalStatusNotify) publishFail.get(publishUrl);
+                TerminalStatusNotify newTerminalStatusNotify = (TerminalStatusNotify)publishMsg;
+                terminalStatusNotify.addMtStatus(newTerminalStatusNotify.getMtStatusNotify().get(0));
+            }
+        }
+
         if (!publishResponse.getStatusCode().is2xxSuccessful()){
             System.out.println("publishMessage failed! , type:"+type.getName()+", publishUrl : "+publishUrl);
-            publishFail.put(publishUrl, publishMsg);
-            return;
-        }
-
-        if (publishResponse.getBody().getCode() != 0){
+        } else if (publishResponse.getBody().getCode() != 0){
             System.out.println("publishMessage failed! , type:"+type.getName()+", publishUrl:"+publishUrl+", errmsg:"+publishResponse.getBody().getMessage());
-            publishFail.put(publishUrl, publishMsg);
-            return;
         }
-
-        System.out.println("publishMessage OK! type:"+type.getName()+", publishUrl:"+publishUrl);
     }
 
     @Scheduled(initialDelay = 60*1000L, fixedDelay = 3 * 1000L)

@@ -1,7 +1,5 @@
 package com.kedacom.confinterface.inner;
 
-import com.kedacom.confinterface.restclient.mcu.McuStatus;
-
 public enum InspectionModeEnum {
 
     ALL("all",0), VIDEO("video", 1), AUDIO("audio", 2);
