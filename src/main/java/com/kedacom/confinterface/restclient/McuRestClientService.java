@@ -138,6 +138,7 @@ public class McuRestClientService {
         createConferenceParam.setEncrypted_key(mcuRestConfig.getEncryptedKey());
         createConferenceParam.setVideo_formats(mcuRestConfig.getVideoFormat());
         createConferenceParam.setAudio_formats(mcuRestConfig.getAudioFormat());
+
         System.out.println("createConfParam:"+createConferenceParam.toString());
 
         constructUrl(url, "/api/v1/mc/confs");

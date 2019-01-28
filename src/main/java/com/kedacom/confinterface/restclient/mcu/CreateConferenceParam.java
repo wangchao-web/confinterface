@@ -318,17 +318,18 @@ public class CreateConferenceParam {
         }
 
         for (String strAudioformat : audioformats) {
-            AudioFormat audioFormat = new AudioFormat();
-
             int format = Integer.valueOf(strAudioformat);
             if (AudioFormatEnum.resolve(format) == AudioFormatEnum.UNKNOWN){
                 System.out.println("invalid audio format! format:" + strAudioformat);
                 continue;
             }
 
-            audioFormat.setFormat(format);
-            audio_formats.add(audioFormat);
+            audio_formats.add(format);
         }
+    }
+
+    public List<Integer> getAudio_formats() {
+        return audio_formats;
     }
 
     @Override
@@ -361,6 +362,8 @@ public class CreateConferenceParam {
                 .append(",auto_end:").append(auto_end)
                 .append(",preoccpuy_resource:").append(preoccpuy_resource)
                 .append(",one_reforming:").append(one_reforming)
+                .append(", video_formats:").append(video_formats)
+                .append(", audio_formats:").append(audio_formats)
                 .toString();
     }
 
@@ -392,5 +395,5 @@ public class CreateConferenceParam {
     private int preoccpuy_resource;
     private int one_reforming;
     private List<VideoFormat> video_formats;
-    private List<AudioFormat> audio_formats;
+    private List<Integer> audio_formats;
 }

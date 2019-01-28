@@ -20,8 +20,7 @@ public enum ConfInterfaceResult {
     TERMINAL_NOT_EXIST(50015, "terminal not exist in this conference!"),
     CTRL_VOLUME(50016, "control terminal volume failed!"),
     CTRL_SILENCE_OR_MUTE(50017, "control silence or mute failed!"),
-    VMT_NOT_ONLINE(50018, "no vmt online, please wait a minute!"),
-    CTRL_DUALSTREAM(50018, "control dual stream failed!");
+    VMT_NOT_ONLINE(50018, "no vmt online, please wait a minute!");
 
     public int getCode(){
         return code;
