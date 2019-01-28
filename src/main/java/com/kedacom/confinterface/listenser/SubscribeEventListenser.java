@@ -913,7 +913,12 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
                         continue;
                     }
 
-                    startDualStreamRequest.setResourceId(detailMediaResouce.getId());
+                    MediaResource mediaResource = new MediaResource();
+                    mediaResource.setId(detailMediaResouce.getId());
+                    mediaResource.setType(detailMediaResouce.getType());
+                    mediaResource.setDual(true);
+
+                    startDualStreamRequest.addResource(mediaResource);
                     startDualStreamRequest.makeSuccessResponseMsg();
                     return;
                 }

@@ -6,13 +6,22 @@ public class DetailMediaResouce extends MediaResource {
 
     public DetailMediaResouce(MediaResource mediaResource){
         super();
+        this.streamIndex = -1;
         this.setId(mediaResource.getId());
         this.setType(mediaResource.getType());
-        this.setDual(0);
+        this.setDual((mediaResource.getDual()==1));
     }
 
     public DetailMediaResouce(){
         super();
+    }
+
+    public int getStreamIndex() {
+        return streamIndex;
+    }
+
+    public void setStreamIndex(int streamIndex) {
+        this.streamIndex = streamIndex;
     }
 
     public TransportAddress getRtcp() {
@@ -42,12 +51,14 @@ public class DetailMediaResouce extends MediaResource {
     @Override
     public String toString() {
         return new StringBuilder().append(super.toString())
+                .append(", streamIndex:").append(streamIndex)
                 .append(", sdp:").append(sdp)
                 .append(", rtp:").append(rtp)
                 .append(", rtcp:").append(rtcp)
                 .toString();
     }
 
+    private int streamIndex;
     private String sdp;
     private TransportAddress rtp;
     private TransportAddress rtcp;

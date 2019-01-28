@@ -9,6 +9,7 @@ import com.kedacom.confinterface.restclient.mcu.*;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
@@ -35,6 +36,14 @@ public class McuRestClientService {
             }
 
             return false;
+        }
+
+        //dev, test, prod
+        //加载当前profile
+        String[] activeProfs = env.getActiveProfiles();
+        if (activeProfs.length > 0){
+            activeProf = activeProfs[0];
+            System.out.println("constructUrl: active prof is "+activeProf);
         }
 
         //通过软件key和密钥获取account_token
@@ -767,7 +776,11 @@ public class McuRestClientService {
             url.delete(0, url.length());
         }
 
-        url.append("http://");
+        if ("prod".equals(activeProf))
+            url.append("https://");
+        else
+            url.append("http://");
+
         url.append(mcuRestConfig.getMcuIp());
         if (mcuRestConfig.getMcuRestPort() > 0) {
             url.append(":");
@@ -885,6 +898,9 @@ public class McuRestClientService {
     @Autowired
     private McuRestConfig mcuRestConfig;
 
+    @Autowired
+    private Environment env;
+
     protected final org.slf4j.Logger logger = LoggerFactory.getLogger(this.getClass());
 
     private final MediaType urlencodeMediaType = MediaType.APPLICATION_FORM_URLENCODED;
@@ -893,4 +909,5 @@ public class McuRestClientService {
     private final long heartbeatInterval = 25 * 60 * 1000L;
     private volatile boolean loginSuccess;
     private Map<String, List<String>> confSubcribeChannelMap;
+    private static String activeProf = "dev";
 }

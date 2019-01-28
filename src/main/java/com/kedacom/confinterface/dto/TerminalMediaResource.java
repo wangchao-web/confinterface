@@ -52,6 +52,7 @@ public class TerminalMediaResource implements Serializable {
             MediaResource mediaResource = new MediaResource();
             mediaResource.setId(detailMediaResouce.getId());
             mediaResource.setType(detailMediaResouce.getType());
+            mediaResource.setDual((detailMediaResouce.getDual() == 1));
             mediaResources.add(mediaResource);
         }
 

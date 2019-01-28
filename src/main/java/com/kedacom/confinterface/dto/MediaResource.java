@@ -28,8 +28,11 @@ public class MediaResource implements Serializable {
         this.id = id;
     }
 
-    public void setDual(int dual) {
-        this.dual.set(dual);
+    public void setDual(boolean dual) {
+        if (dual)
+            this.dual.set(1);
+        else
+            this.dual.set(0);
     }
 
     public int getDual() {

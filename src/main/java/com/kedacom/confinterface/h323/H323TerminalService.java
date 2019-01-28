@@ -85,13 +85,24 @@ public class H323TerminalService extends TerminalService {
             List<UpdateResourceParam> updateResourceParams = new ArrayList<>();
 
             for (MediaDescription mediaDescription : mediaDescriptions){
-                for (DetailMediaResouce detailMediaResouce : reverseChannel){
-                    if (mediaDescription.getMediaType().equals(detailMediaResouce.getType())
-                        && mediaDescription.GetStreamIndex() == detailMediaResouce.getDual()){
+                for (DetailMediaResouce detailMediaResouce : reverseChannel) {
+                    if (!mediaDescription.getMediaType().equals(detailMediaResouce.getType()))
+                        continue;
+
+                    int streamIndex = detailMediaResouce.getStreamIndex();
+                    if (-1 == streamIndex) {
+                        //只有在异常重启后,回复上次的信息时,才会出现该情况
+                        streamIndex = mediaDescription.getStreamIndex();
+                        detailMediaResouce.setStreamIndex(streamIndex);
+                        detailMediaResouce.setDual(mediaDescription.getDual());
+                    }
+
+                    if (mediaDescription.getStreamIndex() == streamIndex) {
                         resourceInfo.add(detailMediaResouce.getId());
                         UpdateResourceParam updateResourceParam = new UpdateResourceParam(detailMediaResouce.getId());
                         updateResourceParam.setSdp(constructSdp(mediaDescription));
                         updateResourceParams.add(updateResourceParam);
+                        break;
                     }
                 }
             }
@@ -114,7 +125,7 @@ public class H323TerminalService extends TerminalService {
             System.out.println("H323, onOpenLogicalChannel, start add exchange info!! threadName:"+Thread.currentThread().getName());
 
             for (MediaDescription mediaDescription : mediaDescriptions) {
-                System.out.println("MediaType:"+mediaDescription.getMediaType()+", Direction:"+mediaDescription.getDirection()+", StreamIndx:"+mediaDescription.GetStreamIndex()+", Payload:"+mediaDescription.getPayload());
+                System.out.println("MediaType:"+mediaDescription.getMediaType()+", Direction:"+mediaDescription.getDirection()+", StreamIndx:"+mediaDescription.getStreamIndex()+", Payload:"+mediaDescription.getPayload());
                 System.out.println("Payload:"+mediaDescription.getPayload()+", EncodingName:"+mediaDescription.getEncodingFormat());
                 System.out.println("Rtp["+mediaDescription.getRtpAddress().getIP()+":"+mediaDescription.getRtpAddress().getPort()+"]");
                 System.out.println("Rtcp["+mediaDescription.getRtcpAddress().getIP()+":"+mediaDescription.getRtcpAddress().getPort()+"]");
@@ -124,7 +135,7 @@ public class H323TerminalService extends TerminalService {
                 CreateResourceResponse resourceResponse = addExchange(createResourceParam);
                 if (null == resourceResponse)
                     return false;
-                addMediaResource(mediaDescription.GetStreamIndex(), resourceResponse);
+                addMediaResource(mediaDescription.getStreamIndex(), mediaDescription.getDual(), resourceResponse);
             }
         }
 
@@ -157,9 +168,19 @@ public class H323TerminalService extends TerminalService {
             List<String> resourceInfo = new ArrayList<>();
             for (MediaDescription mediaDescription : mediaDescriptions){
                 for (DetailMediaResouce detailMediaResouce : forwardChannel){
-                    if (mediaDescription.getMediaType().equals(detailMediaResouce.getType())
-                            && mediaDescription.GetStreamIndex() == detailMediaResouce.getDual()){
+                    if (!mediaDescription.getMediaType().equals(detailMediaResouce.getType())){
+                        continue;
+                    }
+
+                    int streamIndex = detailMediaResouce.getStreamIndex();
+                    if (-1 == streamIndex){
+                        streamIndex = mediaDescription.getStreamIndex();
+                        detailMediaResouce.setStreamIndex(streamIndex);
+                    }
+
+                    if (mediaDescription.getStreamIndex() == streamIndex){
                         resourceInfo.add(detailMediaResouce.getId());
+						break;
                     }
                 }
             }
@@ -184,7 +205,7 @@ public class H323TerminalService extends TerminalService {
                         for (MediaDescription mediaDescription : mediaDescriptions){
                             if (!mediaDescription.getMediaType().equals(detailMediaResouce.getType()))
                                 continue;
-                            if (mediaDescription.GetStreamIndex() != detailMediaResouce.getDual())
+                            if (mediaDescription.getStreamIndex() != detailMediaResouce.getStreamIndex())
                                 continue;
 
                             MediaDescription requestRemoteMedia = constructRequestMediaDescription(mediaDescription, exchangeInfo.getLocalSdp());
@@ -207,7 +228,7 @@ public class H323TerminalService extends TerminalService {
                 if (null == resourceResponse)
                     return false;
 
-                addMediaResource(mediaDescription.GetStreamIndex(), resourceResponse);
+                addMediaResource(mediaDescription.getStreamIndex(), mediaDescription.getDual(), resourceResponse);
 
                 MediaDescription requestRemoteMedia = constructRequestMediaDescription(mediaDescription, resourceResponse.getSdp());
                 newMediaDescription.add(requestRemoteMedia);
@@ -247,13 +268,13 @@ public class H323TerminalService extends TerminalService {
             }
 
             for (DetailMediaResouce detailMediaResouce : channel) {
-                System.out.println("updateExchange, mediaDesc(mediaType:"+mediaDescription.getMediaType()+", streamIndex:"+mediaDescription.GetStreamIndex()+")");
+                System.out.println("updateExchange, mediaDesc(mediaType:"+mediaDescription.getMediaType()+", streamIndex:"+mediaDescription.getStreamIndex()+")");
                 System.out.println("                detailMediaResource(type:"+detailMediaResouce.getType()+", dual:"+detailMediaResouce.getDual()+")");
 
                 if (!mediaDescription.getMediaType().equals(detailMediaResouce.getType()))
                     continue;
 
-                if (mediaDescription.GetStreamIndex() != detailMediaResouce.getDual())
+                if (mediaDescription.getStreamIndex() != detailMediaResouce.getStreamIndex())
                     continue;
 
                 UpdateResourceParam updateResourceParam = new UpdateResourceParam(detailMediaResouce.getId());
@@ -354,7 +375,9 @@ public class H323TerminalService extends TerminalService {
         }
 
         newMediaDescription.setBitrate(mediaDescription.getBitrate());
-        newMediaDescription.setStreamIndex(mediaDescription.GetStreamIndex());
+        newMediaDescription.setStreamIndex(mediaDescription.getStreamIndex());
+        newMediaDescription.setDual(mediaDescription.getDual());
+
         if (exchangeSdp.contains("sendonly")){
             newMediaDescription.setDirection(TransportDirectionEnum.SEND.getName());
         } else {

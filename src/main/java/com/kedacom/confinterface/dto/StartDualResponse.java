@@ -1,18 +1,20 @@
 package com.kedacom.confinterface.dto;
 
+import java.util.List;
+
 public class StartDualResponse extends BaseResponseMsg {
 
     public StartDualResponse(int code, int status, String message) {
         super(code, status, message);
     }
 
-    public String getResourceId() {
-        return resourceId;
+    public List<MediaResource> getResources() {
+        return resources;
     }
 
-    public void setResourceId(String resourceId) {
-        this.resourceId = resourceId;
+    public void setResources(List<MediaResource> resources) {
+        this.resources = resources;
     }
 
-    private String resourceId;
+    private List<MediaResource> resources;
 }

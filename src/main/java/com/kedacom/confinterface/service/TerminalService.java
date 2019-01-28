@@ -37,7 +37,6 @@ public class TerminalService {
         this.inspectedStatus = new AtomicInteger();
         this.inspectedStatus.set(InspectionStatusEnum.UNKNOWN.getCode());
         this.toBeSpeaker = new AtomicBoolean(false);
-        this.dualStream = new AtomicBoolean(false);
         this.inspectVideoStatus = new AtomicInteger();
         this.inspectVideoStatus.set(InspectionStatusEnum.UNKNOWN.getCode());
         this.inspectAudioStatus = new AtomicInteger();
@@ -228,12 +227,8 @@ public class TerminalService {
         this.toBeSpeaker.set(toBeSpeaker);
     }
 
-    public boolean isDualStream() {
-        return dualStream.get();
-    }
-
     public void setDualStream(boolean dualStream) {
-        this.dualStream.set(dualStream);
+        conferenceParticipant.AllowAcceptExtensiveStreamRequest(dualStream);
     }
 
     public void setInspectedStatus(InspectionStatusEnum inspected) {
@@ -437,7 +432,7 @@ public class TerminalService {
         }
     }
 
-    protected boolean removeExchange(List<String> resourceIds){
+    public boolean removeExchange(List<String> resourceIds){
         QueryAndDelResourceParam removeParam = new QueryAndDelResourceParam();
         removeParam.setResourceIDs(resourceIds);
 
@@ -734,15 +729,16 @@ public class TerminalService {
         }
     }
 
-    protected void addMediaResource(int streamIndex, CreateResourceResponse resourceResponse){
+    protected void addMediaResource(int streamIndex, boolean dual, CreateResourceResponse resourceResponse){
         //添加媒体信息
         System.out.println("addMediaResource, resourceId:"+resourceResponse.getResourceID());
         System.out.println("exchangeSdp:");
         System.out.println(resourceResponse.getSdp());
 
         DetailMediaResouce detailMediaResouce = new DetailMediaResouce();
+        detailMediaResouce.setStreamIndex(streamIndex);
         detailMediaResouce.setId(resourceResponse.getResourceID());
-        detailMediaResouce.setDual(streamIndex);
+        detailMediaResouce.setDual(dual);
 
         if(resourceResponse.getSdp().contains("video")){
             detailMediaResouce.setType(MediaTypeEnum.VIDEO.getName());
@@ -839,7 +835,7 @@ public class TerminalService {
                 if (!mediaDescription.getMediaType().equals(detailMediaResouce.getType()))
                     continue;
 
-                if (mediaDescription.GetStreamIndex() != detailMediaResouce.getDual())
+                if (mediaDescription.getStreamIndex() != detailMediaResouce.getStreamIndex())
                     continue;
 
                 MediaDescription localMediaDescription;
@@ -876,7 +872,8 @@ public class TerminalService {
 
                 localMediaDescription.setBitrate(mediaDescription.getBitrate());
                 localMediaDescription.setMediaType(detailMediaResouce.getType());
-                localMediaDescription.setStreamIndex(mediaDescription.GetStreamIndex());
+                localMediaDescription.setStreamIndex(mediaDescription.getStreamIndex());
+                localMediaDescription.setDual(mediaDescription.getDual());
 
                 if (TransportDirectionEnum.SEND.getName().equals(mediaDescription.getDirection())){
                     localMediaDescription.setDirection(TransportDirectionEnum.RECV.getName());
@@ -897,6 +894,7 @@ public class TerminalService {
                 localMediaDescription.setRtcpAddress(rtcpAddress);
 
                 localMediaDescriptions.add(localMediaDescription);
+				break;
             }
         }
 
@@ -939,7 +937,6 @@ public class TerminalService {
     protected AtomicInteger inspectionStatus;   //0-未知,1-选看成功，2-选看失败
     protected AtomicInteger inspectedStatus;    //0-未知,1-选看成功，2-选看失败
     protected AtomicBoolean toBeSpeaker;
-    protected AtomicBoolean dualStream;
     protected AtomicInteger inspectVideoStatus;   //0-未知,1-选看成功，2-选看失败
     protected AtomicInteger inspectAudioStatus;
     protected CopyOnWriteArrayList<DetailMediaResouce> forwardChannel;

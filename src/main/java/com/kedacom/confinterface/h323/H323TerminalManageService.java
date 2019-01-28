@@ -4,6 +4,7 @@ import com.kedacom.confadapter.*;
 import com.kedacom.confinterface.dao.InspectionSrcParam;
 import com.kedacom.confinterface.dto.MediaResource;
 import com.kedacom.confinterface.dto.TerminalMediaResource;
+import com.kedacom.confinterface.inner.DetailMediaResouce;
 import com.kedacom.confinterface.inner.InspectedParam;
 import com.kedacom.confinterface.restclient.mcu.InspectionStatusEnum;
 import com.kedacom.confinterface.service.TerminalManageService;
@@ -12,6 +13,7 @@ import com.kedacom.confinterface.service.TerminalService;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.web.context.request.async.DeferredResult;
 
 import java.util.*;
 import java.util.concurrent.ExecutorService;
@@ -271,6 +273,67 @@ public class H323TerminalManageService extends TerminalManageService implements 
         }
 
         terminalService.updateExchange(mediaDescriptions);
+    }
+
+    @Override
+    @Async("confTaskExecutor")
+    public void OnMediaCleaned(String participantid, Vector<MediaDescription> mediaDescriptions) {
+        System.out.println("OnMediaCleaned, terminal: "+ participantid + ", media cleaned, threadName: "+Thread.currentThread().getName());
+        H323TerminalService terminalService = (H323TerminalService) usedVmtServiceMap.get(participantid);
+        if (null == terminalService){
+            System.out.println("OnMediaCleaned, not found terminal!");
+            return;
+        }
+
+        List<String> resourceIds = new ArrayList<>();
+        List<DetailMediaResouce> mediaResouces = terminalService.getReverseChannel();
+
+        for (MediaDescription mediaDescription : mediaDescriptions){
+            for (DetailMediaResouce mediaResouce : mediaResouces){
+                if (!mediaResouce.getType().equals(mediaDescription.getMediaType())
+                        || mediaResouce.getStreamIndex() != mediaDescription.getStreamIndex()){
+                    continue;
+                }
+
+                System.out.println("OnMediaCleaned, type:"+mediaResouce.getType()+", resourceId:"+mediaResouce.getId()+", streamIndex:"+mediaDescription.getStreamIndex());
+                resourceIds.add(mediaResouce.getId());
+            }
+        }
+
+        if (resourceIds.isEmpty()) {
+            return;
+        }
+
+        boolean bRemoveOk = terminalService.removeExchange(resourceIds);
+        if (!bRemoveOk){
+            System.out.println("onMediaCleaned, removeExchange failed!");
+            resourceIds.clear();
+            return;
+        }
+
+        synchronized (terminalService) {
+            //删除对应的资源信息
+            Iterator<DetailMediaResouce> mediaResourceIterator = mediaResouces.iterator();
+            while (mediaResourceIterator.hasNext()) {
+                DetailMediaResouce mediaResouce = mediaResourceIterator.next();
+                Iterator<String> resoureIdIterator = resourceIds.iterator();
+                while (resoureIdIterator.hasNext()){
+                    String resourceId = resoureIdIterator.next();
+                    if (mediaResouce.getId().equals(resourceId)) {
+                        mediaResourceIterator.remove();
+                        resoureIdIterator.remove();
+                        break;
+                    }
+                }
+            }
+
+            mediaResouces = terminalService.getReverseChannel();
+            TerminalMediaResource oldTerminalMediaResource = terminalMediaSourceService.getTerminalMediaResource(participantid);
+            oldTerminalMediaResource.setReverseResources(TerminalMediaResource.convertToMediaResource(mediaResouces, "all"));
+            terminalMediaSourceService.setTerminalMediaResource(oldTerminalMediaResource);
+        }
+
+        resourceIds.clear();
     }
 
     private final org.slf4j.Logger logger = LoggerFactory.getLogger(this.getClass());
