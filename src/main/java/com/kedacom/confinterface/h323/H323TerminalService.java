@@ -1,16 +1,13 @@
 package com.kedacom.confinterface.h323;
 
 import com.kedacom.confadapter.*;
-import com.kedacom.confinterface.dto.BaseResponseMsg;
+import com.kedacom.confinterface.dto.BaseRequestMsg;
 import com.kedacom.confinterface.exchange.*;
 import com.kedacom.confinterface.inner.DetailMediaResouce;
 import com.kedacom.confinterface.inner.MediaTypeEnum;
-import com.kedacom.confinterface.inner.TransportAddress;
-import com.kedacom.confinterface.inner.TransportDirectionEnum;
 import com.kedacom.confinterface.service.TerminalService;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
-import org.springframework.scheduling.annotation.Async;
+import com.kedacom.confinterface.util.ConfInterfaceResult;
+import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.AsyncResult;
 
 import java.util.*;
@@ -26,9 +23,9 @@ public class H323TerminalService extends TerminalService {
         this.localIp = h323ProtocalConfig.getBaseSysConfig().getLocalIp();
         this.localCallPort = h323ProtocalConfig.getLocalCallPort();
         this.localRasPort = h323ProtocalConfig.getLocalRasPort();
+        this.videoDualStreamMediaDesc = null;
     }
 
-    @Async("confTaskExecutor")
     public Future<Boolean> startRegGK() {
         if (regGK)
             return new AsyncResult<>(true);
@@ -74,12 +71,12 @@ public class H323TerminalService extends TerminalService {
         }
     }
 
-    @Async("confTaskExecutor")
     public boolean onOpenLogicalChannel(Vector<MediaDescription> mediaDescriptions){
         /*1.判断是否存在反向通道资源，存在，则直接查询
           2. 不存在，则请求创建
         * */
         boolean bCreate = true;
+        boolean bOnlyDualStream = true;
         if (null != reverseChannel){
             List<String> resourceInfo = new ArrayList<>();
             List<UpdateResourceParam> updateResourceParams = new ArrayList<>();
@@ -95,6 +92,13 @@ public class H323TerminalService extends TerminalService {
                         streamIndex = mediaDescription.getStreamIndex();
                         detailMediaResouce.setStreamIndex(streamIndex);
                         detailMediaResouce.setDual(mediaDescription.getDual());
+                    }
+
+                    if (!mediaDescription.getDual()) {
+                        bOnlyDualStream = false;
+                        if (null == videoDualStreamMediaDesc && mediaDescription.getMediaType().equals(MediaTypeEnum.VIDEO.getName())) {
+                            videoDualStreamMediaDesc = mediaDescription;
+                        }
                     }
 
                     if (mediaDescription.getStreamIndex() == streamIndex) {
@@ -119,6 +123,20 @@ public class H323TerminalService extends TerminalService {
                 if (!bOk)
                     return false;
             }
+        } else {
+            for (MediaDescription mediaDescription : mediaDescriptions){
+                if (!mediaDescription.getDual()){
+                    bOnlyDualStream = false;
+                    if (null != videoDualStreamMediaDesc || !mediaDescription.getMediaType().equals(MediaTypeEnum.VIDEO.getName())) {
+                        continue;
+                    }
+
+                    videoDualStreamMediaDesc = mediaDescription;
+                    break;
+                } else if (null == videoDualStreamMediaDesc && mediaDescription.getMediaType().equals(MediaTypeEnum.VIDEO.getName())) {
+                    videoDualStreamMediaDesc = mediaDescription;
+                }
+            }
         }
 
         if (bCreate){
@@ -140,8 +158,8 @@ public class H323TerminalService extends TerminalService {
         }
 
         boolean bOk = ackOpenLogicalChannel(mediaDescriptions);
-        if(bOk){
-            //在收到反向的通道打开时，发起正向通道的打开
+        if(bOk && !bOnlyDualStream){
+            //在收到主流的反向的通道打开时，发起正向主流通道的打开
             System.out.println("H323, start open forward logical channel...........");
             bOk = openLogicalChannel(mediaDescriptions);
         }
@@ -158,7 +176,6 @@ public class H323TerminalService extends TerminalService {
         return bOk;
     }
 
-    @Async("confTaskExecutor")
     public boolean openLogicalChannel(Vector<MediaDescription> mediaDescriptions){
         Vector<MediaDescription> newMediaDescription  = new Vector<>();
 
@@ -252,152 +269,74 @@ public class H323TerminalService extends TerminalService {
         return true;
     }
 
-    @Async("confTaskExecutor")
-    public boolean updateExchange(Vector<MediaDescription> mediaDescriptions){
-        System.out.println("now in updateExchange, mediaDescriptions : "+mediaDescriptions.size());
-        List<UpdateResourceParam> updateResourceParams = new ArrayList<>();
-        List<DetailMediaResouce> channel;
-
-        for (MediaDescription mediaDescription : mediaDescriptions){
-            System.out.println("updateExchange, mediaDescription, direction : " + mediaDescription.getDirection());
-            if (TransportDirectionEnum.SEND.getName().equals(mediaDescription.getDirection())){
-                //反向通道更新
-                channel = reverseChannel;
-            } else {
-                channel = forwardChannel;
+    public void openDualStreamChannel(BaseRequestMsg startDualStreamRequest){
+        if (null != forwardChannel)
+            for (DetailMediaResouce detailMediaResouce : forwardChannel) {
+                if (detailMediaResouce.getDual() == 1) {
+                    startDualStreamRequest.makeErrorResponseMsg(ConfInterfaceResult.EXIST_DUALSTREAM.getCode(), HttpStatus.OK, ConfInterfaceResult.EXIST_DUALSTREAM.getMessage());
+                    return;
+                }
             }
 
-            for (DetailMediaResouce detailMediaResouce : channel) {
-                System.out.println("updateExchange, mediaDesc(mediaType:"+mediaDescription.getMediaType()+", streamIndex:"+mediaDescription.getStreamIndex()+")");
-                System.out.println("                detailMediaResource(type:"+detailMediaResouce.getType()+", dual:"+detailMediaResouce.getDual()+")");
-
-                if (!mediaDescription.getMediaType().equals(detailMediaResouce.getType()))
-                    continue;
-
-                if (mediaDescription.getStreamIndex() != detailMediaResouce.getStreamIndex())
-                    continue;
-
-                UpdateResourceParam updateResourceParam = new UpdateResourceParam(detailMediaResouce.getId());
-                updateResourceParam.setSdp(constructSdp(mediaDescription));
-
-                updateResourceParams.add(updateResourceParam);
-                break;
-            }
+        videoDualStreamMediaDesc.setStreamIndex(-1);
+        videoDualStreamMediaDesc.setDual(true);
+        CreateResourceParam createResourceParam = new CreateResourceParam();
+        createResourceParam.setSdp(constructCreateSdp(videoDualStreamMediaDesc));
+        CreateResourceResponse resourceResponse = addExchange(createResourceParam);
+        if (null == resourceResponse) {
+            System.out.println("openDualStreamChannel, addExchange failed!");
+            startDualStreamRequest.makeErrorResponseMsg(ConfInterfaceResult.ADD_EXCHANGENODE_FAILED.getCode(), HttpStatus.OK, ConfInterfaceResult.ADD_EXCHANGENODE_FAILED.getMessage());
+            return;
         }
 
-        return requestUpdateResource(updateResourceParams);
+        Vector<MediaDescription> newMediaDescription = new Vector<>();
+        MediaDescription requestRemoteMedia = constructRequestMediaDescription(videoDualStreamMediaDesc, resourceResponse.getSdp());
+        newMediaDescription.add(requestRemoteMedia);
+
+        boolean bOk = conferenceParticipant.RequestRemoteMedia(newMediaDescription);
+        if (!bOk) {
+            System.out.println("H323, openDualStreamChannel, RequestRemoteMedia failed! participartId : " + e164);
+            //释放交换资源
+            List<String> resourceIds = new ArrayList<>();
+            resourceIds.add(resourceResponse.getResourceID());
+            removeExchange(resourceIds);
+            return;
+        }
+
+        int dualStreamIndex = newMediaDescription.get(0).getStreamIndex();
+        videoDualStreamMediaDesc.setStreamIndex(dualStreamIndex);
+        addWaitMsg(startDualStreamRequest.getClass().getName(), startDualStreamRequest);
+        addMediaResource(dualStreamIndex, videoDualStreamMediaDesc.getDual(), resourceResponse);
+
+        System.out.println("openDualStreamChannel, RequestRemoteMedia Ok! streamIndex:"+dualStreamIndex);
     }
 
-    private boolean requestUpdateResource(List<UpdateResourceParam> updateResourceParams){
-        StringBuilder url = new StringBuilder();
-        constructUrl(url, "/services/media/v1/exchange?GroupID={groupId}&Action=updatenode");
-        Map<String, String> args = new HashMap<>();
-        args.put("groupId", groupId);
+    public boolean closeDualStreamChannel(){
+        if (null == videoDualStreamMediaDesc)
+            return true;
 
-        System.out.println("requestUpdateResource, groupId:"+groupId+", updateResourceSize:"+updateResourceParams.size());
+        System.out.println("closeDualStreamChannel, streamIndex : "+videoDualStreamMediaDesc.getStreamIndex());
+        boolean bOk = conferenceParticipant.RequestCleanupMediaById(videoDualStreamMediaDesc.getStreamIndex());
+        if (!bOk){
+            System.out.println("closeDualStreamChannel, RequestCleanupMediaById failed!");
+            return false;
+        }
 
-        for (UpdateResourceParam updateResourceParam : updateResourceParams){
-            System.out.println("requestUpdateResource, start update exchange, resourceId:"+updateResourceParam.getResourceID()+", sdp:"+updateResourceParam.getSdp());
-            ResponseEntity<BaseResponseMsg> updateResponse = restClientService.exchangeJson(url.toString(), HttpMethod.POST, updateResourceParam, args, BaseResponseMsg.class);
-            if (!updateResponse.getStatusCode().is2xxSuccessful()){
-                System.out.println("requestUpdateResource, update node failed! , resourceId:"+updateResourceParam.getResourceID()+", status : "+updateResponse.getStatusCodeValue()+", url:"+url.toString());
-                return false;
-            }
+        for (DetailMediaResouce detailMediaResouce : forwardChannel){
+            if (detailMediaResouce.getStreamIndex() != videoDualStreamMediaDesc.getStreamIndex())
+                continue;
 
-            if (updateResponse.getBody().getCode() != 0){
-                System.out.println("requestUpdateResource, update exchange failed, resourceId:"+updateResourceParam.getResourceID()+", messge:"+updateResponse.getBody().getMessage());
-                return false;
-            }
+            List<String> resourceIds = new ArrayList<>();
+            resourceIds.add(detailMediaResouce.getId());
 
-            System.out.println("requestUpdateResource, update exchange OK! resourceId:"+updateResourceParam.getResourceID());
+            removeExchange(resourceIds);
+
+            forwardChannel.remove(detailMediaResouce);
+
+            return true;
         }
 
         return true;
-    }
-
-    private String constructCreateSdp(MediaDescription mediaDescription){
-        StringBuilder sdp = new StringBuilder();
-
-        /*此处暂时将mcu向会议接入微服务打开逻辑通道时使用的媒体参数作为接受媒体信息携带的流媒体
-        * todo:等到赵智琛将能力集协商结果提供出来后，此处可以需填写能力集协商内容*/
-        if (mediaDescription.getMediaType().equals(MediaTypeEnum.VIDEO.getName())){
-            sdp.append("m=video 0 RTP/AVP ");
-            sdp.append(mediaDescription.getPayload());
-            VideoMediaDescription videoMediaDescription = (VideoMediaDescription)mediaDescription;
-            sdp.append("a=rtpmap:");
-            sdp.append(mediaDescription.getPayload());
-            sdp.append(" ");
-            sdp.append(mediaDescription.getEncodingFormat());
-            sdp.append("/90000\r\n");
-            sdp.append("a=framerate:");
-            sdp.append(videoMediaDescription.getFramerate());
-
-            if (mediaDescription.getEncodingFormat().equals(VideoMediaDescription.ENCODING_FORMAT_H264)){
-                constructH264Fmtp(sdp, mediaDescription.getPayload(), videoMediaDescription.getH264Desc());
-            }
-        } else {
-            sdp.append("m=audio 0 RTP/AVP ");
-            sdp.append(mediaDescription.getPayload());
-            AudioMediaDescription audioMediaDescription = (AudioMediaDescription)mediaDescription;
-            sdp.append("a=rtpmap:");
-            sdp.append(mediaDescription.getPayload());
-            sdp.append(" ");
-            sdp.append(mediaDescription.getEncodingFormat());
-            sdp.append("/");
-            sdp.append(audioMediaDescription.getSampleRate());
-            sdp.append("/");
-            sdp.append(audioMediaDescription.getChannelNum());
-            sdp.append("\r\n");
-        }
-
-        sdp.append("a=recvonly\r\n");
-
-        return sdp.toString();
-    }
-
-    /*todo：等赵智琛提供了能力集协商结果后，此处应该根据exchangeSdp中的payload在能力集协商结果中选择相应的mediaDescription*/
-    private MediaDescription constructRequestMediaDescription(MediaDescription mediaDescription, String exchangeSdp){
-        MediaDescription newMediaDescription;
-
-        if (exchangeSdp.contains("m=video")){
-            VideoMediaDescription videoMediaDescription = new VideoMediaDescription();
-            videoMediaDescription.setResolution(((VideoMediaDescription)mediaDescription).getResolution());
-            videoMediaDescription.setFramerate(((VideoMediaDescription)mediaDescription).getFramerate());
-            videoMediaDescription.setBitrateType(((VideoMediaDescription)mediaDescription).getBitrateType());
-            newMediaDescription = videoMediaDescription;
-            newMediaDescription.setMediaType(MediaTypeEnum.VIDEO.getName());
-        } else {
-            AudioMediaDescription audioMediaDescription = new AudioMediaDescription();
-            audioMediaDescription.setSampleRate(((AudioMediaDescription)mediaDescription).getSampleRate());
-            audioMediaDescription.setChannelNum(((AudioMediaDescription)mediaDescription).getChannelNum());
-            newMediaDescription = audioMediaDescription;
-            newMediaDescription.setMediaType(MediaTypeEnum.AUDIO.getName());
-        }
-
-        newMediaDescription.setBitrate(mediaDescription.getBitrate());
-        newMediaDescription.setStreamIndex(mediaDescription.getStreamIndex());
-        newMediaDescription.setDual(mediaDescription.getDual());
-
-        if (exchangeSdp.contains("sendonly")){
-            newMediaDescription.setDirection(TransportDirectionEnum.SEND.getName());
-        } else {
-            newMediaDescription.setDirection(TransportDirectionEnum.RECV.getName());
-        }
-
-        TransportAddress rtpAddress = constructTransAddress(exchangeSdp);
-        NetAddress rtpNetAddress = new NetAddress();
-        rtpNetAddress.setIP(rtpAddress.getIp());
-        rtpNetAddress.setPort(rtpAddress.getPort());
-        newMediaDescription.setRtpAddress(rtpNetAddress);
-
-        NetAddress rtcpNetAddress = new NetAddress();
-        rtcpNetAddress.setIP(rtpAddress.getIp());
-        rtcpNetAddress.setPort(rtpAddress.getPort()+1);
-        newMediaDescription.setRtcpAddress(rtcpNetAddress);
-
-        parseRtpMapAndFmtp(exchangeSdp, newMediaDescription);
-
-        return newMediaDescription;
     }
 
     public boolean isRegGK() {
@@ -450,4 +389,5 @@ public class H323TerminalService extends TerminalService {
     private String localIp;
     private int localRasPort;
     private int localCallPort;
+    protected MediaDescription videoDualStreamMediaDesc;
 }

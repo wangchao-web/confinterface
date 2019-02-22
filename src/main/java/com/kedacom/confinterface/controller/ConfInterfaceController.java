@@ -167,6 +167,14 @@ public class ConfInterfaceController {
         return cancelDualStreamRequest.getResponseMsg();
     }
 
+    @GetMapping(value = "/dualStream")
+    public DeferredResult<ResponseEntity<QueryDualStreamResponse>> queryDualStream(@RequestParam("GroupId") String groupId){
+        System.out.println("now in queryDualStream, groupId:"+groupId);
+        QueryDualStreamRequest queryDualStreamRequest = new QueryDualStreamRequest(groupId);
+        confInterfaceService.queryDualStream(queryDualStreamRequest);
+        return queryDualStreamRequest.getResponseMsg();
+    }
+
     private DeferredResult<ResponseEntity<BaseResponseMsg>> silenceOrMute(String groupId, String mtE164, boolean silence, SilenceOrMuteParam silenceOrMuteParam){
         CtrlSilenceOrMuteRequest ctrlSilenceOrMuteRequest = new CtrlSilenceOrMuteRequest(groupId, mtE164, silence, silenceOrMuteParam);
         confInterfaceService.silenceOrMute(ctrlSilenceOrMuteRequest);

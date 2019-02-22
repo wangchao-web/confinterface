@@ -8,6 +8,7 @@ import com.kedacom.confinterface.inner.TransportAddress;
 import com.kedacom.confinterface.restclient.mcu.*;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpHeaders;
@@ -23,6 +24,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
+@ConditionalOnProperty(name = "confinterface.sys.useMcu", havingValue = "true", matchIfMissing = true)
 @Service
 @EnableScheduling
 @EnableConfigurationProperties(McuRestConfig.class)

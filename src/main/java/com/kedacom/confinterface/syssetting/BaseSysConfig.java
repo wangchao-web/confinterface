@@ -58,6 +58,14 @@ public class BaseSysConfig {
         this.memDBType = memDBType;
     }
 
+    public boolean isUseMcu() {
+        return useMcu;
+    }
+
+    public void setUseMcu(boolean useMcu) {
+        this.useMcu = useMcu;
+    }
+
     public int getMaxVmts() {
         return maxVmts;
     }
@@ -160,6 +168,8 @@ public class BaseSysConfig {
                 .append(protocalType)
                 .append(", memDBType:")
                 .append(memDBType)
+                .append(", useMcu:")
+                .append(useMcu)
                 .append(", maxVmts:")
                 .append(maxVmts)
                 .append(", vmtNamePrefix:")
@@ -178,6 +188,7 @@ public class BaseSysConfig {
     private int mediaSrvPort = 8080;
     private String protocalType = "h323";
     private String memDBType = "redis";
+    private boolean useMcu = true;
     private int maxVmts = 3;
     private String vmtNamePrefix = "confInterface_";
     private String e164Start = "1234560100000";

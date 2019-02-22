@@ -13,14 +13,15 @@ import org.cometd.websocket.client.JettyWebSocketTransport;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.websocket.client.WebSocketClient;
 import org.springframework.beans.BeansException;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.stereotype.Service;
 
 import java.net.*;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 
+@ConditionalOnProperty(name = "confinterface.sys.useMcu", havingValue = "true", matchIfMissing = true)
 @Service
 public class McuSubscribeClientService implements ApplicationContextAware{
 

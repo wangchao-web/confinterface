@@ -48,7 +48,7 @@ public class CreateConferenceParam {
         this.mute = 0;
         this.silence = 0;
         this.video_quality = 1;  //0:质量优先，1：速度优先
-        this.dual_mode = 0;  //双流权限，0：发言会场，1：任意会场，2：指定会场
+        this.dual_mode = 1;  //双流权限，0：发言会场，1：任意会场，2：指定会场
         this.voice_activity_detection = 0; //是否开启语音激励, 0：否，1:是
         this.vacinterval = 5;  //语音激励敏感度(s),5，15，30，60
         this.cascade_mode = 1; //级联模式, 0:简单级联, 1:合并级联
@@ -309,6 +309,9 @@ public class CreateConferenceParam {
     }
 
     public void setAudio_formats(String audioFormats){
+        if (null == audioFormats)
+            return;
+
         String[] audioformats = audioFormats.split(",");
 
         if (null == audio_formats) {

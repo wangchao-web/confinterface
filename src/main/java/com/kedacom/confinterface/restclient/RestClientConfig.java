@@ -69,8 +69,8 @@ public class RestClientConfig {
         try {
             SSLContext sslContext = new SSLContextBuilder().loadTrustMaterial(null, (X509Certificate[] chain, String authType) -> true).build();
 
-            //??????NoopHostnameVerifier??,????????,???????SSL?????????
-            //???????DefaultHostnameVerifier,HttpClient???????,?RFC2818??
+            //在此处使用了NoopHostnameVerifier策略，即关闭主机名验证，接受任何有效的SSL会话来匹配目标主机
+            //另外一种策略为DefaultHostnameVerifier，HttpClient使用的默认实现,与RFC2818兼容
             SSLConnectionSocketFactory sslConnectionSocketFactory = new SSLConnectionSocketFactory(sslContext, NoopHostnameVerifier.INSTANCE);
             Registry<ConnectionSocketFactory> registry = RegistryBuilder.<ConnectionSocketFactory>create()
                     .register("http", PlainConnectionSocketFactory.getSocketFactory())

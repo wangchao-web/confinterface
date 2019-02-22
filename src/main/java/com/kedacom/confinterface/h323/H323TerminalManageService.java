@@ -3,6 +3,7 @@ package com.kedacom.confinterface.h323;
 import com.kedacom.confadapter.*;
 import com.kedacom.confinterface.dao.InspectionSrcParam;
 import com.kedacom.confinterface.dto.MediaResource;
+import com.kedacom.confinterface.dto.StartDualStreamRequest;
 import com.kedacom.confinterface.dto.TerminalMediaResource;
 import com.kedacom.confinterface.inner.DetailMediaResouce;
 import com.kedacom.confinterface.inner.InspectedParam;
@@ -10,10 +11,11 @@ import com.kedacom.confinterface.restclient.mcu.InspectionStatusEnum;
 import com.kedacom.confinterface.service.TerminalManageService;
 import com.kedacom.confinterface.service.TerminalMediaSourceService;
 import com.kedacom.confinterface.service.TerminalService;
+import com.kedacom.confinterface.util.ConfInterfaceResult;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Async;
-import org.springframework.web.context.request.async.DeferredResult;
 
 import java.util.*;
 import java.util.concurrent.ExecutorService;
@@ -193,8 +195,8 @@ public class H323TerminalManageService extends TerminalManageService implements 
         usedVmtServiceMap.remove(participantid);
         freeVmtServiceMap.put(participantid, terminalService);
 
-        //向流媒体请求删除交换资源
-        terminalService.removeExchange(terminalService);
+        //释放该虚拟终端的所有交换资源
+        terminalService.clearExchange();
 
         //移除数据库中的资源
         terminalMediaSourceService.delTerminalMediaResource(participantid);
@@ -266,13 +268,63 @@ public class H323TerminalManageService extends TerminalManageService implements 
     public void OnRemoteMediaReponsed(String participantid, Vector<MediaDescription> mediaDescriptions) {
         //该接口只有在使用H323协议时会用到
         System.out.println("OnRemoteMediaReponsed, request terminal: "+ participantid + " local media! threadName:"+Thread.currentThread().getName() );
-        H323TerminalService terminalService = (H323TerminalService)usedVmtServiceMap.get(participantid);
+        TerminalService terminalService = usedVmtServiceMap.get(participantid);
         if (null == terminalService){
             System.out.println("OnRemoteMediaReponsed， not found terminal : " + participantid);
             return;
         }
 
-        terminalService.updateExchange(mediaDescriptions);
+        boolean bOk = terminalService.updateExchange(mediaDescriptions);
+        if (bOk) {
+            if (!mediaDescriptions.get(0).getDual()) {
+                return;
+            }
+
+            //更新数据库中的正向双流交换资源信息
+            List<DetailMediaResouce> mediaResouces = terminalService.getForwardChannel();
+            TerminalMediaResource oldTerminalMediaResource = terminalMediaSourceService.getTerminalMediaResource(participantid);
+            oldTerminalMediaResource.setForwardResources(TerminalMediaResource.convertToMediaResource(mediaResouces, "all"));
+            terminalMediaSourceService.setTerminalMediaResource(oldTerminalMediaResource);
+
+            StartDualStreamRequest startDualStreamRequest = (StartDualStreamRequest) terminalService.getWaitMsg(StartDualStreamRequest.class.getName());
+            if (null == startDualStreamRequest)
+                return;
+
+            List<DetailMediaResouce> detailMediaResouces = terminalService.getForwardChannel();
+            for (DetailMediaResouce detailMediaResouce : detailMediaResouces) {
+                if (detailMediaResouce.getStreamIndex() != mediaDescriptions.get(0).getStreamIndex())
+                    continue;
+
+                System.out.println("OnRemoteMediaReponsed, dual streamIndex:"+mediaDescriptions.get(0).getStreamIndex());
+                MediaResource mediaResource = new MediaResource();
+                mediaResource.setType(detailMediaResouce.getType());
+                mediaResource.setDual(true);
+                mediaResource.setId(detailMediaResouce.getId());
+
+                startDualStreamRequest.addResource(mediaResource);
+                startDualStreamRequest.makeSuccessResponseMsg();
+                terminalService.delWaitMsg(StartDualStreamRequest.class.getName());
+
+                return;
+            }
+        }
+
+        //失败处理
+        if (mediaDescriptions.get(0).getDual()){
+            StartDualStreamRequest startDualStreamRequest = (StartDualStreamRequest)terminalService.getWaitMsg(StartDualStreamRequest.class.getName());
+            if(null == startDualStreamRequest)
+                return;
+
+            startDualStreamRequest.makeErrorResponseMsg(ConfInterfaceResult.UPDATE_EXCHANGENODE_FAILED.getCode(), HttpStatus.OK, ConfInterfaceResult.UPDATE_EXCHANGENODE_FAILED.getMessage());
+            terminalService.delWaitMsg(StartDualStreamRequest.class.getName());
+
+            bOk = terminalService.closeDualStreamChannel();
+            if (bOk){
+                System.out.println("OnRemoteMediaReponsed, closeDualStreamChannel OK!");
+            } else {
+                System.out.println("OnRemoteMediaReponsed, closeDualStreamChannel failed!");
+            }
+        }
     }
 
     @Override
@@ -290,8 +342,7 @@ public class H323TerminalManageService extends TerminalManageService implements 
 
         for (MediaDescription mediaDescription : mediaDescriptions){
             for (DetailMediaResouce mediaResouce : mediaResouces){
-                if (!mediaResouce.getType().equals(mediaDescription.getMediaType())
-                        || mediaResouce.getStreamIndex() != mediaDescription.getStreamIndex()){
+                if (mediaResouce.getStreamIndex() != mediaDescription.getStreamIndex()){
                     continue;
                 }
 
@@ -313,14 +364,13 @@ public class H323TerminalManageService extends TerminalManageService implements 
 
         synchronized (terminalService) {
             //删除对应的资源信息
-            Iterator<DetailMediaResouce> mediaResourceIterator = mediaResouces.iterator();
-            while (mediaResourceIterator.hasNext()) {
-                DetailMediaResouce mediaResouce = mediaResourceIterator.next();
-                Iterator<String> resoureIdIterator = resourceIds.iterator();
-                while (resoureIdIterator.hasNext()){
-                    String resourceId = resoureIdIterator.next();
+            Iterator<String> resoureIdIterator = resourceIds.iterator();
+            while (resoureIdIterator.hasNext()){
+                String resourceId = resoureIdIterator.next();
+                mediaResouces = terminalService.getReverseChannel();
+                for(DetailMediaResouce mediaResouce : mediaResouces) {
                     if (mediaResouce.getId().equals(resourceId)) {
-                        mediaResourceIterator.remove();
+                        mediaResouces.remove(mediaResouce);
                         resoureIdIterator.remove();
                         break;
                     }

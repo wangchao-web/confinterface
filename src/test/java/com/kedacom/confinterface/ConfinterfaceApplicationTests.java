@@ -86,13 +86,13 @@ public class ConfinterfaceApplicationTests implements ApplicationContextAware {
         MediaResource mediaResource = new MediaResource();
         mediaResource.setType("Video");
         mediaResource.setId("8888888888888888");
-        mediaResource.setDual(0);
+        mediaResource.setDual(false);
         forward.add(mediaResource);
         terminalMediaResource.setForwardResources(forward);
 
         List<MediaResource> reverse = new ArrayList<>();
         MediaResource mediaResource1 = new MediaResource();
-        mediaResource1.setDual(0);
+        mediaResource1.setDual(false);
         mediaResource1.setType("Video");
         mediaResource1.setId("999999999999999");
         reverse.add(mediaResource1);
@@ -116,7 +116,7 @@ public class ConfinterfaceApplicationTests implements ApplicationContextAware {
 
         mediaResource.setType("Video");
         mediaResource.setId("8888888888888888");
-        mediaResource.setDual(0);
+        mediaResource.setDual(false);
 
         System.out.println(mediaResource);
 

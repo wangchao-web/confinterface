@@ -1,10 +1,8 @@
 package com.kedacom.confinterface.service;
 
-import com.kedacom.confadapter.MediaDescription;
 import com.kedacom.confinterface.dao.*;
 import com.kedacom.confinterface.dto.*;
 
-import com.kedacom.confinterface.h323.H323TerminalService;
 import com.kedacom.confinterface.inner.*;
 import com.kedacom.confinterface.restclient.McuRestClientService;
 import com.kedacom.confinterface.restclient.mcu.*;
@@ -855,7 +853,6 @@ public class ConfInterfaceService {
             return;
         }
 
-        String confId = groupConfInfo.getConfId();
         TerminalService terminalService;
         if (mtE164.isEmpty()){
             terminalService = groupConfInfo.getBroadcastVmtService();
@@ -868,18 +865,57 @@ public class ConfInterfaceService {
             return;
         }
 
-        String dualStreamChannel = getDualStreamChannel(confId);
-        ctrlDualStreamRequest.addWaitMsg(dualStreamChannel);
-        groupConfInfo.addWaitDealTask(dualStreamChannel, ctrlDualStreamRequest);
+        if (mtE164.isEmpty()){
+            ctrlVmtDualStream(terminalService, dual, ctrlDualStreamRequest);
+        } else {
+            ctrlMtDualStream(terminalService, dual, groupConfInfo, ctrlDualStreamRequest);
+        }
+    }
 
-        McuStatus mcuStatus = mcuRestClientService.ctrlDualStream(confId, terminalService.getMtId(), dual);
-        if (mcuStatus.getValue() == 0) {
+    @Async("confTaskExecutor")
+    public void queryDualStream(QueryDualStreamRequest queryDualStreamRequest){
+        String groupId = queryDualStreamRequest.getGroupId();
+        GroupConfInfo groupConfInfo = groupConfInfoMap.get(groupId);
+        if (null == groupConfInfo) {
+            queryDualStreamRequest.makeErrorResponseMsg(ConfInterfaceResult.GROUP_NOT_EXIST.getCode(), HttpStatus.OK, ConfInterfaceResult.GROUP_NOT_EXIST.getMessage());
             return;
         }
 
-        ctrlDualStreamRequest.removeMsg(dualStreamChannel);
-        groupConfInfo.delWaitDealTask(dualStreamChannel);
-        ctrlDualStreamRequest.makeErrorResponseMsg(ConfInterfaceResult.CTRL_DUALSTREAM.getCode(), HttpStatus.OK, mcuStatus.getDescription());
+        TerminalService terminalService = groupConfInfo.getBroadcastVmtService();
+        List<DetailMediaResouce> reverseResources = terminalService.getReverseChannel();
+        List<DetailMediaResouce> forwardResources = terminalService.getForwardChannel();
+
+        int tryTimes = 2;
+        boolean bFindDual = false;
+        List<DetailMediaResouce> mediaResources = reverseResources;
+        queryDualStreamRequest.setType(1);
+
+        do{
+            for (DetailMediaResouce detailMediaResouce : mediaResources){
+                if (detailMediaResouce.getDual() != 1){
+                    continue;
+                }
+
+                bFindDual = true;
+                MediaResource mediaResource = new MediaResource();
+                mediaResource.setDual(true);
+                mediaResource.setId(detailMediaResouce.getId());
+                mediaResource.setType(detailMediaResouce.getType());
+
+                queryDualStreamRequest.addResource(mediaResource);
+            }
+
+            if (bFindDual){
+                queryDualStreamRequest.makeSuccessResponseMsg();
+                return;
+            } else {
+                mediaResources = forwardResources;
+                queryDualStreamRequest.setType(2);
+            }
+        }while (--tryTimes > 0);
+
+        queryDualStreamRequest.setType(0);
+        queryDualStreamRequest.makeSuccessResponseMsg();
     }
 
     public boolean inspectionMt(GroupConfInfo groupConfInfo, String mode, String srcMtId, String dstMtId, InspectionRequest inspectionRequest) {
@@ -1215,6 +1251,43 @@ public class ConfInterfaceService {
         joinConfVmts.add(terminal);
 
         return mcuRestClientService.joinConference(confId, joinConfVmts);
+    }
+
+    private void ctrlMtDualStream(TerminalService mtService, boolean dual, GroupConfInfo groupConfInfo, BaseRequestMsg ctrlDualStreamRequest){
+        String confId = groupConfInfo.getConfId();
+        String dualStreamChannel = getDualStreamChannel(confId);
+        ctrlDualStreamRequest.addWaitMsg(dualStreamChannel);
+        groupConfInfo.addWaitDealTask(dualStreamChannel, ctrlDualStreamRequest);
+
+        McuStatus mcuStatus = mcuRestClientService.ctrlDualStream(confId, mtService.getMtId(), dual);
+        System.out.println("ctrlMtDualStream, dual:"+dual+", errorCode:" + mcuStatus.getValue() +", errMsg:"+mcuStatus.getDescription());
+
+        if (mcuStatus.getValue() == McuStatus.OK.getValue()) {
+            return;
+        }
+
+        ctrlDualStreamRequest.removeMsg(dualStreamChannel);
+        groupConfInfo.delWaitDealTask(dualStreamChannel);
+        ctrlDualStreamRequest.makeErrorResponseMsg(ConfInterfaceResult.CTRL_DUALSTREAM.getCode(), HttpStatus.OK, mcuStatus.getDescription());
+    }
+
+    private void ctrlVmtDualStream(TerminalService vmtService, boolean dual, BaseRequestMsg ctrlDualStreamRequest){
+        if (dual){
+            vmtService.openDualStreamChannel(ctrlDualStreamRequest);
+        } else {
+            boolean bOk = vmtService.closeDualStreamChannel();
+            if (bOk){
+                List<DetailMediaResouce> mediaResouces = vmtService.getForwardChannel();
+                TerminalMediaResource oldTerminalMediaResource = terminalMediaSourceService.getTerminalMediaResource(vmtService.getE164());
+                oldTerminalMediaResource.setForwardResources(TerminalMediaResource.convertToMediaResource(mediaResouces, "all"));
+                terminalMediaSourceService.setTerminalMediaResource(oldTerminalMediaResource);
+
+                ctrlDualStreamRequest.makeSuccessResponseMsg();
+            } else {
+                System.out.println("ctrlVmtDualStream, closeDualStreamChannel failed!");
+                ctrlDualStreamRequest.makeErrorResponseMsg(ConfInterfaceResult.CLOSE_CHANNEL.getCode(), HttpStatus.OK, ConfInterfaceResult.CLOSE_CHANNEL.getMessage());
+            }
+        }
     }
 
     /*

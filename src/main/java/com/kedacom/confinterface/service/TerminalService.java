@@ -14,7 +14,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
-import org.springframework.scheduling.annotation.Async;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -22,7 +21,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class TerminalService {
+public abstract class TerminalService {
 
     public TerminalService(String e164, String name, boolean bVmt) {
         super();
@@ -51,6 +50,7 @@ public class TerminalService {
         this.forwardChannel = null;
         this.reverseChannel = null;
         this.conferenceParticipant = null;
+        this.waitMsg = null;
     }
 
     public String getGroupId() {
@@ -301,6 +301,30 @@ public class TerminalService {
         this.mediaSrvPort = mediaSrvPort;
     }
 
+    public void addWaitMsg(String msgName, BaseRequestMsg msg){
+        synchronized (this){
+            if (null == waitMsg){
+                waitMsg = new ConcurrentHashMap<>();
+            }
+        }
+
+        waitMsg.put(msgName, msg);
+    }
+
+    public BaseRequestMsg getWaitMsg(String msgName){
+        if (null == waitMsg)
+            return null;
+
+        return waitMsg.get(msgName);
+    }
+
+    public void delWaitMsg(String msgName){
+        if (null == waitMsg)
+            return;
+
+        waitMsg.remove(msgName);
+    }
+
     public ILocalConferenceParticipant getConferenceParticipant() {
         return conferenceParticipant;
     }
@@ -327,11 +351,16 @@ public class TerminalService {
         inspentedTerminals = null;
     }
 
-    public boolean onOpenLogicalChannel(Vector<MediaDescription> mediaDescriptions){
-        return true;
-    }
+    public abstract boolean onOpenLogicalChannel(Vector<MediaDescription> mediaDescriptions);
+
+    public abstract void openDualStreamChannel(BaseRequestMsg startDualStreamRequest);
+
+    public abstract boolean closeDualStreamChannel();
 
     public List<ExchangeInfo> getExchange(List<String> resourceInfo){
+        if (null == resourceInfo || resourceInfo.isEmpty())
+            return null;
+
         StringBuilder url = new StringBuilder();
         constructUrl(url, "/services/media/v1/exchange?GroupID={groupId}&Action=querynode");
         Map<String, String> args = new HashMap<>();
@@ -401,13 +430,12 @@ public class TerminalService {
         return conferenceParticipant.RequestKeyframe();
     }
 
-    @Async("confTaskExecutor")
-    public void removeExchange(TerminalService terminal){
-        List<DetailMediaResouce> forwardMediaResouces = terminal.getForwardChannel();
-        List<DetailMediaResouce> reverseMediaResouces = terminal.getReverseChannel();
+    public void clearExchange(){
+        List<DetailMediaResouce> forwardMediaResouces = forwardChannel;
+        List<DetailMediaResouce> reverseMediaResouces = reverseChannel;
 
         if (null == forwardMediaResouces && null == reverseMediaResouces) {
-            System.out.println("removeExchange, terminal("+terminal.getE164()+") has no resource! no need remove!");
+            System.out.println("clearExchange, terminal("+getE164()+") has no resource! no need remove!");
             return;
         }
 
@@ -426,13 +454,19 @@ public class TerminalService {
 
         boolean bOk = removeExchange(resourceIds);
         if (bOk){
-            System.out.println("removeExchange, OK, groupId:"+groupId);
-            terminal.setForwardChannel(null);
-            terminal.setReverseChannel(null);
+            System.out.println("clearExchange, OK, groupId:"+groupId);
+            forwardChannel.clear();
+            forwardChannel = null;
+
+            reverseChannel.clear();
+            reverseChannel = null;
         }
     }
 
     public boolean removeExchange(List<String> resourceIds){
+        if (null == resourceIds || resourceIds.isEmpty())
+            return true;
+
         QueryAndDelResourceParam removeParam = new QueryAndDelResourceParam();
         removeParam.setResourceIDs(resourceIds);
 
@@ -442,7 +476,9 @@ public class TerminalService {
         args.put("groupId", groupId);
 
         ResponseEntity<BaseResponseMsg> removeResponse = restClientService.exchangeJson(url.toString(), HttpMethod.POST, removeParam, args, BaseResponseMsg.class);
-        if (!removeResponse.getStatusCode().is2xxSuccessful()){
+        if (null == removeResponse) {
+            System.out.println("removeExchange, failed! null == removeResponse");
+        } else if (!removeResponse.getStatusCode().is2xxSuccessful()){
             System.out.println("removeExchange, failed! status:"+removeResponse.getStatusCodeValue());
         } else if (removeResponse.getBody().getCode() != 0) {
             System.out.println("removeExchange, failed! errmsg:"+removeResponse.getBody().getMessage());
@@ -453,7 +489,157 @@ public class TerminalService {
         return false;
     }
 
+    public boolean updateExchange(Vector<MediaDescription> mediaDescriptions){
+        System.out.println("now in updateExchange, mediaDescriptions : "+mediaDescriptions.size());
+        List<UpdateResourceParam> updateResourceParams = new ArrayList<>();
+        List<DetailMediaResouce> channel;
+
+        for (MediaDescription mediaDescription : mediaDescriptions){
+            System.out.println("updateExchange, mediaDescription, direction : " + mediaDescription.getDirection());
+            if (TransportDirectionEnum.SEND.getName().equals(mediaDescription.getDirection())){
+                //反向通道更新
+                channel = reverseChannel;
+            } else {
+                channel = forwardChannel;
+            }
+
+            for (DetailMediaResouce detailMediaResouce : channel) {
+                System.out.println("updateExchange, mediaDesc(mediaType:"+mediaDescription.getMediaType()+", streamIndex:"+mediaDescription.getStreamIndex()+")");
+                System.out.println("                detailMediaResource(type:"+detailMediaResouce.getType()+", dual:"+detailMediaResouce.getDual()+")");
+
+                if (!mediaDescription.getMediaType().equals(detailMediaResouce.getType()))
+                    continue;
+
+                if (mediaDescription.getStreamIndex() != detailMediaResouce.getStreamIndex())
+                    continue;
+
+                UpdateResourceParam updateResourceParam = new UpdateResourceParam(detailMediaResouce.getId());
+                updateResourceParam.setSdp(constructSdp(mediaDescription));
+
+                updateResourceParams.add(updateResourceParam);
+                break;
+            }
+        }
+
+       return requestUpdateResource(updateResourceParams);
+    }
+
+    protected boolean requestUpdateResource(List<UpdateResourceParam> updateResourceParams){
+        StringBuilder url = new StringBuilder();
+        constructUrl(url, "/services/media/v1/exchange?GroupID={groupId}&Action=updatenode");
+        Map<String, String> args = new HashMap<>();
+        args.put("groupId", groupId);
+
+        System.out.println("requestUpdateResource, groupId:"+groupId+", updateResourceSize:"+updateResourceParams.size());
+
+        for (UpdateResourceParam updateResourceParam : updateResourceParams){
+            System.out.println("requestUpdateResource, start update exchange, resourceId:"+updateResourceParam.getResourceID()+", sdp:"+updateResourceParam.getSdp());
+            ResponseEntity<BaseResponseMsg> updateResponse = restClientService.exchangeJson(url.toString(), HttpMethod.POST, updateResourceParam, args, BaseResponseMsg.class);
+            if (!updateResponse.getStatusCode().is2xxSuccessful()){
+                System.out.println("requestUpdateResource, update node failed! , resourceId:"+updateResourceParam.getResourceID()+", status : "+updateResponse.getStatusCodeValue()+", url:"+url.toString());
+                return false;
+            }
+
+            if (updateResponse.getBody().getCode() != 0){
+                System.out.println("requestUpdateResource, update exchange failed, resourceId:"+updateResourceParam.getResourceID()+", messge:"+updateResponse.getBody().getMessage());
+                return false;
+            }
+
+            System.out.println("requestUpdateResource, update exchange OK! resourceId:"+updateResourceParam.getResourceID());
+        }
+
+        return true;
+    }
+
+    protected String constructCreateSdp(MediaDescription mediaDescription){
+        StringBuilder sdp = new StringBuilder();
+
+        /*此处暂时将mcu向会议接入微服务打开逻辑通道时使用的媒体参数作为接受媒体信息携带的流媒体
+         * todo:等到赵智琛将能力集协商结果提供出来后，此处可以需填写能力集协商内容*/
+        if (mediaDescription.getMediaType().equals(MediaTypeEnum.VIDEO.getName())){
+            sdp.append("m=video 0 RTP/AVP ");
+            sdp.append(mediaDescription.getPayload());
+            VideoMediaDescription videoMediaDescription = (VideoMediaDescription)mediaDescription;
+            sdp.append("a=rtpmap:");
+            sdp.append(mediaDescription.getPayload());
+            sdp.append(" ");
+            sdp.append(mediaDescription.getEncodingFormat());
+            sdp.append("/90000\r\n");
+            sdp.append("a=framerate:");
+            sdp.append(videoMediaDescription.getFramerate());
+
+            if (mediaDescription.getEncodingFormat().equals(VideoMediaDescription.ENCODING_FORMAT_H264)){
+                constructH264Fmtp(sdp, mediaDescription.getPayload(), videoMediaDescription.getH264Desc());
+            }
+        } else {
+            sdp.append("m=audio 0 RTP/AVP ");
+            sdp.append(mediaDescription.getPayload());
+            AudioMediaDescription audioMediaDescription = (AudioMediaDescription)mediaDescription;
+            sdp.append("a=rtpmap:");
+            sdp.append(mediaDescription.getPayload());
+            sdp.append(" ");
+            sdp.append(mediaDescription.getEncodingFormat());
+            sdp.append("/");
+            sdp.append(audioMediaDescription.getSampleRate());
+            sdp.append("/");
+            sdp.append(audioMediaDescription.getChannelNum());
+            sdp.append("\r\n");
+        }
+
+        sdp.append("a=recvonly\r\n");
+
+        return sdp.toString();
+    }
+
+    /*todo：等赵智琛提供了能力集协商结果后，此处应该根据exchangeSdp中的payload在能力集协商结果中选择相应的mediaDescription*/
+    protected MediaDescription constructRequestMediaDescription(MediaDescription mediaDescription, String exchangeSdp){
+        MediaDescription newMediaDescription;
+
+        if (exchangeSdp.contains("m=video")){
+            VideoMediaDescription videoMediaDescription = new VideoMediaDescription();
+            videoMediaDescription.setResolution(((VideoMediaDescription)mediaDescription).getResolution());
+            videoMediaDescription.setFramerate(((VideoMediaDescription)mediaDescription).getFramerate());
+            videoMediaDescription.setBitrateType(((VideoMediaDescription)mediaDescription).getBitrateType());
+            newMediaDescription = videoMediaDescription;
+            newMediaDescription.setMediaType(MediaTypeEnum.VIDEO.getName());
+        } else {
+            AudioMediaDescription audioMediaDescription = new AudioMediaDescription();
+            audioMediaDescription.setSampleRate(((AudioMediaDescription)mediaDescription).getSampleRate());
+            audioMediaDescription.setChannelNum(((AudioMediaDescription)mediaDescription).getChannelNum());
+            newMediaDescription = audioMediaDescription;
+            newMediaDescription.setMediaType(MediaTypeEnum.AUDIO.getName());
+        }
+
+        newMediaDescription.setBitrate(mediaDescription.getBitrate());
+        newMediaDescription.setStreamIndex(mediaDescription.getStreamIndex());
+        newMediaDescription.setDual(mediaDescription.getDual());
+
+        if (exchangeSdp.contains("sendonly")){
+            newMediaDescription.setDirection(TransportDirectionEnum.SEND.getName());
+        } else {
+            newMediaDescription.setDirection(TransportDirectionEnum.RECV.getName());
+        }
+
+        TransportAddress rtpAddress = constructTransAddress(exchangeSdp);
+        NetAddress rtpNetAddress = new NetAddress();
+        rtpNetAddress.setIP(rtpAddress.getIp());
+        rtpNetAddress.setPort(rtpAddress.getPort());
+        newMediaDescription.setRtpAddress(rtpNetAddress);
+
+        NetAddress rtcpNetAddress = new NetAddress();
+        rtcpNetAddress.setIP(rtpAddress.getIp());
+        rtcpNetAddress.setPort(rtpAddress.getPort()+1);
+        newMediaDescription.setRtcpAddress(rtcpNetAddress);
+
+        parseRtpMapAndFmtp(exchangeSdp, newMediaDescription);
+
+        return newMediaDescription;
+    }
+
     protected TransportAddress constructTransAddress(String sdp){
+        if (null == sdp)
+            return null;
+
         TransportAddress rtpAddress = new TransportAddress();
 
         boolean getAddress = false;
@@ -481,6 +667,9 @@ public class TerminalService {
     }
 
     protected String constructSdp(MediaDescription mediaDescription){
+        if (null == mediaDescription)
+            return "";
+
         StringBuilder sdp = new StringBuilder();
         sdp.append("c=IN IP4 ");
         sdp.append(mediaDescription.getRtpAddress().getIP());
@@ -944,6 +1133,8 @@ public class TerminalService {
     protected ILocalConferenceParticipant conferenceParticipant;
     protected String mediaSrvIp;
     protected int mediaSrvPort;
+
+    protected ConcurrentHashMap<String, BaseRequestMsg> waitMsg;
 
     protected final org.slf4j.Logger logger = LoggerFactory.getLogger(this.getClass());
 

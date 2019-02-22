@@ -21,7 +21,11 @@ public enum ConfInterfaceResult {
     CTRL_VOLUME(50016, "control terminal volume failed!"),
     CTRL_SILENCE_OR_MUTE(50017, "control silence or mute failed!"),
     VMT_NOT_ONLINE(50018, "no vmt online, please wait a minute!"),
-    CTRL_DUALSTREAM(50019, "control dual stream failed!");
+    CTRL_DUALSTREAM(50019, "control dual stream failed!"),
+    ADD_EXCHANGENODE_FAILED(50020, "add exchange node failed!"),
+    UPDATE_EXCHANGENODE_FAILED(50021, "update exchange node failed!"),
+    EXIST_DUALSTREAM(50022, "exist dual stream!"),
+    CLOSE_CHANNEL(50023, "close logical channel failed!");
 
     public int getCode(){
         return code;
