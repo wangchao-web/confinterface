@@ -219,10 +219,9 @@ public class H323TerminalManageService extends TerminalManageService implements 
         boolean bOK = terminalService.onOpenLogicalChannel(mediaDescriptions);
         if (!bOK){
             System.out.println("OnLocalMediaRequested, onOpenLogicalChannel failed! participantid :"+participantid);
-            return;
         }
 
-        //将虚拟终端的反向资源设置到数据库中
+        //将虚拟终端的资源更新到数据库中
         TerminalMediaResource terminalMediaResource = new TerminalMediaResource();
         terminalMediaResource.setMtE164(participantid);
 
@@ -238,7 +237,7 @@ public class H323TerminalManageService extends TerminalManageService implements 
                 System.out.println("OnLocalMediaRequested, null == oldTerminalMediaResource, need update! E164:"+participantid+", forwardResources:"+forwardResources+", reverseResources:"+reverseResources);
             } else {
                 List<MediaResource> oldForwardResources = oldTerminalMediaResource.getForwardResources();
-                if (null == oldForwardResources || oldForwardResources.size() < forwardResources.size()){
+                if (null == oldForwardResources || oldForwardResources.size() != forwardResources.size()){
                     System.out.println("OnLocalMediaRequested, forward resource need update! "+"E164:"+participantid+", oldResources:"+oldForwardResources+", newResource:"+forwardResources);
                     bNeedUpdate = true;
                     terminalMediaResource.setForwardResources(forwardResources);
@@ -248,7 +247,7 @@ public class H323TerminalManageService extends TerminalManageService implements 
                 }
 
                 List<MediaResource> oldReverseResources = oldTerminalMediaResource.getReverseResources();
-                if (null == oldReverseResources || oldReverseResources.size() < reverseResources.size()){
+                if (null == oldReverseResources || oldReverseResources.size() != reverseResources.size()){
                     System.out.println("OnLocalMediaRequested, reverse resource need update! "+"E164:"+participantid+", oldResources:"+oldReverseResources+", newResource:"+reverseResources);
                     bNeedUpdate = true;
                     terminalMediaResource.setReverseResources(reverseResources);
@@ -268,7 +267,7 @@ public class H323TerminalManageService extends TerminalManageService implements 
     public void OnRemoteMediaReponsed(String participantid, Vector<MediaDescription> mediaDescriptions) {
         //该接口只有在使用H323协议时会用到
         System.out.println("OnRemoteMediaReponsed, request terminal: "+ participantid + " local media! threadName:"+Thread.currentThread().getName() );
-        TerminalService terminalService = usedVmtServiceMap.get(participantid);
+        H323TerminalService terminalService = (H323TerminalService)usedVmtServiceMap.get(participantid);
         if (null == terminalService){
             System.out.println("OnRemoteMediaReponsed， not found terminal : " + participantid);
             return;
@@ -277,6 +276,23 @@ public class H323TerminalManageService extends TerminalManageService implements 
         boolean bOk = terminalService.updateExchange(mediaDescriptions);
         if (bOk) {
             if (!mediaDescriptions.get(0).getDual()) {
+                if (terminalService.getForwardGenericStreamNum().decrementAndGet() != 0)
+                    return;
+
+                 //如果主流全部开启，判断是否需要恢复辅流
+                if (terminalService.getResumeDualStream().compareAndSet(true, false)){
+                    boolean bResumeOk = terminalService.resumeDualStream();
+                    if (!bResumeOk){
+                        List<DetailMediaResouce> mediaResouces = terminalService.getForwardChannel();
+                        TerminalMediaResource oldTerminalMediaResource = terminalMediaSourceService.getTerminalMediaResource(participantid);
+
+                        if (oldTerminalMediaResource.getForwardResources().size() > mediaResouces.size()) {
+                            oldTerminalMediaResource.setForwardResources(TerminalMediaResource.convertToMediaResource(mediaResouces, "all"));
+                            terminalMediaSourceService.setTerminalMediaResource(oldTerminalMediaResource);
+                        }
+                    }
+                }
+
                 return;
             }
 
@@ -339,6 +355,8 @@ public class H323TerminalManageService extends TerminalManageService implements 
 
         List<String> resourceIds = new ArrayList<>();
         List<DetailMediaResouce> mediaResouces = terminalService.getReverseChannel();
+        if (null == mediaResouces)
+            return;
 
         for (MediaDescription mediaDescription : mediaDescriptions){
             for (DetailMediaResouce mediaResouce : mediaResouces){
@@ -348,6 +366,7 @@ public class H323TerminalManageService extends TerminalManageService implements 
 
                 System.out.println("OnMediaCleaned, type:"+mediaResouce.getType()+", resourceId:"+mediaResouce.getId()+", streamIndex:"+mediaDescription.getStreamIndex());
                 resourceIds.add(mediaResouce.getId());
+                break;
             }
         }
 
@@ -368,6 +387,9 @@ public class H323TerminalManageService extends TerminalManageService implements 
             while (resoureIdIterator.hasNext()){
                 String resourceId = resoureIdIterator.next();
                 mediaResouces = terminalService.getReverseChannel();
+                if (null == mediaResouces)
+                    break;
+
                 for(DetailMediaResouce mediaResouce : mediaResouces) {
                     if (mediaResouce.getId().equals(resourceId)) {
                         mediaResouces.remove(mediaResouce);

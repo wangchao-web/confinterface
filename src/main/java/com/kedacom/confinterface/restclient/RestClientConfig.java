@@ -69,8 +69,8 @@ public class RestClientConfig {
         try {
             SSLContext sslContext = new SSLContextBuilder().loadTrustMaterial(null, (X509Certificate[] chain, String authType) -> true).build();
 
-            //ÔÚ´Ë´¦Ê¹ÓÃÁËNoopHostnameVerifier²ßÂÔ£¬¼´¹Ø±ÕÖ÷»úÃûÑéÖ¤£¬½ÓÊÜÈÎºÎÓĞĞ§µÄSSL»á»°À´Æ¥ÅäÄ¿±êÖ÷»ú
-            //ÁíÍâÒ»ÖÖ²ßÂÔÎªDefaultHostnameVerifier£¬HttpClientÊ¹ÓÃµÄÄ¬ÈÏÊµÏÖ,ÓëRFC2818¼æÈİ
+            //åœ¨æ­¤å¤„ä½¿ç”¨äº†NoopHostnameVerifierç­–ç•¥ï¼Œå³å…³é—­ä¸»æœºåéªŒè¯ï¼Œæ¥å—ä»»ä½•æœ‰æ•ˆçš„SSLä¼šè¯æ¥åŒ¹é…ç›®æ ‡ä¸»æœº
+            //å¦å¤–ä¸€ç§ç­–ç•¥ä¸ºDefaultHostnameVerifierï¼ŒHttpClientä½¿ç”¨çš„é»˜è®¤å®ç°,ä¸RFC2818å…¼å®¹
             SSLConnectionSocketFactory sslConnectionSocketFactory = new SSLConnectionSocketFactory(sslContext, NoopHostnameVerifier.INSTANCE);
             Registry<ConnectionSocketFactory> registry = RegistryBuilder.<ConnectionSocketFactory>create()
                     .register("http", PlainConnectionSocketFactory.getSocketFactory())

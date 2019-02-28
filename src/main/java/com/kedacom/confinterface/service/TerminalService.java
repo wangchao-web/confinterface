@@ -455,11 +455,15 @@ public abstract class TerminalService {
         boolean bOk = removeExchange(resourceIds);
         if (bOk){
             System.out.println("clearExchange, OK, groupId:"+groupId);
-            forwardChannel.clear();
-            forwardChannel = null;
+            if (null != forwardChannel) {
+                forwardChannel.clear();
+                forwardChannel = null;
+            }
 
-            reverseChannel.clear();
-            reverseChannel = null;
+            if (null != reverseChannel) {
+                reverseChannel.clear();
+                reverseChannel = null;
+            }
         }
     }
 
@@ -949,6 +953,31 @@ public abstract class TerminalService {
         } else {
             addReverseChannel(detailMediaResouce);
         }
+    }
+
+    protected boolean removeMediaResource(boolean forwardResource, List<String> resourceIds){
+        List<DetailMediaResouce> channel;
+
+        if (forwardResource)
+            channel = forwardChannel;
+        else
+            channel = reverseChannel;
+
+        boolean bOk = removeExchange(resourceIds);
+        if (!bOk)
+            return bOk;
+
+        for (String resourceId : resourceIds) {
+            for (DetailMediaResouce detailMediaResouce : channel) {
+                if (!detailMediaResouce.getId().equals(resourceId))
+                    continue;
+
+                channel.remove(detailMediaResouce);
+                break;
+            }
+        }
+
+        return true;
     }
 
     protected void parseRtpMapAndFmtp(String sdp, MediaDescription mediaDescription){

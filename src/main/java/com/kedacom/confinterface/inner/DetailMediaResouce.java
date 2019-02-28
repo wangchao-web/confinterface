@@ -2,11 +2,13 @@ package com.kedacom.confinterface.inner;
 
 import com.kedacom.confinterface.dto.MediaResource;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 public class DetailMediaResouce extends MediaResource {
 
     public DetailMediaResouce(MediaResource mediaResource){
         super();
-        this.streamIndex = -1;
+        this.streamIndex = new AtomicInteger(-1);
         this.setId(mediaResource.getId());
         this.setType(mediaResource.getType());
         this.setDual((mediaResource.getDual()==1));
@@ -14,14 +16,19 @@ public class DetailMediaResouce extends MediaResource {
 
     public DetailMediaResouce(){
         super();
+        this.streamIndex = new AtomicInteger(-1);
     }
 
     public int getStreamIndex() {
-        return streamIndex;
+        return streamIndex.get();
+    }
+
+    public boolean compareAndSetStreamIndex(int expect, int update){
+        return streamIndex.compareAndSet(expect, update);
     }
 
     public void setStreamIndex(int streamIndex) {
-        this.streamIndex = streamIndex;
+        this.streamIndex.set(streamIndex);
     }
 
     public TransportAddress getRtcp() {
@@ -58,7 +65,7 @@ public class DetailMediaResouce extends MediaResource {
                 .toString();
     }
 
-    private int streamIndex;
+    private AtomicInteger streamIndex;
     private String sdp;
     private TransportAddress rtp;
     private TransportAddress rtcp;
