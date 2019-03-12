@@ -956,7 +956,7 @@ public abstract class TerminalService {
     }
 
     protected boolean removeMediaResource(boolean forwardResource, List<String> resourceIds){
-        List<DetailMediaResouce> channel;
+        List<DetailMediaResouce> channel = null;
 
         if (forwardResource)
             channel = forwardChannel;
@@ -976,7 +976,6 @@ public abstract class TerminalService {
                 break;
             }
         }
-
         return true;
     }
 

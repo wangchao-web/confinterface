@@ -98,17 +98,17 @@ public class GroupConfInfo {
         return mtMembers.get(mtE164);
     }
 
-    public void delMtMember(String mtE164) {
+    public TerminalService delMtMember(String mtE164) {
         synchronized (this) {
             TerminalService terminalService = mtMembers.get(mtE164);
             if (null == terminalService)
-                return;
+                return null;
 
             String mtId = terminalService.getMtId();
             if (null != mtId)
                 mtIdMap.remove(terminalService.getMtId());
 
-            mtMembers.remove(mtE164);
+            return mtMembers.remove(mtE164);
         }
     }
 
@@ -235,6 +235,9 @@ public class GroupConfInfo {
     }
 
     public String getE164(String mtId) {
+        if (null == mtIdMap)
+            return null;
+
         return mtIdMap.get(mtId);
     }
 
@@ -404,5 +407,5 @@ public class GroupConfInfo {
     private ConcurrentHashMap<String, TerminalService> usedVmtMembers;   //E164号为key
     private ConcurrentHashMap<String, TerminalService> mtMembers;        //E164号为key
     private Map<String, BaseRequestMsg<? extends BaseResponseMsg>> waitDealTask; //E164号为key
-    private Map<String, String> mtIdMap;
+    private ConcurrentHashMap<String, String> mtIdMap;
 }
