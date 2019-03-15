@@ -776,6 +776,8 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
             if (dstTerminal.isVmt()
                     && (dstTerminal.getInspentedTerminals() == null || dstTerminal.getInspentedTerminals().isEmpty())){
                 //如果虚拟终端没有选看终端，且没有被选看，则放回空闲队列
+                System.out.println("processCancelInspection, bStopInspection, dst terminal("+dstTerminal.getE164()+") is vmt and need free");
+
                 groupConfInfo.freeVmt(dstTerminal.getE164());
             }
 
@@ -785,6 +787,7 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
                         && srcTerminal.getInspentedTerminals().isEmpty()
                         && srcTerminal.getInspectionParam() == null){
                     //如果选看源是虚拟终端且没有选看和被选看，则放回空闲队列
+                    System.out.println("processCancelInspection, bStopInspection, src terminal("+srcTerminal.getE164()+") is vmt and need free");
                     groupConfInfo.freeVmt(srcTerminal.getE164());
                 }
             }

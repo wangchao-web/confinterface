@@ -147,7 +147,7 @@ public class RedisConfig {
     private boolean testWhileIdle = true;
     private String mode = "single";   //single or cluster
     private String clusterNodes;
-    private String hostName="172.16.119.161";
+    private String hostName="127.0.0.1";
     private int port=6379;
     //在执行失败后，进行的重试次数
     private int maxRedirects = 3;

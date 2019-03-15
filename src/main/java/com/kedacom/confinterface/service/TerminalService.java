@@ -160,7 +160,7 @@ public abstract class TerminalService {
     }
 
     public void delInspentedTerminal(String e164) {
-        if (null == e164)
+        if (null == e164 || null == inspentedTerminals)
             return;
 
         synchronized (inspentedTerminals) {
@@ -182,6 +182,9 @@ public abstract class TerminalService {
     }
 
     public void setInspectedStatus(String e164, InspectionStatusEnum status){
+        if (null == inspentedTerminals)
+            return;
+
         synchronized (inspentedTerminals) {
             InspectedParam inspectedParam = inspentedTerminals.get(e164);
             if (null == inspectedParam)

@@ -953,21 +953,49 @@ public class ConfInterfaceService {
 
     public McuStatus startInspectionForDiscusion(GroupConfInfo groupConfInfo, TerminalService mtService, TerminalService vmtService, boolean bMutual, JoinDiscussionGroupRequest joinDiscussionGroupRequest){
         String confId = groupConfInfo.getConfId();
-        String mtVideoChannel = getInspectionChannel(confId, mtService.getMtId(), InspectionModeEnum.VIDEO.getCode());
+        String vmtMtId = vmtService.getMtId();
+        String mtId = mtService.getMtId();
+
+        String mtVideoChannel = getInspectionChannel(confId, mtId, InspectionModeEnum.VIDEO.getCode());
         joinDiscussionGroupRequest.addWaitMsg(mtVideoChannel);
         groupConfInfo.addWaitDealTask(mtVideoChannel, joinDiscussionGroupRequest);
 
-        String mtAudioChannel = getInspectionChannel(confId, mtService.getMtId(), InspectionModeEnum.AUDIO.getCode());
+        String mtAudioChannel = getInspectionChannel(confId, mtId, InspectionModeEnum.AUDIO.getCode());
         joinDiscussionGroupRequest.addWaitMsg(mtAudioChannel);
         groupConfInfo.addWaitDealTask(mtAudioChannel, joinDiscussionGroupRequest);
 
-        McuStatus mcuStatus = mcuRestClientService.inspections(confId, InspectionModeEnum.ALL.getName(), vmtService.getMtId(), mtService.getMtId());
+        boolean inspectAudioOk = false;
+        McuStatus mcuStatus = mcuRestClientService.inspections(confId, InspectionModeEnum.AUDIO.getName(), vmtMtId, mtId);
+        if (mcuStatus.getValue() == 0){
+            inspectAudioOk = true;
+            mcuStatus = mcuRestClientService.inspections(confId, InspectionModeEnum.VIDEO.getName(), vmtMtId, mtId);
+        }
+
         if (mcuStatus.getValue() > 0) {
-            System.out.println("startInspectionForDiscusion, mt(" + mtService.getE164() + ") inspect vmt(" + vmtService.getE164() + ") failed!");
+            System.out.println("startInspectionForDiscusion, mt(" + mtService.getE164() + ") inspect  vmt(" + vmtService.getE164() + ") failed!");
             groupConfInfo.delWaitDealTask(mtVideoChannel);
             groupConfInfo.delWaitDealTask(mtAudioChannel);
             joinDiscussionGroupRequest.removeMsg(mtAudioChannel);
             joinDiscussionGroupRequest.removeMsg(mtVideoChannel);
+
+            //只要会议终端存在一个方向选看失败，则需要清除相应的虚拟终端的选看及被选看资源
+            vmtService.delInspentedTerminal(mtService.getE164());
+            if (null != vmtService.getInspectionParam() && !vmtService.isInspection()) {
+                //说明该vmt是刚选择进入讨论组的，此时，需要清楚选看参数
+                vmtService.setInspectionParam(null);
+            }
+
+            if (null == vmtService.getInspectionParam() && vmtService.getInspentedTerminals().isEmpty()) {
+                groupConfInfo.freeVmt(vmtService.getE164());
+            }
+
+            if (!inspectAudioOk) {
+                mtService.setInspectionParam(null);
+            } else {
+                mtService.setInspectVideoStatus(InspectionStatusEnum.FAIL.getCode());
+                mcuRestClientService.cancelInspection(confId, InspectionModeEnum.AUDIO.getName(), mtId);
+            }
+
             return mcuStatus;
         }
 
@@ -978,17 +1006,24 @@ public class ConfInterfaceService {
 
         System.out.println("startInspectionForDiscusion, vmt(" + vmtService.getE164() + ") start to inspect mt(" + mtService.getE164() + ")!");
 
-        String vmtVideoChannel = getInspectionChannel(confId, vmtService.getMtId(), InspectionModeEnum.VIDEO.getCode());
+        String vmtVideoChannel = getInspectionChannel(confId, vmtMtId, InspectionModeEnum.VIDEO.getCode());
         joinDiscussionGroupRequest.addWaitMsg(vmtVideoChannel);
         groupConfInfo.addWaitDealTask(vmtVideoChannel, joinDiscussionGroupRequest);
 
-        String vmtAudioChannel = getInspectionChannel(confId, vmtService.getMtId(), InspectionModeEnum.AUDIO.getCode());
+        String vmtAudioChannel = getInspectionChannel(confId, vmtMtId, InspectionModeEnum.AUDIO.getCode());
         joinDiscussionGroupRequest.addWaitMsg(vmtAudioChannel);
         groupConfInfo.addWaitDealTask(vmtAudioChannel, joinDiscussionGroupRequest);
 
-        mcuStatus = mcuRestClientService.inspections(confId, InspectionModeEnum.ALL.getName(), mtService.getMtId(), vmtService.getMtId());
+        inspectAudioOk = false;
+        mcuStatus = mcuRestClientService.inspections(confId, InspectionModeEnum.AUDIO.getName(), mtId, vmtMtId);
+        if (mcuStatus.getValue() == 0) {
+            inspectAudioOk = true;
+            mcuStatus = mcuRestClientService.inspections(confId, InspectionModeEnum.VIDEO.getName(), mtId, vmtMtId);
+        }
+
         if (mcuStatus.getValue() > 0) {
             System.out.println("startInspectionForDiscusion, vmt(" + vmtService.getE164() + ") inspect mt(" + mtService.getE164() + ") failed!");
+
             groupConfInfo.delWaitDealTask(mtVideoChannel);
             groupConfInfo.delWaitDealTask(mtAudioChannel);
             joinDiscussionGroupRequest.removeMsg(mtAudioChannel);
@@ -998,7 +1033,16 @@ public class ConfInterfaceService {
             joinDiscussionGroupRequest.removeMsg(vmtAudioChannel);
             joinDiscussionGroupRequest.removeMsg(vmtVideoChannel);
 
-            mcuRestClientService.cancelInspection(confId, InspectionModeEnum.ALL.getName(), mtService.getMtId());
+            if (!inspectAudioOk) {
+                vmtService.setInspectionParam(null);
+            } else {
+                vmtService.setInspectVideoStatus(InspectionStatusEnum.FAIL.getCode());
+                mcuRestClientService.cancelInspection(confId, InspectionModeEnum.AUDIO.getName(), vmtMtId);
+            }
+
+            //删除会议终端的被选看参数，并取消会议终端对虚拟终端的选看
+            mtService.delInspentedTerminal(vmtService.getE164());
+            mcuRestClientService.cancelInspection(confId, InspectionModeEnum.ALL.getName(), mtId);
 
             return mcuStatus;
         }

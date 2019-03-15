@@ -401,8 +401,10 @@ public class H323TerminalManageService extends TerminalManageService implements 
 
             mediaResouces = terminalService.getReverseChannel();
             TerminalMediaResource oldTerminalMediaResource = terminalMediaSourceService.getTerminalMediaResource(participantid);
-            oldTerminalMediaResource.setReverseResources(TerminalMediaResource.convertToMediaResource(mediaResouces, "all"));
-            terminalMediaSourceService.setTerminalMediaResource(oldTerminalMediaResource);
+            if (null != oldTerminalMediaResource) {
+                oldTerminalMediaResource.setReverseResources(TerminalMediaResource.convertToMediaResource(mediaResouces, "all"));
+                terminalMediaSourceService.setTerminalMediaResource(oldTerminalMediaResource);
+            }
         }
 
         resourceIds.clear();

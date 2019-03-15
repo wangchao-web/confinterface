@@ -3,8 +3,8 @@ package com.kedacom.confinterface.autoconfigure;
 import com.kedacom.confinterface.dao.RedisTerminalMediaSourceDao;
 import com.kedacom.confinterface.dao.TerminalMediaSourceDao;
 import com.kedacom.confinterface.redis.RedisClient;
-import com.kedacom.confinterface.redis.RedisConfig;
 
+import com.kedacom.confinterface.redis.RedisConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -13,6 +13,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisClusterConfiguration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.RedisNode;
+import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.*;
@@ -29,8 +30,10 @@ public class RedisTerminalMediaSourceDaoAutoConfig {
     @Autowired
     private RedisConfig redisConfig;
 
-    @Bean
-    public JedisPoolConfig jedisPoolConfig() {
+    private JedisPoolConfig jedisPoolConfig() {
+
+        System.out.println("create JedisPoolConfig!!!!!! mode:"+redisConfig.getMode());
+
         JedisPoolConfig jedisPoolConfig = new JedisPoolConfig();
 
         jedisPoolConfig.setMaxIdle(redisConfig.getMaxIdle());
@@ -44,12 +47,11 @@ public class RedisTerminalMediaSourceDaoAutoConfig {
         jedisPoolConfig.setTimeBetweenEvictionRunsMillis(redisConfig.getTimeBetweenEvictionRunsMillis());
         jedisPoolConfig.setTestOnBorrow(redisConfig.isTestOnBorrow());
         jedisPoolConfig.setTestWhileIdle(redisConfig.isTestWhileIdle());
+
         return jedisPoolConfig;
     }
 
-    @Bean
-    @ConditionalOnProperty(name = "confinterface.redis.mode", havingValue = "cluster", matchIfMissing = false)
-    public RedisClusterConfiguration redisClusterConfiguration() {
+    private RedisClusterConfiguration redisClusterConfiguration() {
         RedisClusterConfiguration redisClusterConfiguration = new RedisClusterConfiguration();
         String[] redisClusterAddrs = redisConfig.getClusterNodes().split(",");
 
@@ -67,17 +69,24 @@ public class RedisTerminalMediaSourceDaoAutoConfig {
     }
 
     @Bean
-    @ConditionalOnProperty(name = "confinterface.redis.mode", havingValue = "cluster", matchIfMissing = false)
-    public JedisConnectionFactory jedisConnectionFactory(RedisClusterConfiguration redisClusterConfig, JedisPoolConfig jedisPoolConfig) {
-        JedisConnectionFactory jedisConnectionFactory = new JedisConnectionFactory(redisClusterConfig, jedisPoolConfig);
-        return jedisConnectionFactory;
+    @ConditionalOnProperty(name = "confinterface.redis.mode", havingValue = "single", matchIfMissing = true)
+    public JedisConnectionFactory standaloneConnectionFactory(){
+        System.out.println("create standalone connection factory, hostName:"+redisConfig.getHostName());
+
+        RedisStandaloneConfiguration redisStandaloneConfiguration = new RedisStandaloneConfiguration(redisConfig.getHostName(), redisConfig.getPort());
+
+        return new JedisConnectionFactory(redisStandaloneConfiguration);
     }
 
     @Bean
-    @ConditionalOnProperty(name = "confinterface.redis.mode", havingValue = "single", matchIfMissing = false)
-    public JedisConnectionFactory jedisConnectionFactory(JedisPoolConfig jedisPoolConfig) {
-        JedisConnectionFactory jedisConnectionFactory = new JedisConnectionFactory(jedisPoolConfig);
-        return jedisConnectionFactory;
+    @ConditionalOnProperty(name = "confinterface.redis.mode", havingValue = "cluster", matchIfMissing = false)
+    public JedisConnectionFactory clusterConnectionFactory(){
+        System.out.println("create cluster connection factory!!!!");
+
+        JedisPoolConfig jedisPoolConfig = jedisPoolConfig();
+        RedisClusterConfiguration redisClusterConfig = redisClusterConfiguration();
+
+        return new JedisConnectionFactory(redisClusterConfig, jedisPoolConfig);
     }
 
     private void initRedisTemplate(RedisTemplate<String, Object> redisTemplate, RedisConnectionFactory factory) {
@@ -92,16 +101,40 @@ public class RedisTerminalMediaSourceDaoAutoConfig {
 
     @Bean
     public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory redisConnectionFactory) {
-        RedisTemplate<String, Object> redisTemplate = new RedisTemplate<>();
-        initRedisTemplate(redisTemplate, redisConnectionFactory);
-        return redisTemplate;
+        if (null == redisConnectionFactory) {
+            System.out.println("redisTemplate, redisConnectionFactory == null!!!");
+        } else {
+            System.out.println("redisTemplate, redisConnectionFactory not null!!!!");
+        }
+
+        try {
+            RedisTemplate<String, Object> redisTemplate = new RedisTemplate<>();
+            initRedisTemplate(redisTemplate, redisConnectionFactory);
+            return redisTemplate;
+        }catch (Exception e){
+            System.out.println("redisTemplate exception!!!!!!!!!!!!!!!!!");
+            e.printStackTrace();
+            return null;
+        }
     }
 
     @Bean
     public RedisClient redisClient(RedisTemplate<String, Object> redisTemplate) {
-        RedisClient redisClient = new RedisClient();
-        redisClient.setRedisTemplate(redisTemplate);
-        return redisClient;
+        if (null == redisTemplate) {
+            System.out.println("redisClient, redisTemplate == null!!!");
+        } else {
+            System.out.println("redisClient, redisTemplate not null!!!!");
+        }
+
+        try {
+            RedisClient redisClient = new RedisClient();
+            redisClient.setRedisTemplate(redisTemplate);
+            return redisClient;
+        } catch (Exception e){
+            System.out.println("redisClient, exception!!!!!!!!!!!!!!");
+            e.printStackTrace();
+            return null;
+        }
     }
 
     @Bean
