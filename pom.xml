@@ -38,6 +38,20 @@
         </repository>
     </repositories>
 
+    <pluginRepositories>
+        <pluginRepository>
+            <id>ctsp</id>
+            <name>ctsp</name>
+            <url>http://nexus.ctsp.kedacom.com/content/groups/public/</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </pluginRepository>
+    </pluginRepositories>    
+
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
