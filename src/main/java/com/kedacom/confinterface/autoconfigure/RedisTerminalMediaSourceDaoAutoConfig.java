@@ -3,7 +3,6 @@ package com.kedacom.confinterface.autoconfigure;
 import com.kedacom.confinterface.dao.RedisTerminalMediaSourceDao;
 import com.kedacom.confinterface.dao.TerminalMediaSourceDao;
 import com.kedacom.confinterface.redis.RedisClient;
-
 import com.kedacom.confinterface.redis.RedisConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -14,6 +13,7 @@ import org.springframework.data.redis.connection.RedisClusterConfiguration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.RedisNode;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
+import org.springframework.data.redis.connection.jedis.JedisClientConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.*;
@@ -31,8 +31,6 @@ public class RedisTerminalMediaSourceDaoAutoConfig {
     private RedisConfig redisConfig;
 
     private JedisPoolConfig jedisPoolConfig() {
-
-        System.out.println("create JedisPoolConfig!!!!!! mode:"+redisConfig.getMode());
 
         JedisPoolConfig jedisPoolConfig = new JedisPoolConfig();
 
@@ -74,8 +72,8 @@ public class RedisTerminalMediaSourceDaoAutoConfig {
         System.out.println("create standalone connection factory, hostName:"+redisConfig.getHostName());
 
         RedisStandaloneConfiguration redisStandaloneConfiguration = new RedisStandaloneConfiguration(redisConfig.getHostName(), redisConfig.getPort());
-
-        return new JedisConnectionFactory(redisStandaloneConfiguration);
+        JedisClientConfiguration jedisClientConfiguration = JedisClientConfiguration.builder().usePooling().poolConfig(jedisPoolConfig()).build();
+        return new JedisConnectionFactory(redisStandaloneConfiguration, jedisClientConfiguration);
     }
 
     @Bean
@@ -101,40 +99,16 @@ public class RedisTerminalMediaSourceDaoAutoConfig {
 
     @Bean
     public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory redisConnectionFactory) {
-        if (null == redisConnectionFactory) {
-            System.out.println("redisTemplate, redisConnectionFactory == null!!!");
-        } else {
-            System.out.println("redisTemplate, redisConnectionFactory not null!!!!");
-        }
-
-        try {
-            RedisTemplate<String, Object> redisTemplate = new RedisTemplate<>();
-            initRedisTemplate(redisTemplate, redisConnectionFactory);
-            return redisTemplate;
-        }catch (Exception e){
-            System.out.println("redisTemplate exception!!!!!!!!!!!!!!!!!");
-            e.printStackTrace();
-            return null;
-        }
+        RedisTemplate<String, Object> redisTemplate = new RedisTemplate<>();
+        initRedisTemplate(redisTemplate, redisConnectionFactory);
+        return redisTemplate;
     }
 
     @Bean
     public RedisClient redisClient(RedisTemplate<String, Object> redisTemplate) {
-        if (null == redisTemplate) {
-            System.out.println("redisClient, redisTemplate == null!!!");
-        } else {
-            System.out.println("redisClient, redisTemplate not null!!!!");
-        }
-
-        try {
-            RedisClient redisClient = new RedisClient();
-            redisClient.setRedisTemplate(redisTemplate);
-            return redisClient;
-        } catch (Exception e){
-            System.out.println("redisClient, exception!!!!!!!!!!!!!!");
-            e.printStackTrace();
-            return null;
-        }
+        RedisClient redisClient = new RedisClient();
+        redisClient.setRedisTemplate(redisTemplate);
+        return redisClient;
     }
 
     @Bean
