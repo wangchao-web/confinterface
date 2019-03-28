@@ -58,6 +58,10 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
                 continue;
             }
 
+            mcuRestClientService.subscribeInspection(confId);
+            mcuRestClientService.subscribeSpeaker(confId);
+            mcuRestClientService.subscribeDual(confId);
+
             GroupConfInfo groupConfInfo = new GroupConfInfo(groupId, confId);
             loadMtInfo(groupConfInfo, confMtMembers);
 

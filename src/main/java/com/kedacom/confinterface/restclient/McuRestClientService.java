@@ -287,8 +287,6 @@ public class McuRestClientService {
             return McuStatus.TimeOut;
         }
 
-        subscribeInspection(confId);
-
         //开始选看 /api/v1/vc/confs/{conf_id}/inspections
         StringBuilder url = new StringBuilder();
         constructUrl(url,"/api/v1/vc/confs/{conf_id}/inspections");
@@ -443,8 +441,6 @@ public class McuRestClientService {
             System.out.println("setSpeaker, has login out!!!");
             return McuStatus.TimeOut;
         }
-
-        subscribeSpeaker(confId);
 
         //url：/api/v1/vc/confs/{conf_id}/speaker
         StringBuilder url = new StringBuilder();
@@ -609,10 +605,6 @@ public class McuRestClientService {
         if (!loginSuccess) {
             System.out.println("ctrlDualStream, has login out!!!");
             return McuStatus.TimeOut;
-        }
-
-        if (dual) {
-            subscribeDual(confId);
         }
 
         //url ：/api/v1/vc/confs/{conf_id}/dualstream
@@ -823,7 +815,7 @@ public class McuRestClientService {
         confSubcribeChannelMap.put(confId, subscribeChannelList);
     }
 
-    private void subscribeInspection(String confId) {
+    public void subscribeInspection(String confId) {
         //终端选看及失败订阅通道/confs/{conf_id}/inspections/**
         StringBuilder subscribeChannel = new StringBuilder();
         subscribeChannel.append("/confs/");
@@ -845,7 +837,7 @@ public class McuRestClientService {
         confSubcribeChannelMap.put(confId, subscribeChannelList);
     }
 
-    private void subscribeSpeaker(String confId) {
+    public void subscribeSpeaker(String confId) {
         //发言人通道/confs/{conf_id}/speaker
         StringBuilder subscribeChannel = new StringBuilder();
         subscribeChannel.delete(0, subscribeChannel.length());
@@ -868,7 +860,7 @@ public class McuRestClientService {
         confSubcribeChannelMap.put(confId, subscribeChannelList);
     }
 
-    private void subscribeDual(String confId){
+    public void subscribeDual(String confId){
         //会议双流源通道/confs/{conf_id}/dualstream
         StringBuilder subscribeChannel = new StringBuilder();
         subscribeChannel.delete(0, subscribeChannel.length());

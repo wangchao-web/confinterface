@@ -101,10 +101,11 @@ public class ConfInterfaceService {
         boolean bSetBroadcast = false;
         boolean endConf = false;
         int joinConfVmtNum = 0;
+        String confId = null;
 
         if (null == groupConfInfo){
             groupConfInfo = new GroupConfInfo(joinConferenceRequest.getGroupId(), null);
-            String confId = mcuRestClientService.createConference();
+            confId = mcuRestClientService.createConference();
             if (null == confId) {
                 joinConferenceRequest.makeErrorResponseMsg(ConfInterfaceResult.CREATE_CONFERENCE.getCode(), HttpStatus.OK, ConfInterfaceResult.CREATE_CONFERENCE.getMessage());
                 return;
@@ -121,6 +122,7 @@ public class ConfInterfaceService {
             joinConfVmtNum = mtNum + 1;
             joinConfVmtNum = joinConfVmtNum > maxVmtNum ? maxVmtNum : joinConfVmtNum;
         } else {
+            confId = groupConfInfo.getConfId();
             int vmtNum = groupConfInfo.getVmtMemberNum();
             int mtNumTotal = groupConfInfo.getMtMemberNum() + mtNum;
             System.out.println("joinConference, vmtNum:"+vmtNum+", mtNumTotal:"+mtNumTotal);
@@ -138,7 +140,7 @@ public class ConfInterfaceService {
             if (null == terminalServices){
                 //todo:遍历目前所有的group，将空闲的vmt进行退会
                 if (endConf) {
-                    mcuRestClientService.endConference(groupConfInfo.getConfId());
+                    mcuRestClientService.endConference(confId);
                     delGroupConfInfo(groupConfInfo);
                 }
                 joinConferenceRequest.makeErrorResponseMsg(ConfInterfaceResult.NO_FREE_VMT.getCode(), HttpStatus.OK, ConfInterfaceResult.NO_FREE_VMT.getMessage());
@@ -158,7 +160,7 @@ public class ConfInterfaceService {
                 groupConfInfo.setBroadcastVmtService(null);
             }
 
-            List<JoinConferenceRspMtInfo> vmtTerminals = mcuRestClientService.joinConference(groupConfInfo.getConfId(), joinConfVmts);
+            List<JoinConferenceRspMtInfo> vmtTerminals = mcuRestClientService.joinConference(confId, joinConfVmts);
             if (null == vmtTerminals) {
                 System.out.println("vmt join conference failed!............");
                 if (joinConfVmtNum > 0) {
@@ -167,7 +169,7 @@ public class ConfInterfaceService {
                 }
 
                 if (endConf) {
-                    mcuRestClientService.endConference(groupConfInfo.getConfId());
+                    mcuRestClientService.endConference(confId);
                     delGroupConfInfo(groupConfInfo);
                 }
 
@@ -182,7 +184,7 @@ public class ConfInterfaceService {
             groupConfInfo.addMember(terminalService);
         }
 
-        List<JoinConferenceRspMtInfo> terminals = mcuRestClientService.joinConference(groupConfInfo.getConfId(), joinConfMts);
+        List<JoinConferenceRspMtInfo> terminals = mcuRestClientService.joinConference(confId, joinConfMts);
         if (null != terminals) {
             System.out.println("mt join conference OK, joinConfVmtNum:"+joinConfVmtNum);
             if (joinConfVmtNum > 0) {
@@ -193,8 +195,14 @@ public class ConfInterfaceService {
 
             System.out.println("Join conference OK, start addGroupMtMembers and addGroup.............");
             terminalMediaSourceService.addGroupMtMembers(groupId, joinConfMts);
-            terminalMediaSourceService.setGroup(groupId, groupConfInfo.getConfId());
+            terminalMediaSourceService.setGroup(groupId, confId);
             joinConferenceRequest.makeSuccessResponseMsg();
+
+            //与终端无关的订阅信息在此全部订阅掉
+            mcuRestClientService.subscribeInspection(confId);
+            mcuRestClientService.subscribeSpeaker(confId);
+            mcuRestClientService.subscribeDual(confId);
+
             return;
         }
 
@@ -1099,6 +1107,9 @@ public class ConfInterfaceService {
         TerminalService vmtServiceForSrc = null;
         TerminalService vmtServiceForDst = null;
         TerminalService mtService = groupConfInfo.getMtMember(terminal.getMtE164());
+        if (null == mtService)
+            return false;
+
         //判断终端是否被选看
         InspectionSrcParam inspectionSrcParam = new InspectionSrcParam();
         inspectionSrcParam.setMode(InspectionModeEnum.ALL.getName());
