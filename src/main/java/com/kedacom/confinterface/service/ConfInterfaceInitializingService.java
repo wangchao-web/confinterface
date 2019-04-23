@@ -58,6 +58,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
                 continue;
             }
 
+            mcuRestClientService.subscribeConfInfo(confId);
             mcuRestClientService.subscribeInspection(confId);
             mcuRestClientService.subscribeSpeaker(confId);
             mcuRestClientService.subscribeDual(confId);
@@ -186,7 +187,11 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
         while (iterator.hasNext()){
             Terminal terminal = iterator.next();
             String mtE164 = terminal.getMtE164();
-            CascadeTerminalInfo terminalInfo = terminalInfoMap.get(mtE164);
+            CascadeTerminalInfo terminalInfo = null;
+            if (null != terminalInfoMap){
+                terminalInfo = terminalInfoMap.get(mtE164);
+            }
+
             if (null == terminalInfo){
                 //在会议中没有找到相应的会议终端，有可能是会议终端在微服务重启过程中退出了会议
                 System.out.println("not find mt("+mtE164+") in conf, del from db!");

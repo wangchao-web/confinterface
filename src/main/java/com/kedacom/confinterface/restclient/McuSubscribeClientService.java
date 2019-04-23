@@ -216,6 +216,8 @@ public class McuSubscribeClientService implements ApplicationContextAware{
                 applicationContext.publishEvent(subscribeEvent);
             } else {
                 System.out.println("other channel : " + strChannel);
+                SubscribeEvent subscribeEvent = new SubscribeEvent(this, confId, method, errorCode, subChannel, null);
+                applicationContext.publishEvent(subscribeEvent);
             }
         }
     }

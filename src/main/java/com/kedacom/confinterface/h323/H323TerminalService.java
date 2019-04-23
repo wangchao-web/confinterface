@@ -105,12 +105,9 @@ public class H323TerminalService extends TerminalService {
                         || !mediaDescriptions.get(0).getDual() && detailMediaResouce.getDual() == 1)
                     continue;
 
-                int streamIndex = detailMediaResouce.getStreamIndex();
-                if (-1 == streamIndex) {
+                int streamIndex = mediaDescriptions.get(0).getStreamIndex();
+                if (detailMediaResouce.compareAndSetStreamIndex(-1, streamIndex)) {
                     //只有在异常重启后,回复上次的信息时,才会出现该情况
-                    streamIndex = mediaDescriptions.get(0).getStreamIndex();
-                    detailMediaResouce.setStreamIndex(streamIndex);
-
                     resourceInfo.add(detailMediaResouce.getId());
                     UpdateResourceParam updateResourceParam = new UpdateResourceParam(detailMediaResouce.getId());
                     updateResourceParam.setSdp(constructSdp(mediaDescriptions.get(0)));
@@ -123,17 +120,29 @@ public class H323TerminalService extends TerminalService {
                 System.out.println("H323, onOpenLogicalChannel, exist reverseChannel info, start query exchange info, resourceInfoSize:" + resourceInfo.size());
                 bCreate = false;
 
-                boolean bOk = requestUpdateResource(updateResourceParams);
-                if (!bOk) {
-                    removeMediaResource(false, resourceInfo);
-                    return false;
-                }
-
                 List<ExchangeInfo> exchangeInfos = getExchange(resourceInfo);
-                if (null == exchangeInfos)
-                    return false;
+                if (null == exchangeInfos) {
+                    //如果查询不到资源节点，则清理相应的资源信息
+                    for (DetailMediaResouce detailMediaResouce: reverseChannel){
+                        if (!detailMediaResouce.getId().equals(resourceInfo.get(0)))
+                            continue;
 
-                updateMediaResource(true, exchangeInfos);
+                        reverseChannel.remove(detailMediaResouce);
+                        updateResourceParams.clear();
+                        resourceInfo.clear();
+                        break;
+                    }
+
+                    bCreate = true;
+                } else {
+                    boolean bOk = requestUpdateResource(updateResourceParams);
+                    if (!bOk) {
+                        removeMediaResource(false, resourceInfo);
+                        return false;
+                    }
+
+                    updateMediaResource(true, exchangeInfos);
+                }
             }
         }
 
@@ -195,8 +204,20 @@ public class H323TerminalService extends TerminalService {
                     bCreate = false;
                     resourceInfo.add(detailMediaResouce.getId());
                     List<ExchangeInfo> exchangeInfos = getExchange(resourceInfo);
-                    if (null == exchangeInfos)
-                        return false;
+                    if (null == exchangeInfos) {
+                        //清理资源
+                        for(DetailMediaResouce cleanResource : forwardChannel){
+                            if (!cleanResource.getId().equals(resourceInfo.get(0)))
+                                continue;
+
+                            bCreate = true;
+                            forwardChannel.remove(cleanResource);
+                            resourceInfo.clear();
+                            needUpdateDetailMediaResouce = null;
+                            break;
+                        }
+                        break;
+                    }
 
                     //更新正向媒体资源信息
                     updateMediaResource(false, exchangeInfos);

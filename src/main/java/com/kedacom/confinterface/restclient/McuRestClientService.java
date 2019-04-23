@@ -174,28 +174,34 @@ public class McuRestClientService {
         }
     }
 
-    public McuStatus endConference(String confId) {
+    public McuStatus endConference(String confId, boolean deleteConf) {
         if (!loginSuccess)
             return McuStatus.TimeOut;
 
-        StringBuilder url = new StringBuilder();
-        constructUrl(url,"/api/v1/mc/confs/{conf_id}");
-        Map<String, String> args = new HashMap<>();
-        args.put("conf_id", confId);
+        McuBaseResponse response = null;
+        if (deleteConf) {
+            StringBuilder url = new StringBuilder();
+            constructUrl(url, "/api/v1/mc/confs/{conf_id}");
+            Map<String, String> args = new HashMap<>();
+            args.put("conf_id", confId);
 
-        McuPostMsg mcuPostMsg = new McuPostMsg(accountToken);
-        McuBaseResponse response = restClientService.exchange(url.toString(), HttpMethod.DELETE, mcuPostMsg.getMsg(), urlencodeMediaType, args, McuBaseResponse.class);
-        if (null == response)
-            return McuStatus.Unknown;
-
-        List<String> channels = confSubcribeChannelMap.get(confId);
-        if (null != channels) {
-            for (String channel : channels) {
-                mcuSubscribeClientService.unsubscribe(channel);
+            McuPostMsg mcuPostMsg = new McuPostMsg(accountToken);
+            response = restClientService.exchange(url.toString(), HttpMethod.DELETE, mcuPostMsg.getMsg(), urlencodeMediaType, args, McuBaseResponse.class);
+            if (null == response)
+                return McuStatus.Unknown;
+        } else {
+            List<String> channels = confSubcribeChannelMap.get(confId);
+            if (null != channels) {
+                for (String channel : channels) {
+                    mcuSubscribeClientService.unsubscribe(channel);
+                }
             }
+
+            channels.clear();
+            confSubcribeChannelMap.remove(confId);
         }
-        confSubcribeChannelMap.remove(confId);
-        if (response.success())
+
+        if (null == response)
             return McuStatus.OK;
 
         return McuStatus.resolve(response.getError_code());
@@ -272,7 +278,7 @@ public class McuRestClientService {
         }
 
         if (delConf) {
-            endConference(confId);
+            endConference(confId, true);
         }
 
         if (response.success())
@@ -783,6 +789,26 @@ public class McuRestClientService {
         url.append(restApi);
 
         System.out.println("url : " + url.toString());
+    }
+
+    public void subscribeConfInfo(String confId){
+        StringBuilder subscribeChannel = new StringBuilder();
+        subscribeChannel.append("/confs/");
+        subscribeChannel.append(confId);
+
+        List<String> subscribeChannelList = confSubcribeChannelMap.get(confId);
+        if (null == subscribeChannelList) {
+            subscribeChannelList = Collections.synchronizedList(new ArrayList<>());
+        }
+
+        for (String channel : subscribeChannelList) {
+            if (channel.equals(subscribeChannel.toString()))
+                return;
+        }
+
+        mcuSubscribeClientService.subscribe(subscribeChannel.toString());
+        subscribeChannelList.add(subscribeChannel.toString());
+        confSubcribeChannelMap.put(confId, subscribeChannelList);
     }
 
     public void subscribeConfMts(String confId) {

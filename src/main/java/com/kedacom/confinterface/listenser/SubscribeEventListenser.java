@@ -211,16 +211,18 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
                 }
 
                 terminalService.setOnline(TerminalOnlineStatusEnum.OFFLINE.getCode());
-                terminalService.clearStatus();
 
                 System.out.println("terminal(e164:"+e164+",mtId:"+mtId+") is offline! confId:"+groupConfInfo.getConfId()+", vmt:"+terminalService.isVmt());
                 //判断是否有其他的终端选看该终端，如果有，则重置相应终端的选看状态
                 if (!terminalService.isInspected())
                     return;
 
+                terminalService.clearStatus();
                 ConcurrentHashMap<String, InspectedParam> inspentedTerminals = terminalService.getInspentedTerminals();
                 for (ConcurrentHashMap.Entry<String, InspectedParam> inspectedTerminal : inspentedTerminals.entrySet()){
                     TerminalService inspectionService = groupConfInfo.getMember(inspectedTerminal.getKey());
+                    InspectedParam inspectedParam = inspectedTerminal.getValue();
+                    inspectedParam.setStatus(InspectionStatusEnum.UNKNOWN);
                     inspectionService.setInspectionStatus(InspectionStatusEnum.UNKNOWN);
                     inspectionService.setInspectAudioStatus(InspectionStatusEnum.UNKNOWN.getCode());
                     inspectionService.setInspectVideoStatus(InspectionStatusEnum.UNKNOWN.getCode());
@@ -299,6 +301,7 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
         String channel = subscribeEvent.getChannel();
         String method = subscribeEvent.getMethod();
         System.out.println("processSubscribeMsg, method : " + method + ", channel : " + channel);
+        String[] parseResult = channel.split("/");
 
         if (channel.contains("mts")){
             //终端列表 /confs/{conf_id}/cascades/{cascade_id}/mts/{mt_id}
@@ -323,7 +326,31 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
         } else if (channel.contains("speaker")){
             //发言人相关通道
             System.out.println("get speaker subscribe message, channel :" + channel);
+        } else if (parseResult.length == 3){
+            //会议信息订阅
+            System.out.println("get conf info subscribe message, channel :" + channel);
+            if (!method.equals(SubscribeMethodEnum.DELETE.getName())){
+                return;
+            }
+
+            //处理会议被删除的情况
+            processConfDeleted(groupConfInfo);
         }
+    }
+
+    private void processConfDeleted(GroupConfInfo groupConfInfo){
+        String groupId = groupConfInfo.getGroupId();
+        String confId = groupConfInfo.getConfId();
+
+        System.out.println("processConfDeleted, groupId:"+groupId+", confId:"+confId);
+
+        mcuRestClientService.endConference(confId, false);
+        confInterfaceService.delGroupConfInfo(groupConfInfo);
+        groupConfInfo.cancelGroup();
+        terminalMediaSourceService.delGroup(groupConfInfo.getGroupId());
+        terminalMediaSourceService.delGroupMtMembers(groupId, null);
+        terminalMediaSourceService.delGroupVmtMembers(groupId, null);
+        terminalMediaSourceService.delBroadcastSrcInfo(groupId);
     }
 
     private void processBroadcastRequest(SubscribeEvent subscribeEvent, GroupConfInfo groupConfInfo, BroadCastRequest broadCastRequest) {

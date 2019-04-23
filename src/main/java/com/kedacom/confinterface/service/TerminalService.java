@@ -36,6 +36,7 @@ public abstract class TerminalService {
         this.inspectedStatus = new AtomicInteger();
         this.inspectedStatus.set(InspectionStatusEnum.UNKNOWN.getCode());
         this.toBeSpeaker = new AtomicBoolean(false);
+        this.supportDualStream = new AtomicBoolean(false);
         this.inspectVideoStatus = new AtomicInteger();
         this.inspectVideoStatus.set(InspectionStatusEnum.UNKNOWN.getCode());
         this.inspectAudioStatus = new AtomicInteger();
@@ -230,8 +231,16 @@ public abstract class TerminalService {
         this.toBeSpeaker.set(toBeSpeaker);
     }
 
-    public void setDualStream(boolean dualStream) {
-        conferenceParticipant.AllowAcceptExtensiveStreamRequest(dualStream);
+    public void setSupportDualStream(boolean dualStream) {
+        this.supportDualStream.set(dualStream);
+
+    }
+
+    public void allowExtensiveStream(){
+        if (supportDualStream.get())
+            conferenceParticipant.AllowAcceptExtensiveStreamRequest(true);
+        else
+            conferenceParticipant.AllowAcceptExtensiveStreamRequest(false);
     }
 
     public void setInspectedStatus(InspectionStatusEnum inspected) {
@@ -349,7 +358,9 @@ public abstract class TerminalService {
         mtId = null;
         confId = null;
         groupId = null;
+        conferenceParticipant.AllowAcceptExtensiveStreamRequest(false);
         toBeSpeaker.set(false);
+        supportDualStream.set(false);
         inspectionParam = null;
         inspentedTerminals = null;
     }
@@ -458,15 +469,21 @@ public abstract class TerminalService {
         boolean bOk = removeExchange(resourceIds);
         if (bOk){
             System.out.println("clearExchange, OK, groupId:"+groupId);
-            if (null != forwardChannel) {
-                forwardChannel.clear();
-                forwardChannel = null;
-            }
+        } else {
+            System.out.println("clearExchange, fail, groupId:"+groupId);
+        }
 
-            if (null != reverseChannel) {
-                reverseChannel.clear();
-                reverseChannel = null;
-            }
+        System.out.println("clearExchange, start clean forwardChannel and reverseChannel!");
+        if (null != forwardChannel) {
+            System.out.println("clearExchange, forwardChannel is cleaned!");
+            forwardChannel.clear();
+            forwardChannel = null;
+        }
+
+        if (null != reverseChannel) {
+            System.out.println("clearExchange, reverseChannel is cleaned!");
+            reverseChannel.clear();
+            reverseChannel = null;
         }
     }
 
@@ -967,19 +984,16 @@ public abstract class TerminalService {
             channel = reverseChannel;
 
         boolean bOk = removeExchange(resourceIds);
-        if (!bOk)
-            return bOk;
-
         for (String resourceId : resourceIds) {
             for (DetailMediaResouce detailMediaResouce : channel) {
                 if (!detailMediaResouce.getId().equals(resourceId))
                     continue;
-
                 channel.remove(detailMediaResouce);
                 break;
             }
         }
-        return true;
+
+        return bOk;
     }
 
     protected void parseRtpMapAndFmtp(String sdp, MediaDescription mediaDescription){
@@ -1157,6 +1171,7 @@ public abstract class TerminalService {
     protected AtomicInteger inspectionStatus;   //0-未知,1-选看成功，2-选看失败
     protected AtomicInteger inspectedStatus;    //0-未知,1-选看成功，2-选看失败
     protected AtomicBoolean toBeSpeaker;
+    protected AtomicBoolean supportDualStream;   //0-不支持双流,1-支持双流
     protected AtomicInteger inspectVideoStatus;   //0-未知,1-选看成功，2-选看失败
     protected AtomicInteger inspectAudioStatus;
     protected CopyOnWriteArrayList<DetailMediaResouce> forwardChannel;

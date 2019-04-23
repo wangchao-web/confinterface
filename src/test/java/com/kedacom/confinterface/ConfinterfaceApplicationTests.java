@@ -11,7 +11,6 @@ import com.kedacom.confinterface.restclient.RestClientService;
 import com.kedacom.confinterface.restclient.mcu.CascadeTerminalInfo;
 import com.kedacom.confinterface.restclient.mcu.JoinConferenceRspMtInfo;
 import com.kedacom.confinterface.restclient.mcu.McuStatus;
-import com.kedacom.confinterface.restclient.mcu.TerminalInfo;
 import com.kedacom.confinterface.service.GenerateE164Service;
 import com.kedacom.confinterface.service.TerminalMediaSourceService;
 import net.sf.json.JSONArray;
@@ -140,7 +139,7 @@ public class ConfinterfaceApplicationTests implements ApplicationContextAware {
         } else {
             System.out.println("create conference ok, confId : " + confId);
 
-            McuStatus mcuStatus = mcuRestClientService.endConference(confId);
+            McuStatus mcuStatus = mcuRestClientService.endConference(confId, true);
             if (mcuStatus.getValue() > 0){
                 System.out.println("end conference failed! errmsg : " + mcuStatus.getDescription());
             } else {
@@ -167,7 +166,7 @@ public class ConfinterfaceApplicationTests implements ApplicationContextAware {
         List<JoinConferenceRspMtInfo> rspMtInfos = mcuRestClientService.joinConference(confId, mts);
         if (null == rspMtInfos){
             System.out.println("join conference failed! confId : "+ confId);
-            mcuRestClientService.endConference(confId);
+            mcuRestClientService.endConference(confId, true);
             return;
         }
 
@@ -211,7 +210,7 @@ public class ConfinterfaceApplicationTests implements ApplicationContextAware {
                 break;
         }
 
-        mcuRestClientService.endConference(confId);
+        mcuRestClientService.endConference(confId, true);
     }
 
     @Test

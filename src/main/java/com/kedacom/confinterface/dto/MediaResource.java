@@ -9,7 +9,7 @@ public class MediaResource implements Serializable {
         super();
         this.type = null;
         this.id = null;
-        this.dual = new AtomicInteger();
+        this.dual = new AtomicInteger(0);
     }
 
     public void setType(String type) {

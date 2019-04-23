@@ -2,6 +2,7 @@ package com.kedacom.confinterface.h323;
 
 import com.kedacom.confadapter.*;
 import com.kedacom.confinterface.dao.InspectionSrcParam;
+import com.kedacom.confinterface.dto.BaseRequestMsg;
 import com.kedacom.confinterface.dto.MediaResource;
 import com.kedacom.confinterface.dto.StartDualStreamRequest;
 import com.kedacom.confinterface.dto.TerminalMediaResource;
@@ -134,6 +135,8 @@ public class H323TerminalManageService extends TerminalManageService implements 
         }
 
         terminalService.setConfId(conferenceInfo.getId());
+        terminalService.allowExtensiveStream();
+        
         return;
     }
 
@@ -196,14 +199,16 @@ public class H323TerminalManageService extends TerminalManageService implements 
         freeVmtServiceMap.put(participantid, terminalService);
 
         //释放该虚拟终端的所有交换资源
-        terminalService.clearExchange();
+        synchronized (terminalService) {
+            terminalService.clearExchange();
 
-        //移除数据库中的资源
-        terminalMediaSourceService.delTerminalMediaResource(participantid);
-        terminalMediaSourceService.delGroupInspectionParam(participantid);
-        terminalMediaSourceService.delGroupVmtMember(terminalService.getGroupId(), participantid);
+            //移除数据库中的资源
+            terminalMediaSourceService.delTerminalMediaResource(participantid);
+            terminalMediaSourceService.delGroupInspectionParam(participantid);
+            terminalMediaSourceService.delGroupVmtMember(terminalService.getGroupId(), participantid);
 
-        terminalService.leftConference();
+            terminalService.leftConference();
+        }
     }
 
     @Override
@@ -222,9 +227,6 @@ public class H323TerminalManageService extends TerminalManageService implements 
         }
 
         //将虚拟终端的资源更新到数据库中
-        TerminalMediaResource terminalMediaResource = new TerminalMediaResource();
-        terminalMediaResource.setMtE164(participantid);
-
         synchronized (terminalService) {
             TerminalMediaResource oldTerminalMediaResource = terminalMediaSourceService.getTerminalMediaResource(participantid);
             List<MediaResource> forwardResources = TerminalMediaResource.convertToMediaResource(terminalService.getForwardChannel(), "all");
@@ -232,33 +234,44 @@ public class H323TerminalManageService extends TerminalManageService implements 
             boolean bNeedUpdate = false;
             if (null == oldTerminalMediaResource) {
                 bNeedUpdate = true;
-                terminalMediaResource.setForwardResources(forwardResources);
-                terminalMediaResource.setReverseResources(reverseResources);
                 System.out.println("OnLocalMediaRequested, null == oldTerminalMediaResource, need update! E164:"+participantid+", forwardResources:"+forwardResources+", reverseResources:"+reverseResources);
             } else {
                 List<MediaResource> oldForwardResources = oldTerminalMediaResource.getForwardResources();
                 if (null == oldForwardResources || oldForwardResources.size() != forwardResources.size()){
-                    System.out.println("OnLocalMediaRequested, forward resource need update! "+"E164:"+participantid+", oldResources:"+oldForwardResources+", newResource:"+forwardResources);
+                    System.out.println("OnLocalMediaRequested, 1. forward resource need update! "+"E164:"+participantid+", oldResources:"+oldForwardResources+", newResource:"+forwardResources);
                     bNeedUpdate = true;
-                    terminalMediaResource.setForwardResources(forwardResources);
-                } else {
-                    System.out.println("OnLocalMediaRequested, forward resource no need update! "+"E164:"+participantid+", Resources:"+oldForwardResources);
-                    terminalMediaResource.setForwardResources(oldForwardResources);
+                } else{
+                    oldForwardResources.removeAll(forwardResources);
+                    if (!oldForwardResources.isEmpty()) {
+                        System.out.println("OnLocalMediaRequested, 2. forward resource need update! "+"E164:"+participantid+", oldResources:"+oldForwardResources+", newResource:"+forwardResources);
+                        bNeedUpdate = true;
+                    } else {
+                        System.out.println("OnLocalMediaRequested, forward resource no need update! "+"E164:"+participantid+", Resources:"+forwardResources);
+                    }
                 }
 
                 List<MediaResource> oldReverseResources = oldTerminalMediaResource.getReverseResources();
                 if (null == oldReverseResources || oldReverseResources.size() != reverseResources.size()){
-                    System.out.println("OnLocalMediaRequested, reverse resource need update! "+"E164:"+participantid+", oldResources:"+oldReverseResources+", newResource:"+reverseResources);
+                    System.out.println("OnLocalMediaRequested, 1. reverse resource need update! "+"E164:"+participantid+", oldResources:"+oldReverseResources+", newResource:"+reverseResources);
                     bNeedUpdate = true;
-                    terminalMediaResource.setReverseResources(reverseResources);
                 } else {
-                    System.out.println("OnLocalMediaRequested, reverse resource no need update! "+"E164:"+participantid+", Resources:"+oldReverseResources);
-                    terminalMediaResource.setReverseResources(oldReverseResources);
+                    oldReverseResources.removeAll(reverseResources);
+                    if (!oldReverseResources.isEmpty()){
+                        System.out.println("OnLocalMediaRequested, 2. reverse resource need update! "+"E164:"+participantid+", oldResources:"+oldReverseResources+", newResource:"+reverseResources);
+                        bNeedUpdate = true;
+                    } else {
+                        System.out.println("OnLocalMediaRequested, reverse resource no need update! " + "E164:" + participantid + ", Resources:" + oldReverseResources);
+                    }
                 }
             }
 
-            if (bNeedUpdate)
+            if (bNeedUpdate) {
+                TerminalMediaResource terminalMediaResource = new TerminalMediaResource();
+                terminalMediaResource.setMtE164(participantid);
+                terminalMediaResource.setForwardResources(forwardResources);
+                terminalMediaResource.setReverseResources(reverseResources);
                 terminalMediaSourceService.setTerminalMediaResource(terminalMediaResource);
+            }
         }
     }
 
@@ -279,66 +292,37 @@ public class H323TerminalManageService extends TerminalManageService implements 
                 if (terminalService.getForwardGenericStreamNum().decrementAndGet() != 0)
                     return;
 
-                 //如果主流全部开启，判断是否需要恢复辅流
-                if (terminalService.getResumeDualStream().compareAndSet(true, false)){
-                    boolean bResumeOk = terminalService.resumeDualStream();
-                    if (!bResumeOk){
-                        List<DetailMediaResouce> mediaResouces = terminalService.getForwardChannel();
-                        TerminalMediaResource oldTerminalMediaResource = terminalMediaSourceService.getTerminalMediaResource(participantid);
-
-                        if (oldTerminalMediaResource.getForwardResources().size() > mediaResouces.size()) {
-                            oldTerminalMediaResource.setForwardResources(TerminalMediaResource.convertToMediaResource(mediaResouces, "all"));
-                            terminalMediaSourceService.setTerminalMediaResource(oldTerminalMediaResource);
-                        }
-                    }
-                }
-
-                return;
+                 ResumeDualStream(terminalService);
+                 return;
             }
 
-            //更新数据库中的正向双流交换资源信息
-            List<DetailMediaResouce> mediaResouces = terminalService.getForwardChannel();
-            TerminalMediaResource oldTerminalMediaResource = terminalMediaSourceService.getTerminalMediaResource(participantid);
-            oldTerminalMediaResource.setForwardResources(TerminalMediaResource.convertToMediaResource(mediaResouces, "all"));
-            terminalMediaSourceService.setTerminalMediaResource(oldTerminalMediaResource);
-
-            StartDualStreamRequest startDualStreamRequest = (StartDualStreamRequest) terminalService.getWaitMsg(StartDualStreamRequest.class.getName());
-            if (null == startDualStreamRequest)
-                return;
-
-            List<DetailMediaResouce> detailMediaResouces = terminalService.getForwardChannel();
-            for (DetailMediaResouce detailMediaResouce : detailMediaResouces) {
-                if (detailMediaResouce.getStreamIndex() != mediaDescriptions.get(0).getStreamIndex())
-                    continue;
-
-                System.out.println("OnRemoteMediaReponsed, dual streamIndex:"+mediaDescriptions.get(0).getStreamIndex());
-                MediaResource mediaResource = new MediaResource();
-                mediaResource.setType(detailMediaResouce.getType());
-                mediaResource.setDual(true);
-                mediaResource.setId(detailMediaResouce.getId());
-
-                startDualStreamRequest.addResource(mediaResource);
-                startDualStreamRequest.makeSuccessResponseMsg();
-                terminalService.delWaitMsg(StartDualStreamRequest.class.getName());
-
-                return;
-            }
+            DualStreamRequestSuccess(terminalService, mediaDescriptions.get(0).getStreamIndex());
+            return;
         }
 
-        //失败处理
-        if (mediaDescriptions.get(0).getDual()){
-            StartDualStreamRequest startDualStreamRequest = (StartDualStreamRequest)terminalService.getWaitMsg(StartDualStreamRequest.class.getName());
-            if(null == startDualStreamRequest)
-                return;
+        if (mediaDescriptions.get(0).getDual()) {
+            DualStreamRequestFail(terminalService);
+        } else {
+            synchronized (terminalService) {
+                List<DetailMediaResouce> mediaResouces = terminalService.getForwardChannel();
+                List<String> resourceIds = new ArrayList<>();
+                for (DetailMediaResouce mediaResouce : mediaResouces) {
+                    if (mediaResouce.getStreamIndex() != mediaDescriptions.get(0).getStreamIndex()) {
+                        continue;
+                    }
 
-            startDualStreamRequest.makeErrorResponseMsg(ConfInterfaceResult.UPDATE_EXCHANGENODE_FAILED.getCode(), HttpStatus.OK, ConfInterfaceResult.UPDATE_EXCHANGENODE_FAILED.getMessage());
-            terminalService.delWaitMsg(StartDualStreamRequest.class.getName());
+                    System.out.println("OnRemoteMediaReponsed, type:" + mediaResouce.getType() + ", resourceId:" + mediaResouce.getId() + ", streamIndex:" + mediaDescriptions.get(0).getStreamIndex());
+                    resourceIds.add(mediaResouce.getId());
+                    mediaResouces.remove(mediaResouce);
+                    break;
+                }
 
-            bOk = terminalService.closeDualStreamChannel();
-            if (bOk){
-                System.out.println("OnRemoteMediaReponsed, closeDualStreamChannel OK!");
-            } else {
-                System.out.println("OnRemoteMediaReponsed, closeDualStreamChannel failed!");
+                terminalService.removeExchange(resourceIds);
+                TerminalMediaResource oldTerminalMediaResource = terminalMediaSourceService.getTerminalMediaResource(participantid);
+                if (null != oldTerminalMediaResource) {
+                    oldTerminalMediaResource.setForwardResources(TerminalMediaResource.convertToMediaResource(mediaResouces, "all"));
+                    terminalMediaSourceService.setTerminalMediaResource(oldTerminalMediaResource);
+                }
             }
         }
     }
@@ -374,12 +358,7 @@ public class H323TerminalManageService extends TerminalManageService implements 
             return;
         }
 
-        boolean bRemoveOk = terminalService.removeExchange(resourceIds);
-        if (!bRemoveOk){
-            System.out.println("onMediaCleaned, removeExchange failed!");
-            resourceIds.clear();
-            return;
-        }
+        terminalService.removeExchange(resourceIds);
 
         synchronized (terminalService) {
             //删除对应的资源信息
@@ -408,6 +387,74 @@ public class H323TerminalManageService extends TerminalManageService implements 
         }
 
         resourceIds.clear();
+    }
+
+    private void ResumeDualStream(H323TerminalService terminalService){
+        //如果主流全部开启，判断是否需要恢复辅流
+        if (terminalService.getResumeDualStream().compareAndSet(true, false)) {
+            boolean bResumeOk = terminalService.resumeDualStream();
+            if (bResumeOk)
+                return;
+
+            List<DetailMediaResouce> mediaResouces = terminalService.getForwardChannel();
+            TerminalMediaResource oldTerminalMediaResource = terminalMediaSourceService.getTerminalMediaResource(terminalService.getE164());
+
+            if (oldTerminalMediaResource.getForwardResources().size() > mediaResouces.size()) {
+                oldTerminalMediaResource.setForwardResources(TerminalMediaResource.convertToMediaResource(mediaResouces, "all"));
+                terminalMediaSourceService.setTerminalMediaResource(oldTerminalMediaResource);
+            }
+        }
+    }
+
+    private void DualStreamRequestSuccess(H323TerminalService terminalService, int dualStreamIndex) {
+        //更新数据库中的正向双流交换资源信息
+        List<DetailMediaResouce> mediaResouces = terminalService.getForwardChannel();
+        TerminalMediaResource oldTerminalMediaResource = terminalMediaSourceService.getTerminalMediaResource(terminalService.getE164());
+        oldTerminalMediaResource.setForwardResources(TerminalMediaResource.convertToMediaResource(mediaResouces, "all"));
+        terminalMediaSourceService.setTerminalMediaResource(oldTerminalMediaResource);
+
+        MediaResource mediaResource = new MediaResource();
+        List<DetailMediaResouce> detailMediaResouces = terminalService.getForwardChannel();
+        for (DetailMediaResouce detailMediaResouce : detailMediaResouces) {
+            if (detailMediaResouce.getStreamIndex() != dualStreamIndex)
+                continue;
+
+            System.out.println("OnRemoteMediaReponsed, dual streamIndex:" + dualStreamIndex);
+            mediaResource.setType(detailMediaResouce.getType());
+            mediaResource.setDual(true);
+            mediaResource.setId(detailMediaResouce.getId());
+
+            break;
+        }
+
+        //非点对点呼叫
+        StartDualStreamRequest startDualStreamRequest = (StartDualStreamRequest) terminalService.getWaitMsg(StartDualStreamRequest.class.getName());
+        if (null == startDualStreamRequest)
+            return;
+
+        startDualStreamRequest.addResource(mediaResource);
+        startDualStreamRequest.makeSuccessResponseMsg();
+        terminalService.delWaitMsg(StartDualStreamRequest.class.getName());
+        return;
+    }
+
+    private void DualStreamRequestFail(H323TerminalService terminalService) {
+        //失败处理
+        String waitMsgKey = StartDualStreamRequest.class.getName();
+        BaseRequestMsg dualStreamRequest = terminalService.getWaitMsg(waitMsgKey);
+
+        if (null == dualStreamRequest)
+            return;
+
+        dualStreamRequest.makeErrorResponseMsg(ConfInterfaceResult.UPDATE_EXCHANGENODE_FAILED.getCode(), HttpStatus.OK, ConfInterfaceResult.UPDATE_EXCHANGENODE_FAILED.getMessage());
+        terminalService.delWaitMsg(waitMsgKey);
+
+        boolean bOk = terminalService.closeDualStreamChannel();
+        if (bOk) {
+            System.out.println("DualStreamRequestFail, closeDualStreamChannel OK!");
+        } else {
+            System.out.println("DualStreamRequestFail, closeDualStreamChannel failed!");
+        }
     }
 
     private final org.slf4j.Logger logger = LoggerFactory.getLogger(this.getClass());

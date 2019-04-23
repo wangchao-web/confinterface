@@ -140,7 +140,7 @@ public class ConfInterfaceService {
             if (null == terminalServices){
                 //todo:遍历目前所有的group，将空闲的vmt进行退会
                 if (endConf) {
-                    mcuRestClientService.endConference(confId);
+                    mcuRestClientService.endConference(confId, true);
                     delGroupConfInfo(groupConfInfo);
                 }
                 joinConferenceRequest.makeErrorResponseMsg(ConfInterfaceResult.NO_FREE_VMT.getCode(), HttpStatus.OK, ConfInterfaceResult.NO_FREE_VMT.getMessage());
@@ -169,7 +169,7 @@ public class ConfInterfaceService {
                 }
 
                 if (endConf) {
-                    mcuRestClientService.endConference(confId);
+                    mcuRestClientService.endConference(confId, true);
                     delGroupConfInfo(groupConfInfo);
                 }
 
@@ -199,6 +199,7 @@ public class ConfInterfaceService {
             joinConferenceRequest.makeSuccessResponseMsg();
 
             //与终端无关的订阅信息在此全部订阅掉
+            mcuRestClientService.subscribeConfInfo(confId);
             mcuRestClientService.subscribeInspection(confId);
             mcuRestClientService.subscribeSpeaker(confId);
             mcuRestClientService.subscribeDual(confId);
@@ -219,7 +220,7 @@ public class ConfInterfaceService {
 
         //失败,则需要解散会议
         if (endConf) {
-            mcuRestClientService.endConference(groupConfInfo.getConfId());
+            mcuRestClientService.endConference(groupConfInfo.getConfId(), true);
             delGroupConfInfo(groupConfInfo);
         }
 
@@ -259,6 +260,8 @@ public class ConfInterfaceService {
                 groupConfInfo.delMtMember(terminal.getMtE164());
             }
 
+            //以下内容放到收到会议的订阅消息时处理
+            /*
             if (cancelGroup) {
                 System.out.println("leftConference, cancelGroup, groupId:"+groupId);
                 delGroupConfInfo(groupConfInfo);
@@ -269,6 +272,7 @@ public class ConfInterfaceService {
                 terminalMediaSourceService.delGroupVmtMembers(groupId, null);
                 terminalMediaSourceService.delBroadcastSrcInfo(groupId);
             }
+            */
         } else {
             System.out.println("left conference failed, confId:"+groupConfInfo.getConfId()+", groupId:"+groupId);
             leftConferenceRequest.makeErrorResponseMsg(ConfInterfaceResult.LEFT_CONFERENCE.getCode(), HttpStatus.OK, mcuStatus.getDescription());
