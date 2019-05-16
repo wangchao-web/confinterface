@@ -175,6 +175,15 @@ public class ConfInterfaceController {
         return queryDualStreamRequest.getResponseMsg();
     }
 
+    @GetMapping(value = "/vmts")
+    public DeferredResult<ResponseEntity<QueryVmtsResponse>> getVmts(){
+        System.out.println("query all vmts! time:"+System.currentTimeMillis());
+        QueryVmtsRequest queryVmtsRequest = new QueryVmtsRequest();
+        confInterfaceService.queryVmts(queryVmtsRequest);
+        System.out.println("now finished query all vmts, time:"+System.currentTimeMillis());
+        return queryVmtsRequest.getResponseMsg();
+    }
+
     private DeferredResult<ResponseEntity<BaseResponseMsg>> silenceOrMute(String groupId, String mtE164, boolean silence, SilenceOrMuteParam silenceOrMuteParam){
         CtrlSilenceOrMuteRequest ctrlSilenceOrMuteRequest = new CtrlSilenceOrMuteRequest(groupId, mtE164, silence, silenceOrMuteParam);
         confInterfaceService.silenceOrMute(ctrlSilenceOrMuteRequest);

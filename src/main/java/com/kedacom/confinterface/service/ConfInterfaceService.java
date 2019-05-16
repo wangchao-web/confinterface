@@ -517,8 +517,8 @@ public class ConfInterfaceService {
         }
 
         if (null == dstService && !dstInspectionE164.isEmpty()){
-            //目的是会议终端
-            dstService = groupConfInfo.getMtMember(dstInspectionE164);
+            //目的是会议终端或者指定虚拟终端进行选看(指定虚拟终端的情况只发生在会议终端下线后再上线的选看恢复!!!!)
+            dstService = groupConfInfo.getMember(dstInspectionE164);
             System.out.println("startInspection, dstInspectionE164 is not empty, e164:"+dstInspectionE164+", mtId:"+dstService.getMtId());
 
             //判断是否存在选看
@@ -930,6 +930,28 @@ public class ConfInterfaceService {
         queryDualStreamRequest.makeSuccessResponseMsg();
     }
 
+    @Async("confTaskExecutor")
+    public void queryVmts(QueryVmtsRequest queryVmtsRequest){
+        List<TerminalService> usedVmts = terminalManageService.queryAllUsedVmts();
+        if (null == usedVmts) {
+            queryVmtsRequest.makeSuccessResponseMsg();
+            return;
+        }
+
+        for(TerminalService usedVmt : usedVmts){
+            VmtDetailInfo vmtDetailInfo = new VmtDetailInfo();
+            vmtDetailInfo.setGroupId(usedVmt.getGroupId());
+            vmtDetailInfo.setVmtE164(usedVmt.getE164());
+            vmtDetailInfo.setForwardResources(TerminalMediaResource.convertToMediaResource(usedVmt.getForwardChannel(), "all"));
+            vmtDetailInfo.setReverseResources(TerminalMediaResource.convertToMediaResource(usedVmt.getReverseChannel(), "all"));
+
+            queryVmtsRequest.addVmtDetailInfos(vmtDetailInfo);
+        }
+
+        queryVmtsRequest.makeSuccessResponseMsg();
+        usedVmts.clear();
+    }
+
     public boolean inspectionMt(GroupConfInfo groupConfInfo, String mode, String srcMtId, String dstMtId, InspectionRequest inspectionRequest) {
         System.out.println("inspectionMt, mode:"+mode+", srcMtId:"+srcMtId+", dstMtId:"+dstMtId);
 
@@ -1003,6 +1025,7 @@ public class ConfInterfaceService {
 
             if (!inspectAudioOk) {
                 mtService.setInspectionParam(null);
+                mtService.delInspentedTerminal(vmtService.getE164());
             } else {
                 mtService.setInspectVideoStatus(InspectionStatusEnum.FAIL.getCode());
                 mcuRestClientService.cancelInspection(confId, InspectionModeEnum.AUDIO.getName(), mtId);

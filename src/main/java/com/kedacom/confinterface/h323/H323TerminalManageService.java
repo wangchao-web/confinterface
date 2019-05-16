@@ -2,10 +2,7 @@ package com.kedacom.confinterface.h323;
 
 import com.kedacom.confadapter.*;
 import com.kedacom.confinterface.dao.InspectionSrcParam;
-import com.kedacom.confinterface.dto.BaseRequestMsg;
-import com.kedacom.confinterface.dto.MediaResource;
-import com.kedacom.confinterface.dto.StartDualStreamRequest;
-import com.kedacom.confinterface.dto.TerminalMediaResource;
+import com.kedacom.confinterface.dto.*;
 import com.kedacom.confinterface.inner.DetailMediaResouce;
 import com.kedacom.confinterface.inner.InspectedParam;
 import com.kedacom.confinterface.restclient.mcu.InspectionStatusEnum;

@@ -84,6 +84,18 @@ public abstract class TerminalManageService {
         }
     }
 
+    public List<TerminalService> queryAllUsedVmts(){
+        if (usedVmtServiceMap.isEmpty())
+            return null;
+
+        List<TerminalService> terminalServices = new ArrayList<>();
+        for(Map.Entry<String, TerminalService> terminalServiceEntry : usedVmtServiceMap.entrySet()){
+            terminalServices.add(terminalServiceEntry.getValue());
+        }
+
+        return terminalServices;
+    }
+
     public void freeVmt(String e164){
         synchronized (usedVmtServiceMap){
             TerminalService vmtService = usedVmtServiceMap.get(e164);
