@@ -9,10 +9,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.redis.connection.RedisClusterConfiguration;
-import org.springframework.data.redis.connection.RedisConnectionFactory;
-import org.springframework.data.redis.connection.RedisNode;
-import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
+import org.springframework.data.redis.connection.*;
 import org.springframework.data.redis.connection.jedis.JedisClientConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -63,6 +60,11 @@ public class RedisTerminalMediaSourceDaoAutoConfig {
         redisClusterConfiguration.setClusterNodes(redisNodeSet);
         redisClusterConfiguration.setMaxRedirects(redisConfig.getMaxRedirects());
 
+        String password = redisConfig.getPassword();
+        if (null != password && !password.isEmpty()) {
+            redisClusterConfiguration.setPassword(RedisPassword.of(password));
+        }
+
         return redisClusterConfiguration;
     }
 
@@ -72,6 +74,12 @@ public class RedisTerminalMediaSourceDaoAutoConfig {
         System.out.println("create standalone connection factory, hostName:"+redisConfig.getHostName());
 
         RedisStandaloneConfiguration redisStandaloneConfiguration = new RedisStandaloneConfiguration(redisConfig.getHostName(), redisConfig.getPort());
+
+        String password = redisConfig.getPassword();
+        if (null != password && !password.isEmpty()) {
+            redisStandaloneConfiguration.setPassword(RedisPassword.of(password));
+        }
+
         JedisClientConfiguration jedisClientConfiguration = JedisClientConfiguration.builder().usePooling().poolConfig(jedisPoolConfig()).build();
         return new JedisConnectionFactory(redisStandaloneConfiguration, jedisClientConfiguration);
     }
