@@ -31,7 +31,11 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
 
         createConferenceManage();
         registerVmts();
-        loginMcuRestSrv();
+        if ("mcu".equals(baseSysConfig.getMcuMode())) {
+            System.out.println("5.2mcu登陆");
+            loginMcuRestSrv();
+        }
+
 
         Map<String, String> groups = confInterfaceService.getGroups();
         if (null == groups || groups.isEmpty()){

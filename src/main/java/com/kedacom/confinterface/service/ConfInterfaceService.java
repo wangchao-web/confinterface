@@ -951,6 +951,74 @@ public class ConfInterfaceService {
         queryVmtsRequest.makeSuccessResponseMsg();
         usedVmts.clear();
     }
+	
+	@Async("confTaskExecutor")
+    public void p2pCall(P2PCallRequest p2PCallRequest, P2PCallParam p2PCallParam){
+        final String groupId = p2PCallRequest.getGroupId();
+        String mtAccount = p2PCallParam.getAccount();
+
+        P2PCallGroup p2PCallGroup = p2pCallGroupMap.computeIfAbsent(groupId, k->new P2PCallGroup(groupId));
+        TerminalService vmtService = terminalManageService.getFreeVmt();
+        vmtService.setGroupId(groupId);
+        //System.out.println("vmtService.getGroupId() : " +vmtService.getGroupId());
+
+        String waitMsg = P2PCallRequest.class.getName();
+        vmtService.addWaitMsg(waitMsg, p2PCallRequest);
+
+        if (!p2PCallParam.isDual()) {
+            p2PCallRequest.setWaitMsg(new ArrayList<>(Arrays.asList(waitMsg, waitMsg, waitMsg, waitMsg)));
+            if (vmtService.callMt(p2PCallParam)) {
+                vmtService.setDualStream(true);
+                System.out.println("添加vmtService : " +vmtService.getE164());
+                p2PCallGroup.addCallMember(mtAccount, vmtService);
+            } else {
+                vmtService.delWaitMsg(waitMsg);
+                terminalManageService.freeVmt(vmtService.getE164());
+                vmtService.setGroupId(null);
+                p2PCallRequest.makeErrorResponseMsg(ConfInterfaceResult.P2PCALL.getCode(), HttpStatus.OK, ConfInterfaceResult.P2PCALL.getMessage());
+            }
+
+            return;
+        }
+
+        ctrlVmtDualStream(vmtService, true, p2PCallRequest);
+    }
+
+    @Async("confTaskExecutor")
+    public void cancelP2PCall(CancelP2PCallRequest cancelP2PCallRequest, CancelP2PCallParam cancelP2PCallParam){
+        String groupId = cancelP2PCallRequest.getGroupId();
+        P2PCallGroup p2PCallGroup = p2pCallGroupMap.get(groupId);
+        if (null == p2PCallGroup) {
+            cancelP2PCallRequest.makeErrorResponseMsg(ConfInterfaceResult.GROUP_NOT_EXIST.getCode(), HttpStatus.OK, ConfInterfaceResult.GROUP_NOT_EXIST.getMessage());
+            return;
+        }
+
+        String account = cancelP2PCallParam.getAccount();
+        TerminalService vmtService = p2PCallGroup.getVmt(account);
+        //System.out.println("vmtService : "+vmtService);
+        System.out.println("vmtService  :  "+vmtService.getE164());
+        if (null == vmtService){
+            cancelP2PCallRequest.makeErrorResponseMsg(ConfInterfaceResult.TERMINAL_NOT_EXIST.getCode(), HttpStatus.OK, ConfInterfaceResult.TERMINAL_NOT_EXIST.getMessage());
+            return;
+        }
+
+        if (cancelP2PCallParam.isDual()){
+            //停止双流呼叫
+            ctrlVmtDualStream(vmtService, false, cancelP2PCallRequest);
+            return;
+        }
+
+        //停止呼叫
+        Boolean bOk = vmtService.cancelCallMt(vmtService);
+        if (bOk){
+            vmtService.setGroupId(null);
+            p2PCallGroup.removeCallMember(account);
+            cancelP2PCallRequest.makeSuccessResponseMsg();
+        }else{
+            cancelP2PCallRequest.makeErrorResponseMsg(ConfInterfaceResult.P2PCANCELCALL.getCode(), HttpStatus.OK, ConfInterfaceResult.P2PCANCELCALL.getMessage());
+        }
+
+    }
 
     public boolean inspectionMt(GroupConfInfo groupConfInfo, String mode, String srcMtId, String dstMtId, InspectionRequest inspectionRequest) {
         System.out.println("inspectionMt, mode:"+mode+", srcMtId:"+srcMtId+", dstMtId:"+dstMtId);
@@ -1395,6 +1463,10 @@ public class ConfInterfaceService {
     @Autowired
     private TerminalMediaSourceService terminalMediaSourceService;
 
+    @Autowired
+    private ConfInterfacePublishService confInterfacePublishService;
+
     private Map<String, GroupConfInfo> groupConfInfoMap = new ConcurrentHashMap<>();
     private Map<String, String> confGroupMap = new ConcurrentHashMap<>();
+    private Map<String, P2PCallGroup> p2pCallGroupMap = new ConcurrentHashMap<>();
 }

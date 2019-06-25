@@ -183,6 +183,22 @@ public class ConfInterfaceController {
         System.out.println("now finished query all vmts, time:"+System.currentTimeMillis());
         return queryVmtsRequest.getResponseMsg();
     }
+	 @PostMapping(value = "p2pcall")
+    public DeferredResult<ResponseEntity<P2PCallResponse>> p2pCall(@RequestParam("GroupId") String groupId, @Valid @RequestBody P2PCallParam p2PCallParam){
+        System.out.println("now in p2pCall, groupId:"+groupId+", p2pCallParam:"+p2PCallParam);
+        P2PCallRequest p2PCallRequest = new P2PCallRequest(groupId, p2PCallParam.getAccount());
+        confInterfaceService.p2pCall(p2PCallRequest, p2PCallParam);
+        //handle()
+        return p2PCallRequest.getResponseMsg();
+    }
+
+    @DeleteMapping(value = "p2pcall")
+    public DeferredResult<ResponseEntity<BaseResponseMsg>> cancelP2PCall(@RequestParam("GroupId") String groupId, @Valid @RequestBody CancelP2PCallParam cancelP2PCallParam){
+        System.out.println("now in p2pCall, groupId:"+groupId+", p2pCallParam:"+cancelP2PCallParam);
+        CancelP2PCallRequest cancelP2PCallRequest = new CancelP2PCallRequest(groupId);
+        confInterfaceService.cancelP2PCall(cancelP2PCallRequest, cancelP2PCallParam);
+        return cancelP2PCallRequest.getResponseMsg();
+    }
 
     private DeferredResult<ResponseEntity<BaseResponseMsg>> silenceOrMute(String groupId, String mtE164, boolean silence, SilenceOrMuteParam silenceOrMuteParam){
         CtrlSilenceOrMuteRequest ctrlSilenceOrMuteRequest = new CtrlSilenceOrMuteRequest(groupId, mtE164, silence, silenceOrMuteParam);

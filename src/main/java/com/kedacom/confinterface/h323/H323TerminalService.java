@@ -1,6 +1,9 @@
 package com.kedacom.confinterface.h323;
 
-import com.kedacom.confadapter.*;
+
+import com.kedacom.confadapter.common.ConferenceSysRegisterInfo;
+import com.kedacom.confadapter.common.NetAddress;
+import com.kedacom.confadapter.media.MediaDescription;
 import com.kedacom.confinterface.dto.BaseRequestMsg;
 import com.kedacom.confinterface.exchange.*;
 import com.kedacom.confinterface.inner.DetailMediaResouce;
@@ -240,21 +243,22 @@ public class H323TerminalService extends TerminalService {
             resourceInfo.add(resourceResponse.getResourceID());
             newMediaDescription.add(constructRequestMediaDescription(mediaDescriptions.get(0), resourceResponse.getSdp()));
         }
-
-        boolean bOk = conferenceParticipant.RequestRemoteMedia(newMediaDescription);
-        if (!bOk) {
-            System.out.println("H323, openLogicalChannel, RequestRemoteMedia failed! participartId : " + e164);
-            removeMediaResource(true, resourceInfo);
-        } else {
-            System.out.println("H323, openLogicalChannel, RequestRemoteMedia Ok, participartId : " + e164);
-            if (bCreate) {
-                addMediaResource(newMediaDescription.get(0).getStreamIndex(), newMediaDescription.get(0).getDual(), resourceResponse);
+        boolean bOk = false;
+        synchronized (this) {
+             bOk = conferenceParticipant.RequestRemoteMedia(newMediaDescription);
+            if (!bOk) {
+                System.out.println("H323, openLogicalChannel, RequestRemoteMedia failed! participartId : " + e164);
+                removeMediaResource(true, resourceInfo);
             } else {
-                //更新流ID
-                needUpdateDetailMediaResouce.setStreamIndex(newMediaDescription.get(0).getStreamIndex());
+                System.out.println("H323, openLogicalChannel, RequestRemoteMedia Ok, participartId : " + e164);
+                if (bCreate) {
+                    addMediaResource(newMediaDescription.get(0).getStreamIndex(), newMediaDescription.get(0).getDual(), resourceResponse);
+                } else {
+                    //更新流ID
+                    needUpdateDetailMediaResouce.setStreamIndex(newMediaDescription.get(0).getStreamIndex());
+                }
             }
         }
-
         newMediaDescription.clear();
         resourceInfo.clear();
         return bOk;

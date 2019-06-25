@@ -158,7 +158,9 @@ public class BaseSysConfig {
     @Override
     public String toString() {
         return new StringBuffer()
-                .append("localIp:")
+                .append("mcuMode:")
+                .append(mcuMode)
+                .append(",localIp:")
                 .append(localIp)
                 .append(", mediaSrvIp:")
                 .append(mediaSrvIp)
@@ -183,6 +185,15 @@ public class BaseSysConfig {
                 .toString();
     }
 
+    public String getMcuMode() {
+        return mcuMode;
+    }
+
+    public void setMcuMode(String mcuMode) {
+        this.mcuMode = mcuMode;
+    }
+
+    private String mcuMode = "mcu";
     private String localIp = "172.16.64.25";
     private String mediaSrvIp = "172.16.64.25";
     private int mediaSrvPort = 8080;

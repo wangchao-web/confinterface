@@ -1,6 +1,13 @@
 package com.kedacom.confinterface.service;
 
-import com.kedacom.confadapter.*;
+
+import com.kedacom.confadapter.ILocalConferenceParticipant;
+import com.kedacom.confadapter.common.NetAddress;
+import com.kedacom.confadapter.common.RemoteParticipantInfo;
+import com.kedacom.confadapter.media.AudioMediaDescription;
+import com.kedacom.confadapter.media.H264Description;
+import com.kedacom.confadapter.media.MediaDescription;
+import com.kedacom.confadapter.media.VideoMediaDescription;
 import com.kedacom.confinterface.dao.InspectionSrcParam;
 import com.kedacom.confinterface.dto.*;
 import com.kedacom.confinterface.exchange.*;
@@ -28,6 +35,7 @@ public abstract class TerminalService {
         this.e164 = e164;
         this.mtId = null;
         this.groupId = null;
+        this.remoteMtAccount = null;
         this.name = name;
         this.online = new AtomicInteger();
         this.online.set(TerminalOnlineStatusEnum.UNKNOWN.getCode());
@@ -92,6 +100,10 @@ public abstract class TerminalService {
 
     public void setMtId(String mtId) {
         this.mtId = mtId;
+    }
+
+    public String getRemoteMtAccount() {
+        return remoteMtAccount;
     }
 
     public int getType() {
@@ -242,6 +254,10 @@ public abstract class TerminalService {
         else
             conferenceParticipant.AllowAcceptExtensiveStreamRequest(false);
     }
+	public void setDualStream(boolean dualStream) {
+        conferenceParticipant.AllowAcceptExtensiveStreamRequest(dualStream);
+    }
+
 
     public void setInspectedStatus(InspectionStatusEnum inspected) {
         this.inspectedStatus.set(inspected.getCode());
@@ -546,6 +562,53 @@ public abstract class TerminalService {
         }
 
        return requestUpdateResource(updateResourceParams);
+    }
+
+    public boolean callMt(P2PCallParam p2PCallParam) {
+        String account = p2PCallParam.getAccount();
+        RemoteParticipantInfo remoteParticipantInfo = new RemoteParticipantInfo();
+
+        if (p2PCallParam.getAccountType() == 1) {
+            //ip地址呼叫
+            String[] mtAddress = account.split(":", 2);
+            NetAddress netAddress = new NetAddress();
+            netAddress.setIP(mtAddress[0]);
+
+            if (mtAddress.length == 1) {
+                netAddress.setPort(1720);
+            } else {
+                netAddress.setPort(Integer.valueOf(mtAddress[1]));
+            }
+
+            remoteParticipantInfo.setAddress(netAddress);
+        } else {
+            //e164号呼叫
+            remoteParticipantInfo.setParticipantId(account);
+        }
+
+        boolean bOK = conferenceParticipant.CallRemote(remoteParticipantInfo);
+        System.out.println("conferenceParticipant.CallRemote");
+        if (bOK) {
+            remoteMtAccount = account;
+            System.out.println("conferenceParticipant.CallRemote : " + bOK);
+        } else {
+            remoteMtAccount = null;
+        }
+
+        return bOK;
+    }
+
+    public Boolean cancelCallMt(TerminalService terminalService) {
+        //conferenceParticipant.Uncall();
+        boolean bOk = conferenceParticipant.LeaveConference();
+        //List<String> resourceIds = new ArrayList<>();
+
+        if (bOk) {
+            terminalManageService.freeVmt(terminalService.getE164());
+            clearExchange();
+            terminalMediaSourceService.delTerminalMediaResource(terminalService.getE164());
+        }
+        return bOk;
     }
 
     protected boolean requestUpdateResource(List<UpdateResourceParam> updateResourceParams){
@@ -972,6 +1035,20 @@ public abstract class TerminalService {
             addForwardChannel(detailMediaResouce);
         } else {
             addReverseChannel(detailMediaResouce);
+            if (null != remoteMtAccount) {
+                //点对点呼叫,在此处处理反向资源
+                MediaResource mediaResource = new MediaResource();
+                mediaResource.setDual(detailMediaResouce.getDual() == 1);
+                mediaResource.setId(detailMediaResouce.getId());
+                mediaResource.setType(detailMediaResouce.getType());
+
+
+                P2PCallRequest p2PCallRequest = (P2PCallRequest) waitMsg.get(P2PCallRequest.class.getName());
+                p2PCallRequest.addReverseResource(mediaResource);
+                System.out.println("在此处处理反向资源");
+                //System.out.println("P2PCallRequest.class.getName() : " + P2PCallRequest.class.getName());
+                p2PCallRequest.removeMsg(P2PCallRequest.class.getName());
+            }
         }
     }
 
@@ -1163,6 +1240,7 @@ public abstract class TerminalService {
     protected String name;
     protected String confId;
     protected String mtId;
+    protected String remoteMtAccount;   //p2p呼叫时，存储呼叫的会议终端帐号
     protected String occupyConfName;
     protected int type;  //1:会议终端，2:虚拟终端
     protected InspectionSrcParam inspectionParam;
@@ -1186,4 +1264,11 @@ public abstract class TerminalService {
 
     @Autowired
     protected RestClientService restClientService;
+
+    @Autowired
+    private TerminalMediaSourceService terminalMediaSourceService;
+
+    @Autowired
+    private TerminalManageService terminalManageService;
+
 }

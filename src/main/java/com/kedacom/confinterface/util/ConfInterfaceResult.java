@@ -25,7 +25,9 @@ public enum ConfInterfaceResult {
     ADD_EXCHANGENODE_FAILED(50020, "add exchange node failed!"),
     UPDATE_EXCHANGENODE_FAILED(50021, "update exchange node failed!"),
     EXIST_DUALSTREAM(50022, "exist dual stream!"),
-    CLOSE_CHANNEL(50023, "close logical channel failed!");
+    CLOSE_CHANNEL(50023, "close logical channel failed!"),
+    P2PCALL(50024, "p2p call failed!"),
+    P2PCANCELCALL(50025, "p2p cancelCallMt failed!");
 
     public int getCode(){
         return code;

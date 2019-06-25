@@ -6,6 +6,7 @@ import com.kedacom.confinterface.inner.InspectionModeEnum;
 import com.kedacom.confinterface.dao.Terminal;
 import com.kedacom.confinterface.inner.TransportAddress;
 import com.kedacom.confinterface.restclient.mcu.*;
+import com.kedacom.confinterface.syssetting.BaseSysConfig;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -744,29 +745,33 @@ public class McuRestClientService {
 
     @Scheduled(initialDelay = heartbeatInterval, fixedRate = heartbeatInterval)
     public void doHearbeat(){
-        System.out.println("McuRestClientService, start do heartbeat, current time : "+System.currentTimeMillis()+", threadName:"+Thread.currentThread().getName());
-        //每25分钟执行一次心跳检测 /api/v1/system/heartbeat
-        StringBuilder url = new StringBuilder();
-        constructUrl(url, "/api/v1/system/heartbeat");
+        if ("mcu".equals(baseSysConfig.getMcuMode())) {
+            System.out.println("5.2mcu心跳机制");
+            System.out.println("McuRestClientService, start do heartbeat, current time : "+System.currentTimeMillis()+", threadName:"+Thread.currentThread().getName());
+            //每25分钟执行一次心跳检测 /api/v1/system/heartbeat
+            StringBuilder url = new StringBuilder();
+            constructUrl(url, "/api/v1/system/heartbeat");
 
-        McuPostMsg mcuPostMsg = new McuPostMsg(accountToken);
-        ResponseEntity<McuBaseResponse> response = restClientService.postForEntity(url.toString(), mcuPostMsg.getMsg(), urlencodeMediaType, McuBaseResponse.class);
-        if (null == response || response.getStatusCode().is4xxClientError() || response.getStatusCode().is5xxServerError()){
-            //尝试重新登陆
-            loginSuccess = false;
-            while (true) {
-                boolean bOK = login();
-                if (bOK){
-                    break;
-                }
+            McuPostMsg mcuPostMsg = new McuPostMsg(accountToken);
+            ResponseEntity<McuBaseResponse> response = restClientService.postForEntity(url.toString(), mcuPostMsg.getMsg(), urlencodeMediaType, McuBaseResponse.class);
+            if (null == response || response.getStatusCode().is4xxClientError() || response.getStatusCode().is5xxServerError()){
+                //尝试重新登陆
+                loginSuccess = false;
+                while (true) {
+                    boolean bOK = login();
+                    if (bOK){
+                        break;
+                    }
 
-                try {
-                    TimeUnit.SECONDS.sleep(1);
-                } catch (InterruptedException e){
-                    e.printStackTrace();
+                    try {
+                        TimeUnit.SECONDS.sleep(1);
+                    } catch (InterruptedException e){
+                        e.printStackTrace();
+                    }
                 }
             }
         }
+        System.out.println("采用点对点,不进行心跳机制");
     }
 
     private void constructUrl(StringBuilder url, String restApi) {
@@ -930,4 +935,7 @@ public class McuRestClientService {
     private volatile boolean loginSuccess;
     private Map<String, List<String>> confSubcribeChannelMap;
     private static String activeProf = "dev";
+
+    @Autowired
+    private BaseSysConfig baseSysConfig;
 }

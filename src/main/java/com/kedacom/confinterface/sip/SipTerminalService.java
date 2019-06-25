@@ -1,6 +1,7 @@
 package com.kedacom.confinterface.sip;
 
-import com.kedacom.confadapter.MediaDescription;
+
+import com.kedacom.confadapter.media.MediaDescription;
 import com.kedacom.confinterface.dto.BaseRequestMsg;
 import com.kedacom.confinterface.service.TerminalService;
 

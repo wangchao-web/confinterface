@@ -1,6 +1,10 @@
 package com.kedacom.confinterface.h323;
 
-import com.kedacom.confadapter.*;
+
+import com.kedacom.confadapter.IConferenceEventHandler;
+import com.kedacom.confadapter.common.ConferenceInfo;
+import com.kedacom.confadapter.common.ConferencePresentParticipant;
+import com.kedacom.confadapter.media.MediaDescription;
 import com.kedacom.confinterface.dao.InspectionSrcParam;
 import com.kedacom.confinterface.dto.*;
 import com.kedacom.confinterface.inner.DetailMediaResouce;
@@ -286,6 +290,12 @@ public class H323TerminalManageService extends TerminalManageService implements 
         boolean bOk = terminalService.updateExchange(mediaDescriptions);
         if (bOk) {
             if (!mediaDescriptions.get(0).getDual()) {
+                if (null != terminalService.getRemoteMtAccount()){
+                    //点对点呼叫，需要在此处处理点点对呼叫消息
+                    //System.out.println("需要在此处处理点点对呼叫消息正向通道");
+                    P2PCallRequestSuccess(terminalService, mediaDescriptions.get(0).getStreamIndex());
+                }
+
                 if (terminalService.getForwardGenericStreamNum().decrementAndGet() != 0)
                     return;
 
@@ -300,6 +310,9 @@ public class H323TerminalManageService extends TerminalManageService implements 
         if (mediaDescriptions.get(0).getDual()) {
             DualStreamRequestFail(terminalService);
         } else {
+		if (null != terminalService.getRemoteMtAccount()){
+            P2PCallRequestFail(terminalService);
+			}
             synchronized (terminalService) {
                 List<DetailMediaResouce> mediaResouces = terminalService.getForwardChannel();
                 List<String> resourceIds = new ArrayList<>();
@@ -424,21 +437,41 @@ public class H323TerminalManageService extends TerminalManageService implements 
             break;
         }
 
-        //非点对点呼叫
-        StartDualStreamRequest startDualStreamRequest = (StartDualStreamRequest) terminalService.getWaitMsg(StartDualStreamRequest.class.getName());
-        if (null == startDualStreamRequest)
+        if (null == terminalService.getRemoteMtAccount()) {
+            //非点对点呼叫
+            StartDualStreamRequest startDualStreamRequest = (StartDualStreamRequest) terminalService.getWaitMsg(StartDualStreamRequest.class.getName());
+            if (null == startDualStreamRequest)
+                return;
+
+            startDualStreamRequest.addResource(mediaResource);
+            startDualStreamRequest.makeSuccessResponseMsg();
+            terminalService.delWaitMsg(StartDualStreamRequest.class.getName());
+
+            return;
+        }
+
+        P2PCallRequest p2PCallRequest = (P2PCallRequest) terminalService.getWaitMsg(P2PCallRequest.class.getName());
+        if (null == p2PCallRequest)
             return;
 
-        startDualStreamRequest.addResource(mediaResource);
-        startDualStreamRequest.makeSuccessResponseMsg();
-        terminalService.delWaitMsg(StartDualStreamRequest.class.getName());
+        p2PCallRequest.addForwardResource(mediaResource);
+        p2PCallRequest.makeSuccessResponseMsg();
+        terminalService.delWaitMsg(P2PCallRequest.class.getName());
+
         return;
     }
 
     private void DualStreamRequestFail(H323TerminalService terminalService) {
         //失败处理
-        String waitMsgKey = StartDualStreamRequest.class.getName();
-        BaseRequestMsg dualStreamRequest = terminalService.getWaitMsg(waitMsgKey);
+        BaseRequestMsg dualStreamRequest;
+        String waitMsgKey;
+        if (null == terminalService.getRemoteMtAccount()) {
+            waitMsgKey = StartDualStreamRequest.class.getName();
+            dualStreamRequest = terminalService.getWaitMsg(waitMsgKey);
+        } else {
+            waitMsgKey = P2PCallRequest.class.getName();
+            dualStreamRequest = terminalService.getWaitMsg(waitMsgKey);
+        }
 
         if (null == dualStreamRequest)
             return;
@@ -452,6 +485,53 @@ public class H323TerminalManageService extends TerminalManageService implements 
         } else {
             System.out.println("DualStreamRequestFail, closeDualStreamChannel failed!");
         }
+    }
+
+    private void P2PCallRequestSuccess(H323TerminalService terminalService, int streamIndex){
+        P2PCallRequest p2PCallRequest = (P2PCallRequest) terminalService.getWaitMsg(P2PCallRequest.class.getName());
+        if (null == p2PCallRequest)
+            return;
+        //System.out.println("p2PCallRequest : " +p2PCallRequest);
+        List<DetailMediaResouce> mediaResouces = terminalService.getForwardChannel();
+        for (DetailMediaResouce detailMediaResouce : mediaResouces) {
+            //System.out.println("detailMediaResouce.getStreamIndex() != streamIndex : "+detailMediaResouce.getStreamIndex());
+            //System.out.println("streamIndex : " +streamIndex);
+            if (detailMediaResouce.getStreamIndex() != streamIndex)
+                continue;
+
+            MediaResource mediaResource = new MediaResource();
+            mediaResource.setType(detailMediaResouce.getType());
+            mediaResource.setDual(detailMediaResouce.getDual() == 1);
+            mediaResource.setId(detailMediaResouce.getId());
+
+            p2PCallRequest.addForwardResource(mediaResource);
+            System.out.println("添加正向资源");
+            p2PCallRequest.removeMsg(P2PCallRequest.class.getName());
+            break;
+        }
+
+        if (p2PCallRequest.getWaitMsg().isEmpty())
+            terminalService.delWaitMsg(P2PCallRequest.class.getName());
+    }
+
+    private void P2PCallRequestFail(H323TerminalService terminalService){
+        P2PCallRequest p2PCallRequest = (P2PCallRequest) terminalService.getWaitMsg(P2PCallRequest.class.getName());
+        if (null == p2PCallRequest)
+            return;
+
+        p2PCallRequest.getWaitMsg().clear();
+        terminalService.delWaitMsg(P2PCallRequest.class.getName());
+        p2PCallRequest.makeErrorResponseMsg(ConfInterfaceResult.P2PCALL.getCode(), HttpStatus.OK, ConfInterfaceResult.P2PCALL.getMessage());
+
+        terminalService.cancelCallMt(terminalService);
+
+        terminalService.setDualStream(false);
+        freeVmt(terminalService.getE164());
+
+        //清理数据库中的正向通道资源,反向资源在OnMediaCleaned函数中清除
+        TerminalMediaResource oldTerminalMediaResource = terminalMediaSourceService.getTerminalMediaResource(terminalService.getE164());
+        oldTerminalMediaResource.getForwardResources().clear();
+        terminalMediaSourceService.setTerminalMediaResource(oldTerminalMediaResource);
     }
 
     private final org.slf4j.Logger logger = LoggerFactory.getLogger(this.getClass());

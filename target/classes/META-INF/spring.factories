@@ -1,0 +1,4 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+com.kedacom.confinterface.autoconfigure.H323TerminalManageServiceAutoConfig,\
+com.kedacom.confinterface.autoconfigure.SipTerminalManageServiceAutoConfig,\
+com.kedacom.confinterface.autoconfigure.RedisTerminalMediaSourceDaoAutoConfig

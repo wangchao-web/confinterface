@@ -1,0 +1,40 @@
+Manifest-Version: 1.0
+Class-Path: commons-beanutils-1.8.0.jar reactor-core-3.1.8.RELEASE.jar
+  jetty-io-9.4.11.v20180605.jar jackson-module-parameter-names-2.9.6.j
+ ar spring-data-keyvalue-2.0.9.RELEASE.jar spring-boot-starter-json-2.
+ 0.4.RELEASE.jar jboss-logging-3.3.2.Final.jar jackson-datatype-jsr310
+ -2.9.6.jar hibernate-validator-6.0.11.Final.jar tomcat-embed-el-8.5.3
+ 2.jar spring-boot-starter-data-redis-2.0.4.RELEASE.jar com.kedacom.co
+ nfadapter-0.0.1-SNAPSHOT.jar spring-web-5.0.8.RELEASE.jar spring-boot
+ -starter-web-2.0.4.RELEASE.jar websocket-client-9.2.24.v20180105-hybr
+ id.jar javax.annotation-api-1.3.2.jar classmate-1.3.4.jar jackson-cor
+ e-2.9.6.jar tomcat-embed-websocket-8.5.32.jar cometd-java-client-3.1.
+ 4.jar jetty-xml-9.4.11.v20180605.jar jetty-util-ajax-9.4.11.v20180605
+ .jar jetty-http-9.4.11.v20180605.jar logback-core-1.2.3.jar commons-c
+ odec-1.11.jar jetty-util-9.4.11.v20180605.jar spring-core-5.0.8.RELEA
+ SE.jar slf4j-log4j12-1.8.0-beta2.jar tomcat-embed-core-8.5.32.jar com
+ mons-logging-1.1.1.jar commons-lang-2.5.jar spring-boot-starter-2.0.4
+ .RELEASE.jar log4j-1.2.17.jar logback-classic-1.2.3.jar jackson-datab
+ ind-2.9.6.jar lettuce-core-5.0.4.RELEASE.jar cometd-java-websocket-co
+ mmon-client-3.1.4.jar commons-collections-3.2.1.jar netty-codec-4.1.2
+ 7.Final.jar spring-tx-5.0.8.RELEASE.jar commons-pool2-2.5.0.jar jul-t
+ o-slf4j-1.7.25.jar spring-jcl-5.0.8.RELEASE.jar netty-common-4.1.27.F
+ inal.jar netty-resolver-4.1.27.Final.jar netty-transport-4.1.27.Final
+ .jar jedis-2.9.0.jar reactive-streams-1.0.2.jar jackson-annotations-2
+ .9.0.jar json-lib-2.4-jdk15.jar httpcore-4.4.10.jar jackson-datatype-
+ jdk8-2.9.6.jar websocket-client-9.4.12.v20180830.jar websocket-api-9.
+ 4.11.v20180605.jar snakeyaml-1.19.jar spring-beans-5.0.8.RELEASE.jar 
+ jetty-client-9.4.11.v20180605.jar spring-oxm-5.0.8.RELEASE.jar spring
+ -expression-5.0.8.RELEASE.jar spring-boot-2.0.4.RELEASE.jar spring-da
+ ta-commons-2.0.9.RELEASE.jar websocket-common-9.4.11.v20180605.jar sp
+ ring-webmvc-5.0.8.RELEASE.jar spring-aop-5.0.8.RELEASE.jar cometd-jav
+ a-common-3.1.4.jar spring-boot-starter-logging-2.0.4.RELEASE.jar come
+ td-java-websocket-jetty-client-3.1.4.jar validation-api-2.0.1.Final.j
+ ar slf4j-api-1.8.0-beta2.jar netty-buffer-4.1.27.Final.jar log4j-api-
+ 2.10.0.jar log4j-to-slf4j-2.10.0.jar spring-boot-autoconfigure-2.0.4.
+ RELEASE.jar spring-context-5.0.8.RELEASE.jar spring-context-support-5
+ .0.8.RELEASE.jar spring-boot-starter-tomcat-2.0.4.RELEASE.jar httpcli
+ ent-4.5.6.jar bayeux-api-3.1.4.jar ezmorph-1.0.6.jar netty-handler-4.
+ 1.27.Final.jar spring-data-redis-2.0.9.RELEASE.jar
+Main-Class: com.kedacom.confinterface.ConfinterfaceApplication
+
