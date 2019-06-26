@@ -309,31 +309,8 @@ public class H323TerminalManageService extends TerminalManageService implements 
 
         if (mediaDescriptions.get(0).getDual()) {
             DualStreamRequestFail(terminalService);
-        } else {
-		if (null != terminalService.getRemoteMtAccount()){
+        } else if (null != terminalService.getRemoteMtAccount()) {
             P2PCallRequestFail(terminalService);
-			}
-            synchronized (terminalService) {
-                List<DetailMediaResouce> mediaResouces = terminalService.getForwardChannel();
-                List<String> resourceIds = new ArrayList<>();
-                for (DetailMediaResouce mediaResouce : mediaResouces) {
-                    if (mediaResouce.getStreamIndex() != mediaDescriptions.get(0).getStreamIndex()) {
-                        continue;
-                    }
-
-                    System.out.println("OnRemoteMediaReponsed, type:" + mediaResouce.getType() + ", resourceId:" + mediaResouce.getId() + ", streamIndex:" + mediaDescriptions.get(0).getStreamIndex());
-                    resourceIds.add(mediaResouce.getId());
-                    mediaResouces.remove(mediaResouce);
-                    break;
-                }
-
-                terminalService.removeExchange(resourceIds);
-                TerminalMediaResource oldTerminalMediaResource = terminalMediaSourceService.getTerminalMediaResource(participantid);
-                if (null != oldTerminalMediaResource) {
-                    oldTerminalMediaResource.setForwardResources(TerminalMediaResource.convertToMediaResource(mediaResouces, "all"));
-                    terminalMediaSourceService.setTerminalMediaResource(oldTerminalMediaResource);
-                }
-            }
         }
     }
 

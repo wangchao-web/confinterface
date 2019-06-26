@@ -799,6 +799,12 @@ public abstract class TerminalService {
             sdp.append("\r\n");
         }
 
+		sdp.append("a=rtcp:");
+        sdp.append(mediaDescription.getRtcpAddress().getPort());
+        sdp.append(" IN IP4 ");
+        sdp.append(mediaDescription.getRtcpAddress().getIP());
+        sdp.append("\r\n");
+
         if (mediaDescription.getDirection().equals(TransportDirectionEnum.SEND.getName())){
             sdp.append("a=sendonly\r\n");
         } else {
