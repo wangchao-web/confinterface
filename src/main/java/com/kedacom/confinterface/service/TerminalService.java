@@ -147,7 +147,7 @@ public abstract class TerminalService {
             if (null == forwardChannel) {
                 forwardChannel = new CopyOnWriteArrayList<>();
             }
-            System.out.println("反向detailMediaResouce: " + detailMediaResouce.getId());
+            System.out.println("正向detailMediaResouce: " + detailMediaResouce.getId());
             forwardChannel.add(detailMediaResouce);
         }
     }
@@ -1040,6 +1040,7 @@ public abstract class TerminalService {
         detailMediaResouce.setSdp(resourceResponse.getSdp());
 
         if (resourceResponse.getSdp().contains("a=sendonly")) {
+            System.out.println("添加正向资源111");
             System.out.println("添加正向资源");
             addForwardChannel(detailMediaResouce);
         } else {
