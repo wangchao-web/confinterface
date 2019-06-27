@@ -147,9 +147,10 @@ public abstract class TerminalService {
             if (null == forwardChannel) {
                 forwardChannel = new CopyOnWriteArrayList<>();
             }
+            forwardChannel.add(detailMediaResouce);
         }
 
-        forwardChannel.add(detailMediaResouce);
+        
     }
 
     public void addReverseChannel(DetailMediaResouce detailMediaResouce) {
@@ -157,9 +158,10 @@ public abstract class TerminalService {
             if (null == reverseChannel) {
                 reverseChannel = new CopyOnWriteArrayList<>();
             }
+             reverseChannel.add(detailMediaResouce);
         }
 
-        reverseChannel.add(detailMediaResouce);
+       
     }
 
     public void addInspentedTerminal(String e164, InspectedParam inspectedParam) {
