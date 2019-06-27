@@ -147,10 +147,9 @@ public abstract class TerminalService {
             if (null == forwardChannel) {
                 forwardChannel = new CopyOnWriteArrayList<>();
             }
+            System.out.println("反向detailMediaResouce: " + detailMediaResouce.getId());
             forwardChannel.add(detailMediaResouce);
         }
-
-        
     }
 
     public void addReverseChannel(DetailMediaResouce detailMediaResouce) {
@@ -158,6 +157,7 @@ public abstract class TerminalService {
             if (null == reverseChannel) {
                 reverseChannel = new CopyOnWriteArrayList<>();
             }
+            System.out.println("反向detailMediaResouce: " + detailMediaResouce.getId());
              reverseChannel.add(detailMediaResouce);
         }
 
@@ -1040,8 +1040,10 @@ public abstract class TerminalService {
         detailMediaResouce.setSdp(resourceResponse.getSdp());
 
         if (resourceResponse.getSdp().contains("a=sendonly")) {
+            System.out.println("添加正向资源");
             addForwardChannel(detailMediaResouce);
         } else {
+            System.out.println("添加反向资源");
             addReverseChannel(detailMediaResouce);
             if (null != remoteMtAccount) {
                 //点对点呼叫,在此处处理反向资源
