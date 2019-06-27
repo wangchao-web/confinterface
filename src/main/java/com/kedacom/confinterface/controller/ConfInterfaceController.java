@@ -188,6 +188,7 @@ public class ConfInterfaceController {
         System.out.println("now in p2pCall, groupId:"+groupId+", p2pCallParam:"+p2PCallParam);
         P2PCallRequest p2PCallRequest = new P2PCallRequest(groupId, p2PCallParam.getAccount());
         confInterfaceService.p2pCall(p2PCallRequest, p2PCallParam);
+        System.out.println("开始点对点");
         //handle()
         return p2PCallRequest.getResponseMsg();
     }
