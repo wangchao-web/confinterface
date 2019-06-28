@@ -288,6 +288,7 @@ public class H323TerminalManageService extends TerminalManageService implements 
         }
 
         boolean bOk = terminalService.updateExchange(mediaDescriptions);
+        System.out.println("bOk : "+bOk);
         if (bOk) {
             if (!mediaDescriptions.get(0).getDual()) {
                 if (null != terminalService.getRemoteMtAccount()){
@@ -480,7 +481,7 @@ public class H323TerminalManageService extends TerminalManageService implements 
             mediaResource.setType(detailMediaResouce.getType());
             mediaResource.setDual(detailMediaResouce.getDual() == 1);
             mediaResource.setId(detailMediaResouce.getId());
-
+            System.out.println("mediaResource :"+mediaResource.getId());
             p2PCallRequest.addForwardResource(mediaResource);
             System.out.println("添加正向资源");
             p2PCallRequest.removeMsg(P2PCallRequest.class.getName());
