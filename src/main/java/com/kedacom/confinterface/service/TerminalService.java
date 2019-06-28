@@ -157,11 +157,9 @@ public abstract class TerminalService {
             if (null == reverseChannel) {
                 reverseChannel = new CopyOnWriteArrayList<>();
             }
-            System.out.println("反向detailMediaResouce: " + detailMediaResouce.getId());
-             reverseChannel.add(detailMediaResouce);
         }
-
-       
+        System.out.println("反向detailMediaResouce: " + detailMediaResouce.getId());
+        reverseChannel.add(detailMediaResouce);
     }
 
     public void addInspentedTerminal(String e164, InspectedParam inspectedParam) {
