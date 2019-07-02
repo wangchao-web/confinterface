@@ -292,8 +292,6 @@ public class H323TerminalManageService extends TerminalManageService implements 
         if (bOk) {
             if (!mediaDescriptions.get(0).getDual()) {
                 if (null != terminalService.getRemoteMtAccount()) {
-                    //点对点呼叫，需要在此处处理点点对呼叫消息
-                    //System.out.println("需要在此处处理点点对呼叫消息正向通道");
                     P2PCallRequestSuccess(terminalService, mediaDescriptions.get(0).getStreamIndex());
                 }
 
