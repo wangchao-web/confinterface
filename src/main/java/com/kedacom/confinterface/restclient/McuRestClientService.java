@@ -771,7 +771,6 @@ public class McuRestClientService {
                 }
             }
         }
-        System.out.println("采用点对点,不进行心跳机制");
     }
 
     private void constructUrl(StringBuilder url, String restApi) {

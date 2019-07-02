@@ -995,8 +995,6 @@ public class ConfInterfaceService {
 
         String account = cancelP2PCallParam.getAccount();
         TerminalService vmtService = p2PCallGroup.getVmt(account);
-        //System.out.println("vmtService : "+vmtService);
-        System.out.println("vmtService  :  "+vmtService.getE164());
         if (null == vmtService){
             cancelP2PCallRequest.makeErrorResponseMsg(ConfInterfaceResult.TERMINAL_NOT_EXIST.getCode(), HttpStatus.OK, ConfInterfaceResult.TERMINAL_NOT_EXIST.getMessage());
             return;

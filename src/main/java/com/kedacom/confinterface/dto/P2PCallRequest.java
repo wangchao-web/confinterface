@@ -29,12 +29,12 @@ public class P2PCallRequest extends BaseRequestMsg<P2PCallResponse> {
 
     @Override
     public void removeMsg(String msg) {
-        super.removeMsg(msg);
-        System.out.println("移除removeMsg : "+msg);
-        if (waitMsg.isEmpty()){
-            System.out.println("移除成功");
-            makeSuccessResponseMsg();
-        }
+            super.removeMsg(msg);
+            System.out.println("移除removeMsg : " + msg);
+            if (waitMsg.isEmpty()) {
+                System.out.println("移除成功");
+                makeSuccessResponseMsg();
+            }
     }
 
     @Override
