@@ -806,6 +806,16 @@ public abstract class TerminalService {
         sdp.append(mediaDescription.getRtcpAddress().getIP());
         sdp.append("\r\n");
 
+        sdp.append("a=rtcp-fb:");
+        sdp.append(mediaDescription.getPayload());
+        sdp.append(" nack");
+        sdp.append("\r\n");
+
+        sdp.append("a=rtcp-fb:");
+        sdp.append(mediaDescription.getPayload());
+        sdp.append(" nack kdv");
+        sdp.append("\r\n");
+
         if (mediaDescription.getDirection().equals(TransportDirectionEnum.SEND.getName())) {
             sdp.append("a=sendonly\r\n");
         } else {
