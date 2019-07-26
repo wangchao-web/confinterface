@@ -4,9 +4,10 @@ import org.hibernate.validator.constraints.Range;
 import javax.validation.constraints.NotBlank;
 
 public class P2PCallParam {
-    public P2PCallParam(int accountType, String account, boolean dual){
+    public P2PCallParam(int accountType, String account, int dual){
         this.accountType = accountType;
         this.account = account;
+        this.dual = dual;
     }
 
     public int getAccountType() {
@@ -26,10 +27,19 @@ public class P2PCallParam {
     }
 
     public boolean isDual() {
+        if(dual == 1){
+            return true;
+        }else if(dual == 0){
+            return false;
+        }
+        return false;
+    }
+
+    public int getDual() {
         return dual;
     }
 
-    public void setDual(boolean dual) {
+    public void setDual(int dual) {
         this.dual = dual;
     }
 
@@ -47,5 +57,6 @@ public class P2PCallParam {
     @NotBlank
     private String account;
 
-    private boolean dual;
+    @Range(min = 0, max = 1)
+    private int dual;
 }

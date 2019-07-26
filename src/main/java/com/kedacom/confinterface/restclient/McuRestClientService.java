@@ -1,11 +1,13 @@
 package com.kedacom.confinterface.restclient;
 
-import com.kedacom.confinterface.dto.CameraCtrlParam;
-import com.kedacom.confinterface.dto.SilenceOrMuteParam;
-import com.kedacom.confinterface.inner.InspectionModeEnum;
+import com.kedacom.confinterface.dto.*;
+import com.kedacom.confinterface.inner.*;
 import com.kedacom.confinterface.dao.Terminal;
-import com.kedacom.confinterface.inner.TransportAddress;
 import com.kedacom.confinterface.restclient.mcu.*;
+import com.kedacom.confinterface.service.ConfInterfacePublishService;
+import com.kedacom.confinterface.service.ConfInterfaceService;
+import com.kedacom.confinterface.service.TerminalService;
+import com.kedacom.confinterface.service.UnifiedDevicePushService;
 import com.kedacom.confinterface.syssetting.BaseSysConfig;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,7 +34,7 @@ import java.util.concurrent.TimeUnit;
 public class McuRestClientService {
 
     public boolean login() {
-        if (loginSuccess){
+        if (loginSuccess) {
             if (mcuSubscribeClientService.isHandShakeOk()) {
                 System.out.println("login success and handshake OK!");
                 return true;
@@ -44,9 +46,9 @@ public class McuRestClientService {
         //dev, test, prod
         //加载当前profile
         String[] activeProfs = env.getActiveProfiles();
-        if (activeProfs.length > 0){
+        if (activeProfs.length > 0) {
             activeProf = activeProfs[0];
-            System.out.println("constructUrl: active prof is "+activeProf);
+            System.out.println("constructUrl: active prof is " + activeProf);
         }
 
         //通过软件key和密钥获取account_token
@@ -58,7 +60,7 @@ public class McuRestClientService {
             param.append(URLEncoder.encode(mcuRestConfig.getSoftwareKey(), "UTF-8"));
             param.append("&oauth_consumer_secret=");
             param.append(URLEncoder.encode(mcuRestConfig.getSecretKey(), "UTF-8"));
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
 
@@ -68,14 +70,14 @@ public class McuRestClientService {
         constructUrl(url, "/api/v1/system/token");
 
         ResponseEntity<AccountTokenResponse> result = restClientService.postForEntity(url.toString(), param.toString(), urlencodeMediaType, AccountTokenResponse.class);
-        if (null == result){
+        if (null == result) {
             System.out.println("get token failed!!!!!!!!!!!!");
             return false;
         }
 
         if (result.getBody().getSuccess() == 0) {
             int errorCode = result.getBody().getError_code();
-            System.out.println("get token failed! errCode:"+errorCode+", errMsg:"+McuStatus.resolve(errorCode).getDescription());
+            System.out.println("get token failed! errCode:" + errorCode + ", errMsg:" + McuStatus.resolve(errorCode).getDescription());
             return false;
         }
 
@@ -91,18 +93,18 @@ public class McuRestClientService {
             param.append(URLEncoder.encode(mcuRestConfig.getUsername(), "UTF-8"));
             param.append("&password=");
             param.append(URLEncoder.encode(mcuRestConfig.getPassword(), "UTF-8"));
-        } catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
 
         System.out.println("login param: " + param.toString());
-        constructUrl(url,"/api/v1/system/login");
+        constructUrl(url, "/api/v1/system/login");
 
         //result中带有是否成功与用户名信息
         ResponseEntity<LoginResponse> loginResult = restClientService.postForEntity(url.toString(), param.toString(), urlencodeMediaType, LoginResponse.class);
         if (loginResult.getBody().getSuccess() == 0) {
             int errorCode = loginResult.getBody().getError_code();
-            System.out.println("login fail, errCode:"+errorCode+", errMsg:"+McuStatus.resolve(errorCode).getDescription());
+            System.out.println("login fail, errCode:" + errorCode + ", errMsg:" + McuStatus.resolve(errorCode).getDescription());
 
             loginSuccess = false;
             return false;
@@ -112,11 +114,11 @@ public class McuRestClientService {
 
         HttpHeaders httpHeaders = loginResult.getHeaders();
         List<String> getCookies = httpHeaders.get("Set-Cookie");
-        System.out.println("Set-Cookie: "+getCookies);
+        System.out.println("Set-Cookie: " + getCookies);
         if (getCookies.size() >= 1) {
             cookies = new ArrayList<>();
             for (String cookie : getCookies) {
-                System.out.println("login, cookie:"+cookie);
+                System.out.println("login, cookie:" + cookie);
                 String[] cookieParse = cookie.split(";", 2);
                 cookies.add(cookieParse[0]);
             }
@@ -131,7 +133,7 @@ public class McuRestClientService {
             confSubcribeChannelMap = new ConcurrentHashMap<>();
         }
 
-        System.out.println("login successfully!! handshake:"+mcuSubscribeClientService.isHandShakeOk());
+        System.out.println("login successfully!! handshake:" + mcuSubscribeClientService.isHandShakeOk());
         return mcuSubscribeClientService.isHandShakeOk();
     }
 
@@ -151,7 +153,7 @@ public class McuRestClientService {
         createConferenceParam.setVideo_formats(mcuRestConfig.getVideoFormat());
         createConferenceParam.setAudio_formats(mcuRestConfig.getAudioFormat());
 
-        System.out.println("createConfParam:"+createConferenceParam.toString());
+        System.out.println("createConfParam:" + createConferenceParam.toString());
 
         constructUrl(url, "/api/v1/mc/confs");
         McuPostMsg mcuPostMsg = new McuPostMsg(accountToken);
@@ -170,7 +172,7 @@ public class McuRestClientService {
             return createConferenceResponse.getConf_id();
         } else {
             int errorCode = createConferenceResponse.getError_code();
-            System.out.println("create conference failed! errCode : " + errorCode +", errMsg : " + McuStatus.resolve(errorCode).getDescription());
+            System.out.println("create conference failed! errCode : " + errorCode + ", errMsg : " + McuStatus.resolve(errorCode).getDescription());
             return null;
         }
     }
@@ -215,7 +217,7 @@ public class McuRestClientService {
         }
 
         StringBuilder url = new StringBuilder();
-        constructUrl(url,"/api/v1/vc/confs/{conf_id}/mts");
+        constructUrl(url, "/api/v1/vc/confs/{conf_id}/mts");
         Map<String, String> args = new HashMap<>();
         args.put("conf_id", confId);
 
@@ -235,7 +237,7 @@ public class McuRestClientService {
         McuPostMsg mcuPostMsg = new McuPostMsg(accountToken);
         mcuPostMsg.setParams(joinConferenceMts);
         JoinConferenceResponse response = restClientService.exchange(url.toString(), HttpMethod.POST, mcuPostMsg.getMsg(), urlencodeMediaType, args, JoinConferenceResponse.class);
-        if (null == response){
+        if (null == response) {
             System.out.println("JoinConferenceResponse null!");
             return null;
         }
@@ -246,7 +248,7 @@ public class McuRestClientService {
             return response.getMts();
         } else {
             int errorCode = response.getError_code();
-            System.out.println("join conference failed! errcode : " + errorCode +", errMsg : " + McuStatus.resolve(errorCode).getDescription());
+            System.out.println("join conference failed! errcode : " + errorCode + ", errMsg : " + McuStatus.resolve(errorCode).getDescription());
         }
 
         return null;
@@ -262,7 +264,7 @@ public class McuRestClientService {
         }
 
         StringBuilder url = new StringBuilder();
-        constructUrl(url,"/api/v1/vc/confs/{conf_id}/mts");
+        constructUrl(url, "/api/v1/vc/confs/{conf_id}/mts");
         Map<String, String> args = new HashMap<>();
         args.put("conf_id", confId);
 
@@ -274,7 +276,7 @@ public class McuRestClientService {
         if (null == response)
             return McuStatus.Unknown;
 
-        if (!response.success()){
+        if (!response.success()) {
             System.out.println("left conference failed! errCode : " + response.getError_code());
         }
 
@@ -296,7 +298,7 @@ public class McuRestClientService {
 
         //开始选看 /api/v1/vc/confs/{conf_id}/inspections
         StringBuilder url = new StringBuilder();
-        constructUrl(url,"/api/v1/vc/confs/{conf_id}/inspections");
+        constructUrl(url, "/api/v1/vc/confs/{conf_id}/inspections");
         Map<String, String> args = new HashMap<>();
         args.put("conf_id", confId);
 
@@ -310,7 +312,7 @@ public class McuRestClientService {
         mcuInspectionParam.setDst(inspectionDstInfo);
 
         McuPostMsg mcuPostMsg = new McuPostMsg(accountToken);
-        if (mode.equals(InspectionModeEnum.ALL.getName()) || mode.equals(InspectionModeEnum.VIDEO.getName())){
+        if (mode.equals(InspectionModeEnum.ALL.getName()) || mode.equals(InspectionModeEnum.VIDEO.getName())) {
             mcuInspectionParam.setMode(InspectionModeEnum.VIDEO.getCode());
             mcuPostMsg.setParams(mcuInspectionParam);
             McuBaseResponse response = restClientService.exchange(url.toString(), HttpMethod.POST, mcuPostMsg.getMsg(), urlencodeMediaType, args, McuBaseResponse.class);
@@ -319,15 +321,15 @@ public class McuRestClientService {
                 return McuStatus.Unknown;
             }
 
-            if (!response.success()){
+            if (!response.success()) {
                 int errorCode = response.getError_code();
                 McuStatus mcuStatus = McuStatus.resolve(response.getError_code());
-                System.out.println("inspections, dstMtId("+dstMtId+") inspect srcMtId("+srcMtId+") video failed! errcode : " + errorCode +", errMsg : "+mcuStatus.getDescription());
+                System.out.println("inspections, dstMtId(" + dstMtId + ") inspect srcMtId(" + srcMtId + ") video failed! errcode : " + errorCode + ", errMsg : " + mcuStatus.getDescription());
                 return mcuStatus;
             }
         }
 
-        if (mode.equals(InspectionModeEnum.ALL.getName()) || mode.equals(InspectionModeEnum.AUDIO.getName())){
+        if (mode.equals(InspectionModeEnum.ALL.getName()) || mode.equals(InspectionModeEnum.AUDIO.getName())) {
             mcuInspectionParam.setMode(InspectionModeEnum.AUDIO.getCode());
             mcuPostMsg.setParams(mcuInspectionParam);
             McuBaseResponse response = restClientService.exchange(url.toString(), HttpMethod.POST, mcuPostMsg.getMsg(), urlencodeMediaType, args, McuBaseResponse.class);
@@ -335,10 +337,10 @@ public class McuRestClientService {
                 System.out.println("inspections, audio, null == response");
                 return McuStatus.Unknown;
             }
-            if (!response.success()){
+            if (!response.success()) {
                 int errorCode = response.getError_code();
                 McuStatus mcuStatus = McuStatus.resolve(response.getError_code());
-                System.out.println("inspections, dstMtId("+dstMtId+") inspect srcMtId("+srcMtId+") audio failed! errCode :"+errorCode+", errMsg:"+mcuStatus.getDescription());
+                System.out.println("inspections, dstMtId(" + dstMtId + ") inspect srcMtId(" + srcMtId + ") audio failed! errCode :" + errorCode + ", errMsg:" + mcuStatus.getDescription());
                 return mcuStatus;
             }
         }
@@ -353,34 +355,34 @@ public class McuRestClientService {
         }
         //url : /api/v1/vc/confs/{conf_id}/inspections/{mt_id}/{mode}
         StringBuilder url = new StringBuilder();
-        constructUrl(url,"/api/v1/vc/confs/{conf_id}/inspections/{mt_id}/{mode}");
+        constructUrl(url, "/api/v1/vc/confs/{conf_id}/inspections/{mt_id}/{mode}");
         Map<String, String> args = new HashMap<>();
         args.put("conf_id", confId);
         args.put("mt_id", mtId);
 
         McuPostMsg mcuPostMsg = new McuPostMsg(accountToken);
-        if(mode.equals(InspectionModeEnum.ALL.getName()) || mode.equals(InspectionModeEnum.VIDEO.getName())) {
+        if (mode.equals(InspectionModeEnum.ALL.getName()) || mode.equals(InspectionModeEnum.VIDEO.getName())) {
             args.put("mode", "1");
             McuBaseResponse response = restClientService.exchange(url.toString(), HttpMethod.DELETE, mcuPostMsg.getMsg(), urlencodeMediaType, args, McuBaseResponse.class);
             if (null == response) {
                 System.out.println("cancelInspection, video, null == response");
                 return McuStatus.Unknown;
             }
-            if (!response.success()){
-                System.out.println("cancelInspection, video, cancel inspection(" + "mtId:" + mtId + ",confId:" + confId +", mode: video) failed! errCode : " + response.getError_code());
+            if (!response.success()) {
+                System.out.println("cancelInspection, video, cancel inspection(" + "mtId:" + mtId + ",confId:" + confId + ", mode: video) failed! errCode : " + response.getError_code());
                 return McuStatus.resolve(response.getError_code());
             }
         }
 
-        if (mode.equals(InspectionModeEnum.ALL.getName()) || mode.equals(InspectionModeEnum.AUDIO.getName())){
+        if (mode.equals(InspectionModeEnum.ALL.getName()) || mode.equals(InspectionModeEnum.AUDIO.getName())) {
             args.put("mode", "2");
             McuBaseResponse response = restClientService.exchange(url.toString(), HttpMethod.DELETE, mcuPostMsg.getMsg(), urlencodeMediaType, args, McuBaseResponse.class);
-            if (null == response){
-				System.out.println("cancelInspection, audio, null == response");
+            if (null == response) {
+                System.out.println("cancelInspection, audio, null == response");
                 return McuStatus.Unknown;
-			}
-            if (!response.success()){
-                System.out.println("cancelInspection, audio, cancel inspection(" + "mtId:" + mtId + ",confId:" + confId +", mode: audio) failed! errCode : " + response.getError_code());
+            }
+            if (!response.success()) {
+                System.out.println("cancelInspection, audio, cancel inspection(" + "mtId:" + mtId + ",confId:" + confId + ", mode: audio) failed! errCode : " + response.getError_code());
                 return McuStatus.resolve(response.getError_code());
             }
         }
@@ -388,7 +390,7 @@ public class McuRestClientService {
         return McuStatus.OK;
     }
 
-    public String getDualStream(String confId){
+    public String getDualStream(String confId) {
         if (!loginSuccess) {
             System.out.println("getDualStream, has login out!!!");
             return null;
@@ -407,9 +409,9 @@ public class McuRestClientService {
             return null;
         }
 
-        if (!getDualStreamResponse.success()){
+        if (!getDualStreamResponse.success()) {
             int errorCode = getDualStreamResponse.getError_code();
-            System.out.println("getDualStream, failed! errcode:"+errorCode+",errmsg:"+ McuStatus.resolve(errorCode).getDescription());
+            System.out.println("getDualStream, failed! errcode:" + errorCode + ",errmsg:" + McuStatus.resolve(errorCode).getDescription());
             return null;
         }
 
@@ -434,9 +436,9 @@ public class McuRestClientService {
             return null;
         }
 
-        if (!getSpeakerResponse.success()){
+        if (!getSpeakerResponse.success()) {
             int errorCode = getSpeakerResponse.getError_code();
-            System.out.println("getSpeaker, failed! errcode:"+errorCode+",errmsg:"+ McuStatus.resolve(errorCode).getDescription());
+            System.out.println("getSpeaker, failed! errcode:" + errorCode + ",errmsg:" + McuStatus.resolve(errorCode).getDescription());
             return null;
         }
 
@@ -465,7 +467,7 @@ public class McuRestClientService {
         }
 
         if (!response.success()) {
-            System.out.println("setSpeaker, exchange put failed! errcode:"+response.getError_code());
+            System.out.println("setSpeaker, exchange put failed! errcode:" + response.getError_code());
             return McuStatus.resolve(response.getError_code());
         }
 
@@ -522,7 +524,7 @@ public class McuRestClientService {
         return McuStatus.resolve(response.getError_code());
     }
 
-    public McuStatus sendIFrame(String confId, TransportAddress transportAddress){
+    public McuStatus sendIFrame(String confId, TransportAddress transportAddress) {
         if (!loginSuccess) {
             System.out.println("sendIFrame, has login out!!!");
             return McuStatus.TimeOut;
@@ -550,7 +552,7 @@ public class McuRestClientService {
         return McuStatus.resolve(response.getError_code());
     }
 
-    public McuStatus ctrlVolume(String confId, String mtId, McuCtrlVolumeParam ctrlVolumeParam){
+    public McuStatus ctrlVolume(String confId, String mtId, McuCtrlVolumeParam ctrlVolumeParam) {
         if (!loginSuccess) {
             System.out.println("ctrlVolume, has login out!!!");
             return McuStatus.TimeOut;
@@ -576,7 +578,7 @@ public class McuRestClientService {
         return McuStatus.resolve(response.getError_code());
     }
 
-    public McuStatus silenceOrMute(String confId, String mtId, boolean silence, SilenceOrMuteParam silenceOrMuteParam){
+    public McuStatus silenceOrMute(String confId, String mtId, boolean silence, SilenceOrMuteParam silenceOrMuteParam) {
         if (!loginSuccess) {
             System.out.println("silenceOrMute, has login out!!!");
             return McuStatus.TimeOut;
@@ -608,7 +610,7 @@ public class McuRestClientService {
         return McuStatus.resolve(response.getError_code());
     }
 
-    public McuStatus ctrlDualStream(String confId, String mtId, boolean dual){
+    public McuStatus ctrlDualStream(String confId, String mtId, boolean dual) {
         if (!loginSuccess) {
             System.out.println("ctrlDualStream, has login out!!!");
             return McuStatus.TimeOut;
@@ -641,7 +643,7 @@ public class McuRestClientService {
         return McuStatus.resolve(response.getError_code());
     }
 
-    public McuStatus onlineMts(String confId, OnlineMtsInfo onlineMtsInfo){
+    public McuStatus onlineMts(String confId, OnlineMtsInfo onlineMtsInfo) {
         if (!loginSuccess) {
             System.out.println("onlineMts, has login out!!!");
             return McuStatus.TimeOut;
@@ -667,7 +669,7 @@ public class McuRestClientService {
         return McuStatus.resolve(response.getError_code());
     }
 
-    public Map<String, CascadeTerminalInfo> getCascadesTerminal(String confId, String cascadeId, boolean e164Key){
+    public Map<String, CascadeTerminalInfo> getCascadesTerminal(String confId, String cascadeId, boolean e164Key) {
         if (!loginSuccess) {
             System.out.println("getCascadesTerminal, has login out!!!");
             return null;
@@ -675,7 +677,7 @@ public class McuRestClientService {
 
         //URL为 /api/v1/vc/confs/{conf_id}/cascades/{cascade_id}/mts
         StringBuilder url = new StringBuilder();
-        constructUrl(url,"/api/v1/vc/confs/{conf_id}/cascades/{cascade_id}/mts?account_token={account_token}");
+        constructUrl(url, "/api/v1/vc/confs/{conf_id}/cascades/{cascade_id}/mts?account_token={account_token}");
         Map<String, String> args = new HashMap<>();
         args.put("conf_id", confId);
         args.put("cascade_id", cascadeId);
@@ -687,14 +689,14 @@ public class McuRestClientService {
             return null;
         }
 
-        if (!getCascadesMtResponse.success()){
+        if (!getCascadesMtResponse.success()) {
             int errorCode = getCascadesMtResponse.getError_code();
-            System.out.println("getCascadesTerminal failed! errCode :" + errorCode+", errMsg:"+McuStatus.resolve(errorCode).getDescription());
+            System.out.println("getCascadesTerminal failed! errCode :" + errorCode + ", errMsg:" + McuStatus.resolve(errorCode).getDescription());
             return null;
         }
 
         List<CascadeTerminalInfo> terminalInfos = getCascadesMtResponse.getMts();
-        if (null == terminalInfos || terminalInfos.isEmpty()){
+        if (null == terminalInfos || terminalInfos.isEmpty()) {
             System.out.println("GetCascadesMtResponse has no result!!");
             return null;
         }
@@ -714,7 +716,7 @@ public class McuRestClientService {
         return terminalInfoMap;
     }
 
-    public GetConfMtInfoResponse getConfMtInfo(String confId, String mtId){
+    public GetConfMtInfoResponse getConfMtInfo(String confId, String mtId) {
         if (!loginSuccess) {
             System.out.println("getCascadesTerminal, has login out!!!");
             return null;
@@ -722,7 +724,7 @@ public class McuRestClientService {
 
         //URL为 /api/v1/vc/confs/{conf_id}/mts/{mt_id}
         StringBuilder url = new StringBuilder();
-        constructUrl(url,"/api/v1/vc/confs/{conf_id}/mts/{mt_id}?account_token={account_token}");
+        constructUrl(url, "/api/v1/vc/confs/{conf_id}/mts/{mt_id}?account_token={account_token}");
         Map<String, String> args = new HashMap<>();
         args.put("conf_id", confId);
         args.put("mt_id", mtId);
@@ -734,9 +736,9 @@ public class McuRestClientService {
             return null;
         }
 
-        if (!getConfMtInfoResponse.success()){
+        if (!getConfMtInfoResponse.success()) {
             int errorCode = getConfMtInfoResponse.getError_code();
-            System.out.println("getConfMtInfo failed! errCode :" + errorCode+", errmsg:"+McuStatus.resolve(errorCode).getDescription());
+            System.out.println("getConfMtInfo failed! errCode :" + errorCode + ", errmsg:" + McuStatus.resolve(errorCode).getDescription());
             return null;
         }
 
@@ -744,30 +746,87 @@ public class McuRestClientService {
     }
 
     @Scheduled(initialDelay = heartbeatInterval, fixedRate = heartbeatInterval)
-    public void doHearbeat(){
+    public void doHearbeat() {
         if ("mcu".equals(baseSysConfig.getMcuMode())) {
             System.out.println("5.2mcu心跳机制");
-            System.out.println("McuRestClientService, start do heartbeat, current time : "+System.currentTimeMillis()+", threadName:"+Thread.currentThread().getName());
+            System.out.println("McuRestClientService, start do heartbeat, current time : " + System.currentTimeMillis() + ", threadName:" + Thread.currentThread().getName());
             //每25分钟执行一次心跳检测 /api/v1/system/heartbeat
             StringBuilder url = new StringBuilder();
             constructUrl(url, "/api/v1/system/heartbeat");
 
             McuPostMsg mcuPostMsg = new McuPostMsg(accountToken);
             ResponseEntity<McuBaseResponse> response = restClientService.postForEntity(url.toString(), mcuPostMsg.getMsg(), urlencodeMediaType, McuBaseResponse.class);
-            if (null == response || response.getStatusCode().is4xxClientError() || response.getStatusCode().is5xxServerError()){
+            if (null == response || response.getStatusCode().is4xxClientError() || response.getStatusCode().is5xxServerError()) {
                 //尝试重新登陆
                 loginSuccess = false;
                 while (true) {
                     boolean bOK = login();
-                    if (bOK){
+                    if (bOK) {
                         break;
                     }
 
                     try {
                         TimeUnit.SECONDS.sleep(1);
-                    } catch (InterruptedException e){
+                    } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
+                }
+            } else if (response.getStatusCode().is2xxSuccessful()) {
+                System.out.println("mcuSubscribeClientService.isHandShakeOk() : " + mcuSubscribeClientService.isHandShakeOk());
+                if (!mcuSubscribeClientService.isHandShakeOk()) {
+                    System.out.println("尝试重新登录");
+                    loginSuccess = false;
+                    while (true) {
+                        boolean bOK = login();
+                        if (bOK) {
+                           /* number = 0;
+                            Map<String, String> groups = terminalMediaSourceService.getGroups();
+                            //System.out.println("通过Map.entrySet遍历key和value");
+                            for (Map.Entry<String, String> group : groups.entrySet()) {
+                                //System.out.println("key= " + group.getKey() + " and value= " + group.getValue());
+                                McuStatus mcuStatus = endConference(group.getValue(), true);
+                                if (mcuStatus.getValue() == 0) {
+                                    GroupConfInfo groupConfInfo = confInterfaceService.getGroupConfInfo(group.getKey());
+                                    endConference(group.getValue(), false);
+                                    confInterfaceService.delGroupConfInfo(groupConfInfo);
+                                    groupConfInfo.cancelGroup();
+                                    terminalMediaSourceService.delGroup(group.getKey());
+                                    terminalMediaSourceService.delGroupMtMembers(group.getKey(), null);
+                                    terminalMediaSourceService.delGroupVmtMembers(group.getKey(), null);
+                                    terminalMediaSourceService.delBroadcastSrcInfo(group.getKey());*/
+                            Map<String, P2PCallGroup> p2pCallGroupMap = ConfInterfaceService.p2pCallGroupMap;
+                            if (null != p2pCallGroupMap) {
+                                for (Map.Entry<String, P2PCallGroup> entry : p2pCallGroupMap.entrySet()) {
+                                    System.out.println("key= " + entry.getKey() + " and value= " + entry.getValue());
+                                    for (Map.Entry<String, TerminalService> entrys : entry.getValue().getCallMap().entrySet()) {
+                                        System.out.println("entrys.getKey() " + entrys.getKey());
+                                        entry.getValue().removeCallMember(entrys.getKey());
+                                        if ("mediaSchedule".equals(baseSysConfig.getPushServiceType())) {
+                                            TerminalStatusNotify terminalStatusNotify = new TerminalStatusNotify();
+                                            TerminalStatus terminalStatus = new TerminalStatus(entrys.getKey(), "MT", 0);
+                                            terminalStatusNotify.addMtStatus(terminalStatus);
+                                            confInterfacePublishService.publishMessage(SubscribeMsgTypeEnum.TERMINAL_STATUS, entry.getKey(), terminalStatusNotify);
+                                        } else {
+                                            UnifiedDevicePushTerminalStatus unifiedDevicePushTerminalStatus = new UnifiedDevicePushTerminalStatus(entrys.getKey(), entry.getKey(), TerminalOnlineStatusEnum.OFFLINE.getCode());
+                                            unifiedDevicePushService.publishMtStatus(unifiedDevicePushTerminalStatus);
+                                        }
+
+                                    }
+                                }
+                            }
+                            System.out.println("结会成功 confId : ");
+                        } else {
+                            System.out.println("结会失败 confId : " );
+                        }
+                        break;
+                    }
+
+                }
+
+                try {
+                    TimeUnit.SECONDS.sleep(1);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
             }
         }
@@ -795,7 +854,7 @@ public class McuRestClientService {
         System.out.println("url : " + url.toString());
     }
 
-    public void subscribeConfInfo(String confId){
+    public void subscribeConfInfo(String confId) {
         StringBuilder subscribeChannel = new StringBuilder();
         subscribeChannel.append("/confs/");
         subscribeChannel.append(confId);
@@ -890,7 +949,7 @@ public class McuRestClientService {
         confSubcribeChannelMap.put(confId, subscribeChannelList);
     }
 
-    public void subscribeDual(String confId){
+    public void subscribeDual(String confId) {
         //会议双流源通道/confs/{conf_id}/dualstream
         StringBuilder subscribeChannel = new StringBuilder();
         subscribeChannel.delete(0, subscribeChannel.length());
@@ -930,11 +989,19 @@ public class McuRestClientService {
     private final MediaType urlencodeMediaType = MediaType.APPLICATION_FORM_URLENCODED;
     private String accountToken;
     private List<String> cookies;
-    private final long heartbeatInterval = 25 * 60 * 1000L;
-    private volatile boolean loginSuccess;
+    //private final long heartbeatInterval = 25 * 60 * 1000L;
+    private final long heartbeatInterval = 1 * 60 * 1000L;
+    //private volatile boolean loginSuccess;
+    public volatile boolean loginSuccess;
     private Map<String, List<String>> confSubcribeChannelMap;
     private static String activeProf = "dev";
 
     @Autowired
     private BaseSysConfig baseSysConfig;
+
+    @Autowired
+    private ConfInterfacePublishService confInterfacePublishService;
+
+    @Autowired
+    private UnifiedDevicePushService unifiedDevicePushService;
 }

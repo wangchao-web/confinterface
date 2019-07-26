@@ -5,14 +5,13 @@ import com.kedacom.confadapter.IConferenceEventHandler;
 import com.kedacom.confadapter.common.ConferenceInfo;
 import com.kedacom.confadapter.common.ConferencePresentParticipant;
 import com.kedacom.confadapter.media.MediaDescription;
+import com.kedacom.confinterface.LogService.LogOutputTypeEnum;
+import com.kedacom.confinterface.LogService.LogTools;
 import com.kedacom.confinterface.dao.InspectionSrcParam;
 import com.kedacom.confinterface.dto.*;
-import com.kedacom.confinterface.inner.DetailMediaResouce;
-import com.kedacom.confinterface.inner.InspectedParam;
+import com.kedacom.confinterface.inner.*;
 import com.kedacom.confinterface.restclient.mcu.InspectionStatusEnum;
-import com.kedacom.confinterface.service.TerminalManageService;
-import com.kedacom.confinterface.service.TerminalMediaSourceService;
-import com.kedacom.confinterface.service.TerminalService;
+import com.kedacom.confinterface.service.*;
 import com.kedacom.confinterface.util.ConfInterfaceResult;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -88,6 +87,7 @@ public class H323TerminalManageService extends TerminalManageService implements 
     public void StartUp() {
         //如果需要注册GK，则在此处完成所有虚拟终端的注册
         if (!protocalConfig.isUseGK()) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"[H323VmtManageService] no need register gk");
             System.out.println("[H323VmtManageService] no need register gk");
             return;
         }
@@ -111,6 +111,7 @@ public class H323TerminalManageService extends TerminalManageService implements 
 
         List<Future<Boolean>> futureList = RegisterGkHandler.getFutureList();
         while (true) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"futureList size : " + futureList.size() + ", freeVmt : " + registerGkTerminalNum);
             System.out.println("futureList size : " + futureList.size() + ", freeVmt : " + registerGkTerminalNum);
             if (futureList.size() == registerGkTerminalNum)
                 break;
@@ -121,16 +122,18 @@ public class H323TerminalManageService extends TerminalManageService implements 
 
             }
         }
-
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"[H323VmtManageService] finished start up, time : " + System.currentTimeMillis());
         System.out.println("[H323VmtManageService] finished start up, time : " + System.currentTimeMillis());
     }
 
     @Override
     @Async("confTaskExecutor")
     public void OnInvited(String participantid, ConferenceInfo conferenceInfo) {
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"OnInvited, participantid : " + participantid + ", confId : " + conferenceInfo.getId() + ", threadName:" + Thread.currentThread().getName());
         System.out.println("OnInvited, participantid : " + participantid + ", confId : " + conferenceInfo.getId() + ", threadName:" + Thread.currentThread().getName());
         TerminalService terminalService = usedVmtServiceMap.get(participantid);
         if (null == terminalService) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"OnInvited, not found participant!!");
             System.out.println("OnInvited, not found participant!!");
             return;
         }
@@ -144,6 +147,8 @@ public class H323TerminalManageService extends TerminalManageService implements 
     @Override
     @Async("confTaskExecutor")
     public void OnParticipantJoined(String participantid, ConferencePresentParticipant conferencePresentParticipant) {
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"OnParticipantJoined, terminal: " + conferencePresentParticipant.getId() + "join conference! confId : "
+                + conferencePresentParticipant.getConf().getId() + ", threadName:" + Thread.currentThread().getName());
         System.out.println("OnParticipantJoined, terminal: " + conferencePresentParticipant.getId() + "join conference! confId : "
                 + conferencePresentParticipant.getConf().getId() + ", threadName:" + Thread.currentThread().getName());
     }
@@ -151,12 +156,15 @@ public class H323TerminalManageService extends TerminalManageService implements 
     @Override
     @Async("confTaskExecutor")
     public void OnParticipantLeft(String participantid, ConferencePresentParticipant conferencePresentParticipant) {
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"OnParticipantLeft, terminal: " + conferencePresentParticipant.getId() + "left conference! confId: "
+                + conferencePresentParticipant.getConf().getId() + ", threadName:" + Thread.currentThread().getName());
         System.out.println("OnParticipantLeft, terminal: " + conferencePresentParticipant.getId() + "left conference! confId: "
                 + conferencePresentParticipant.getConf().getId() + ", threadName:" + Thread.currentThread().getName());
         /*如果下线的是虚拟终端,则不需要额外的处理,因为虚拟终端不会选看或者被其他虚拟终端选看*/
         String offlineMtE164 = conferencePresentParticipant.getId();
         TerminalService offlineTerminal = findVmt(offlineMtE164);
         if (null != offlineTerminal) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"OnParticipantLeft, offline terminal is vmt!!");
             System.out.println("OnParticipantLeft, offline terminal is vmt!!");
             return;
         }
@@ -166,6 +174,7 @@ public class H323TerminalManageService extends TerminalManageService implements 
             //判断选看的是否是下线的终端，如果是，则需要将选看状态清除
             InspectionSrcParam inspectionParam = terminalService.getInspectionParam();
             if (inspectionParam.getMtE164().equals(offlineMtE164)) {
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"OnParticipantLeft, inspection left terminal! dstMt:" + participantid);
                 System.out.println("OnParticipantLeft, inspection left terminal! dstMt:" + participantid);
                 terminalService.setInspectionStatus(InspectionStatusEnum.UNKNOWN);
                 terminalService.setInspectAudioStatus(InspectionStatusEnum.UNKNOWN.getCode());
@@ -189,15 +198,40 @@ public class H323TerminalManageService extends TerminalManageService implements 
     @Override
     @Async("confTaskExecutor")
     public void OnKickedOff(String participantid) {
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"OnKickedOff, terminal: " + participantid + " is kicked off conference, threadName: " + Thread.currentThread().getName());
         System.out.println("OnKickedOff, terminal: " + participantid + " is kicked off conference, threadName: " + Thread.currentThread().getName());
         H323TerminalService terminalService = (H323TerminalService) usedVmtServiceMap.get(participantid);
         if (null == terminalService) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"OnKickedOff, not found terminal!");
             System.out.println("OnKickedOff, not found terminal!");
             return;
         }
 
         usedVmtServiceMap.remove(participantid);
         freeVmtServiceMap.put(participantid, terminalService);
+        Map<String, P2PCallGroup> p2pCallGroupMap = ConfInterfaceService.p2pCallGroupMap;
+        if(null != p2pCallGroupMap){
+             for (Map.Entry<String, P2PCallGroup> entry : p2pCallGroupMap.entrySet()) {
+                 for(Map.Entry<String, TerminalService> entrys : entry.getValue().getCallMap().entrySet()){
+                     if(entrys.getValue() == terminalService){
+                         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"entrys.getKey() "+entrys.getKey());
+                         System.out.println("entrys.getKey() "+entrys.getKey());
+                         entry.getValue().removeCallMember(entrys.getKey());
+                         if ("mediaSchedule".equals(protocalConfig.getBaseSysConfig().getPushServiceType())) {
+                             TerminalStatusNotify terminalStatusNotify = new TerminalStatusNotify();
+                             TerminalStatus terminalStatus = new TerminalStatus(entrys.getKey(), "MT", 0);
+                             terminalStatusNotify.addMtStatus(terminalStatus);
+                             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"terminalService.getE164() "+terminalService.getE164()+ ",terminalService.getGroupId() : "+terminalService.getGroupId());
+                             System.out.println("terminalService.getE164() "+terminalService.getE164()+ ",terminalService.getGroupId() : "+terminalService.getGroupId());
+                             confInterfacePublishService.publishMessage(SubscribeMsgTypeEnum.TERMINAL_STATUS, terminalService.getGroupId(), terminalStatusNotify);
+                         } else {
+                             UnifiedDevicePushTerminalStatus unifiedDevicePushTerminalStatus = new UnifiedDevicePushTerminalStatus(entrys.getKey(), terminalService.getGroupId(), TerminalOnlineStatusEnum.OFFLINE.getCode());
+                             unifiedDevicePushService.publishMtStatus(unifiedDevicePushTerminalStatus);
+                         }
+                     }
+                 }
+            }
+        }
 
         //释放该虚拟终端的所有交换资源
         synchronized (terminalService) {
@@ -215,15 +249,18 @@ public class H323TerminalManageService extends TerminalManageService implements 
     @Override
     @Async("confTaskExecutor")
     public void OnLocalMediaRequested(String participantid, Vector<MediaDescription> mediaDescriptions) {
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"OnLocalMediaRequested, request terminal: " + participantid + " local media! threadName:" + Thread.currentThread().getName());
         System.out.println("OnLocalMediaRequested, request terminal: " + participantid + " local media! threadName:" + Thread.currentThread().getName());
         H323TerminalService terminalService = (H323TerminalService) usedVmtServiceMap.get(participantid);
         if (null == terminalService) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"OnLocalMediaRequested, not found terminal : " + participantid);
             System.out.println("OnLocalMediaRequested, not found terminal : " + participantid);
             return;
         }
 
         boolean bOK = terminalService.onOpenLogicalChannel(mediaDescriptions);
         if (!bOK) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"OnLocalMediaRequested, onOpenLogicalChannel failed! participantid :" + participantid);
             System.out.println("OnLocalMediaRequested, onOpenLogicalChannel failed! participantid :" + participantid);
         }
 
@@ -235,32 +272,39 @@ public class H323TerminalManageService extends TerminalManageService implements 
             boolean bNeedUpdate = false;
             if (null == oldTerminalMediaResource) {
                 bNeedUpdate = true;
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"OnLocalMediaRequested, null == oldTerminalMediaResource, need update! E164:" + participantid + ", forwardResources:" + forwardResources + ", reverseResources:" + reverseResources);
                 System.out.println("OnLocalMediaRequested, null == oldTerminalMediaResource, need update! E164:" + participantid + ", forwardResources:" + forwardResources + ", reverseResources:" + reverseResources);
             } else {
                 List<MediaResource> oldForwardResources = oldTerminalMediaResource.getForwardResources();
                 if (null == oldForwardResources || oldForwardResources.size() != forwardResources.size()) {
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"OnLocalMediaRequested, 1. forward resource need update! " + "E164:" + participantid + ", oldResources:" + oldForwardResources + ", newResource:" + forwardResources);
                     System.out.println("OnLocalMediaRequested, 1. forward resource need update! " + "E164:" + participantid + ", oldResources:" + oldForwardResources + ", newResource:" + forwardResources);
                     bNeedUpdate = true;
                 } else {
                     oldForwardResources.removeAll(forwardResources);
                     if (!oldForwardResources.isEmpty()) {
+                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"OnLocalMediaRequested, 2. forward resource need update! " + "E164:" + participantid + ", oldResources:" + oldForwardResources + ", newResource:" + forwardResources);
                         System.out.println("OnLocalMediaRequested, 2. forward resource need update! " + "E164:" + participantid + ", oldResources:" + oldForwardResources + ", newResource:" + forwardResources);
                         bNeedUpdate = true;
                     } else {
+                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"OnLocalMediaRequested, forward resource no need update! " + "E164:" + participantid + ", Resources:" + forwardResources);
                         System.out.println("OnLocalMediaRequested, forward resource no need update! " + "E164:" + participantid + ", Resources:" + forwardResources);
                     }
                 }
 
                 List<MediaResource> oldReverseResources = oldTerminalMediaResource.getReverseResources();
                 if (null == oldReverseResources || oldReverseResources.size() != reverseResources.size()) {
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"OnLocalMediaRequested, 1. reverse resource need update! " + "E164:" + participantid + ", oldResources:" + oldReverseResources + ", newResource:" + reverseResources);
                     System.out.println("OnLocalMediaRequested, 1. reverse resource need update! " + "E164:" + participantid + ", oldResources:" + oldReverseResources + ", newResource:" + reverseResources);
                     bNeedUpdate = true;
                 } else {
                     oldReverseResources.removeAll(reverseResources);
                     if (!oldReverseResources.isEmpty()) {
+                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"OnLocalMediaRequested, 2. reverse resource need update! " + "E164:" + participantid + ", oldResources:" + oldReverseResources + ", newResource:" + reverseResources);
                         System.out.println("OnLocalMediaRequested, 2. reverse resource need update! " + "E164:" + participantid + ", oldResources:" + oldReverseResources + ", newResource:" + reverseResources);
                         bNeedUpdate = true;
                     } else {
+                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"OnLocalMediaRequested, reverse resource no need update! " + "E164:" + participantid + ", Resources:" + oldReverseResources);
                         System.out.println("OnLocalMediaRequested, reverse resource no need update! " + "E164:" + participantid + ", Resources:" + oldReverseResources);
                     }
                 }
@@ -280,14 +324,17 @@ public class H323TerminalManageService extends TerminalManageService implements 
     @Async("confTaskExecutor")
     public void OnRemoteMediaReponsed(String participantid, Vector<MediaDescription> mediaDescriptions) {
         //该接口只有在使用H323协议时会用到
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"OnRemoteMediaReponsed, request terminal: " + participantid + " local media! threadName:" + Thread.currentThread().getName());
         System.out.println("OnRemoteMediaReponsed, request terminal: " + participantid + " local media! threadName:" + Thread.currentThread().getName());
         H323TerminalService terminalService = (H323TerminalService) usedVmtServiceMap.get(participantid);
         if (null == terminalService) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"OnRemoteMediaReponsed， not found terminal : " + participantid);
             System.out.println("OnRemoteMediaReponsed， not found terminal : " + participantid);
             return;
         }
 
         boolean bOk = terminalService.updateExchange(mediaDescriptions);
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"bOk : " + bOk);
         System.out.println("bOk : " + bOk);
         if (bOk) {
             if (!mediaDescriptions.get(0).getDual()) {
@@ -316,9 +363,11 @@ public class H323TerminalManageService extends TerminalManageService implements 
     @Override
     @Async("confTaskExecutor")
     public void OnMediaCleaned(String participantid, Vector<MediaDescription> mediaDescriptions) {
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"OnMediaCleaned, terminal: " + participantid + ", media cleaned, threadName: " + Thread.currentThread().getName());
         System.out.println("OnMediaCleaned, terminal: " + participantid + ", media cleaned, threadName: " + Thread.currentThread().getName());
         H323TerminalService terminalService = (H323TerminalService) usedVmtServiceMap.get(participantid);
         if (null == terminalService) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"OnMediaCleaned, not found terminal!");
             System.out.println("OnMediaCleaned, not found terminal!");
             return;
         }
@@ -333,7 +382,7 @@ public class H323TerminalManageService extends TerminalManageService implements 
                 if (mediaResouce.getStreamIndex() != mediaDescription.getStreamIndex()) {
                     continue;
                 }
-
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"OnMediaCleaned, type:" + mediaResouce.getType() + ", resourceId:" + mediaResouce.getId() + ", streamIndex:" + mediaDescription.getStreamIndex());
                 System.out.println("OnMediaCleaned, type:" + mediaResouce.getType() + ", resourceId:" + mediaResouce.getId() + ", streamIndex:" + mediaDescription.getStreamIndex());
                 resourceIds.add(mediaResouce.getId());
                 break;
@@ -405,6 +454,7 @@ public class H323TerminalManageService extends TerminalManageService implements 
             if (detailMediaResouce.getStreamIndex() != dualStreamIndex)
                 continue;
 
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"OnRemoteMediaReponsed, dual streamIndex:" + dualStreamIndex);
             System.out.println("OnRemoteMediaReponsed, dual streamIndex:" + dualStreamIndex);
             mediaResource.setType(detailMediaResouce.getType());
             mediaResource.setDual(true);
@@ -457,8 +507,10 @@ public class H323TerminalManageService extends TerminalManageService implements 
 
         boolean bOk = terminalService.closeDualStreamChannel();
         if (bOk) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"DualStreamRequestFail, closeDualStreamChannel OK!");
             System.out.println("DualStreamRequestFail, closeDualStreamChannel OK!");
         } else {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"DualStreamRequestFail, closeDualStreamChannel failed!");
             System.out.println("DualStreamRequestFail, closeDualStreamChannel failed!");
         }
     }
@@ -479,8 +531,10 @@ public class H323TerminalManageService extends TerminalManageService implements 
             mediaResource.setType(detailMediaResouce.getType());
             mediaResource.setDual(detailMediaResouce.getDual() == 1);
             mediaResource.setId(detailMediaResouce.getId());
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"mediaResource :" + mediaResource.getId());
             System.out.println("mediaResource :" + mediaResource.getId());
             p2PCallRequest.addForwardResource(mediaResource);
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"添加正向资源");
             System.out.println("添加正向资源");
             p2PCallRequest.removeMsg(P2PCallRequest.class.getName());
             break;
@@ -516,4 +570,11 @@ public class H323TerminalManageService extends TerminalManageService implements 
 
     @Autowired
     private TerminalMediaSourceService terminalMediaSourceService;
+
+    @Autowired
+    private ConfInterfacePublishService confInterfacePublishService;
+
+    @Autowired
+    private UnifiedDevicePushService unifiedDevicePushService;
+
 }

@@ -1,5 +1,7 @@
 package com.kedacom.confinterface.dto;
 
+import com.kedacom.confinterface.LogService.LogOutputTypeEnum;
+import com.kedacom.confinterface.LogService.LogTools;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.context.request.async.DeferredResult;
@@ -48,12 +50,18 @@ public abstract class BaseRequestMsg<T> {
     }
 
     public void removeMsg(String msg) {
-        if (null == waitMsg)
-            return;
-        waitMsg.remove(msg);
+        synchronized (this) {
+            if (null == waitMsg) {
+                return;
+            }
+            waitMsg.remove(msg);
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"正在移除removeMsg");
+            System.out.println("正在移除removeMsg");
+        }
     }
 
     public abstract void makeErrorResponseMsg(int code, HttpStatus status, String message);
+
     public abstract void makeSuccessResponseMsg();
 
     protected String groupId;

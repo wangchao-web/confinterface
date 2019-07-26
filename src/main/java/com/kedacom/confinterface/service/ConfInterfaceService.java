@@ -6,9 +6,11 @@ import com.kedacom.confinterface.dto.*;
 import com.kedacom.confinterface.inner.*;
 import com.kedacom.confinterface.restclient.McuRestClientService;
 import com.kedacom.confinterface.restclient.mcu.*;
+import com.kedacom.confinterface.syssetting.BaseSysConfig;
 import com.kedacom.confinterface.util.ConfInterfaceResult;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Scope;
 import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -27,11 +29,11 @@ public class ConfInterfaceService {
         return terminalMediaSourceService.getVmtList();
     }
 
-    public List<String> addVmt(String e164){
+    public List<String> addVmt(String e164) {
         return terminalMediaSourceService.addVmt(e164);
     }
 
-    public List<String> delVmt(String e164){
+    public List<String> delVmt(String e164) {
         return terminalMediaSourceService.delVmt(e164);
     }
 
@@ -39,27 +41,27 @@ public class ConfInterfaceService {
         return terminalMediaSourceService.getGroups();
     }
 
-    public List<Terminal> getGroupMtMembers(String groupId){
+    public List<Terminal> getGroupMtMembers(String groupId) {
         return terminalMediaSourceService.getGroupMtMembers(groupId);
     }
 
-    public List<Terminal> delGroupMtMember(String groupId, Terminal mtTerminal){
+    public List<Terminal> delGroupMtMember(String groupId, Terminal mtTerminal) {
         return terminalMediaSourceService.delGroupMtMember(groupId, mtTerminal);
     }
 
-    public List<Terminal> getGroupVmtMembers(String groupId){
+    public List<Terminal> getGroupVmtMembers(String groupId) {
         return terminalMediaSourceService.getGroupVmtMembers(groupId);
     }
 
-    public InspectionSrcParam getGroupInspectionParam(String e164){
+    public InspectionSrcParam getGroupInspectionParam(String e164) {
         return terminalMediaSourceService.getGroupInspectionParam(e164);
     }
 
-    public InspectionSrcParam addGroupInspectionParam(String e164, InspectionSrcParam inspectionParam){
+    public InspectionSrcParam addGroupInspectionParam(String e164, InspectionSrcParam inspectionParam) {
         return terminalMediaSourceService.addGroupInspectionParam(e164, inspectionParam);
     }
 
-    public InspectionSrcParam delGroupInspectionParam(String e164){
+    public InspectionSrcParam delGroupInspectionParam(String e164) {
         return terminalMediaSourceService.delGroupInspectionParam(e164);
     }
 
@@ -67,29 +69,38 @@ public class ConfInterfaceService {
         return terminalMediaSourceService.getTerminalMediaResources(groupId);
     }
 
-    public TerminalMediaResource getTerminalMediaResource(String mtE164){
+    public TerminalMediaResource getTerminalMediaResource(String mtE164) {
         return terminalMediaSourceService.getTerminalMediaResource(mtE164);
     }
 
-    public BroadcastSrcMediaInfo getBroadcastSrc(String groupId){
+    public BroadcastSrcMediaInfo getBroadcastSrc(String groupId) {
         return terminalMediaSourceService.getBroadcastSrcInfo(groupId);
     }
 
-    public String getGroupId(String confId){
+    public String getGroupId(String confId) {
         return confGroupMap.get(confId);
     }
-    public void addGroupConfInfo(GroupConfInfo groupConfInfo){
+
+    public void addGroupConfInfo(GroupConfInfo groupConfInfo) {
         confGroupMap.put(groupConfInfo.getConfId(), groupConfInfo.getGroupId());
         groupConfInfoMap.put(groupConfInfo.getGroupId(), groupConfInfo);
     }
 
-    public void delGroupConfInfo(GroupConfInfo groupConfInfo){
+    public void delGroupConfInfo(GroupConfInfo groupConfInfo) {
         confGroupMap.remove(groupConfInfo.getConfId());
         groupConfInfoMap.remove(groupConfInfo.getGroupId());
     }
 
-    public GroupConfInfo getGroupConfInfo(String groupId){
+    public GroupConfInfo getGroupConfInfo(String groupId) {
         return groupConfInfoMap.get(groupId);
+    }
+
+    public Map<String, P2PCallGroup> getP2pCallGroupMap() {
+        return p2pCallGroupMap;
+    }
+
+    public void setP2pCallGroupMap(Map<String, P2PCallGroup> p2pCallGroupMap) {
+        this.p2pCallGroupMap = p2pCallGroupMap;
     }
 
     @Async("confTaskExecutor")
@@ -103,7 +114,7 @@ public class ConfInterfaceService {
         int joinConfVmtNum = 0;
         String confId = null;
 
-        if (null == groupConfInfo){
+        if (null == groupConfInfo) {
             groupConfInfo = new GroupConfInfo(joinConferenceRequest.getGroupId(), null);
             confId = mcuRestClientService.createConference();
             if (null == confId) {
@@ -125,7 +136,7 @@ public class ConfInterfaceService {
             confId = groupConfInfo.getConfId();
             int vmtNum = groupConfInfo.getVmtMemberNum();
             int mtNumTotal = groupConfInfo.getMtMemberNum() + mtNum;
-            System.out.println("joinConference, vmtNum:"+vmtNum+", mtNumTotal:"+mtNumTotal);
+            System.out.println("joinConference, vmtNum:" + vmtNum + ", mtNumTotal:" + mtNumTotal);
             if (vmtNum < mtNumTotal + 1) {
                 if (vmtNum < maxVmtNum) {
                     joinConfVmtNum = (maxVmtNum - vmtNum) > mtNum ? mtNum : (maxVmtNum - vmtNum);
@@ -137,7 +148,7 @@ public class ConfInterfaceService {
         if (joinConfVmtNum > 0) {
             System.out.println("joinConfVmtNum : " + joinConfVmtNum + ", bSetBroadcast :" + bSetBroadcast);
             List<TerminalService> terminalServices = terminalManageService.getFreeVmts(joinConfVmtNum);
-            if (null == terminalServices){
+            if (null == terminalServices) {
                 //todo:遍历目前所有的group，将空闲的vmt进行退会
                 if (endConf) {
                     mcuRestClientService.endConference(confId, true);
@@ -156,7 +167,7 @@ public class ConfInterfaceService {
             }
 
             //设置广播源VMT
-            if (bSetBroadcast){
+            if (bSetBroadcast) {
                 groupConfInfo.setBroadcastVmtService(null);
             }
 
@@ -186,7 +197,7 @@ public class ConfInterfaceService {
 
         List<JoinConferenceRspMtInfo> terminals = mcuRestClientService.joinConference(confId, joinConfMts);
         if (null != terminals) {
-            System.out.println("mt join conference OK, joinConfVmtNum:"+joinConfVmtNum);
+            System.out.println("mt join conference OK, joinConfVmtNum:" + joinConfVmtNum);
             if (joinConfVmtNum > 0) {
                 //说明本次有新的vmt被选定入会,需要写入数据库
                 System.out.println("start addGroupVmtMembers.............");
@@ -212,7 +223,7 @@ public class ConfInterfaceService {
             groupConfInfo.delMtMember(terminal.getMtE164());
         }
 
-        if (joinConfVmtNum > 0){
+        if (joinConfVmtNum > 0) {
             //如果入会失败，需要将vmt变为空闲状态
             groupConfInfo.delVmtMembers(joinConfVmts);
             terminalManageService.freeVmts(joinConfVmts);
@@ -231,7 +242,7 @@ public class ConfInterfaceService {
     public void leftConference(LeftConferenceRequest leftConferenceRequest) {
         String groupId = leftConferenceRequest.getGroupId();
         GroupConfInfo groupConfInfo = groupConfInfoMap.get(groupId);
-        if (null == groupConfInfo){
+        if (null == groupConfInfo) {
             System.out.println("leftConference, not found groupId : " + leftConferenceRequest.getGroupId());
             leftConferenceRequest.makeErrorResponseMsg(ConfInterfaceResult.GROUP_NOT_EXIST.getCode(), HttpStatus.OK, ConfInterfaceResult.GROUP_NOT_EXIST.getMessage());
             return;
@@ -255,7 +266,7 @@ public class ConfInterfaceService {
         if (mcuStatus.getValue() == 0) {
             leftConferenceRequest.makeSuccessResponseMsg();
             terminalMediaSourceService.delGroupMtMembers(groupId, terminals);
-            for (Terminal terminal : terminals){
+            for (Terminal terminal : terminals) {
                 terminalMediaSourceService.delGroupInspectionParam(terminal.getMtE164());
                 groupConfInfo.delMtMember(terminal.getMtE164());
             }
@@ -274,7 +285,7 @@ public class ConfInterfaceService {
             }
             */
         } else {
-            System.out.println("left conference failed, confId:"+groupConfInfo.getConfId()+", groupId:"+groupId);
+            System.out.println("left conference failed, confId:" + groupConfInfo.getConfId() + ", groupId:" + groupId);
             leftConferenceRequest.makeErrorResponseMsg(ConfInterfaceResult.LEFT_CONFERENCE.getCode(), HttpStatus.OK, mcuStatus.getDescription());
         }
     }
@@ -297,13 +308,13 @@ public class ConfInterfaceService {
             boolean theSameOne = false;
             if (isTerminal && groupConfInfo.isTerminalType() && broadcastE164.equals(groupConfInfo.getBroadcastMtE164())) {
                 theSameOne = true;
-            } else if (!isTerminal && !groupConfInfo.isTerminalType()){
+            } else if (!isTerminal && !groupConfInfo.isTerminalType()) {
                 theSameOne = true;
                 broadcastE164 = broadcastVmtService.getE164();
             }
 
             if (theSameOne) {
-                System.out.println("setBroadcastSrc, terminal:"+broadcastE164+",type:"+groupConfInfo.getBroadcastType()+", group exist the same broadcast src!");
+                System.out.println("setBroadcastSrc, terminal:" + broadcastE164 + ",type:" + groupConfInfo.getBroadcastType() + ", group exist the same broadcast src!");
                 broadCastRequest.setForwardResources(TerminalMediaResource.convertToMediaResource(broadcastVmtService.getForwardChannel(), "all"));
                 broadCastRequest.setReverseResources(TerminalMediaResource.convertToMediaResource(broadcastVmtService.getReverseChannel(), "all"));
                 broadCastRequest.makeSuccessResponseMsg();
@@ -324,7 +335,7 @@ public class ConfInterfaceService {
         groupConfInfo.addWaitDealTask(channel, broadCastRequest);
 
         McuStatus mcuStatus = mcuRestClientService.setSpeaker(groupConfInfo.getConfId(), broadcastMtId);
-        if (mcuStatus.getValue() == 0){
+        if (mcuStatus.getValue() == 0) {
             groupConfInfo.setBroadcastType(broadCastRequest.getBroadCastParam().getType());
             groupConfInfo.setBroadcastMtE164(broadCastRequest.getBroadCastParam().getMtE164());
             return;
@@ -371,12 +382,12 @@ public class ConfInterfaceService {
 
         boolean bOk = false;
         List<Terminal> joinDiscussionMts = joinDiscussionGroupRequest.getMts();
-        System.out.println("joinDiscussionGroup, join discussion mts :"+joinDiscussionMts.size());
+        System.out.println("joinDiscussionGroup, join discussion mts :" + joinDiscussionMts.size());
         for (Terminal terminal : joinDiscussionMts) {
             bOk |= joinDiscusssion(groupConfInfo, terminal, joinDiscussionGroupRequest);
         }
 
-        if (!bOk){
+        if (!bOk) {
             //如果失败，则表明加入讨论组均失败,直接回复失败
             joinDiscussionGroupRequest.makeErrorResponseMsg(ConfInterfaceResult.INSPECTION.getCode(), HttpStatus.OK, ConfInterfaceResult.INSPECTION.getMessage());
         }
@@ -393,7 +404,7 @@ public class ConfInterfaceService {
 
         String confId = groupConfInfo.getConfId();
         List<LeftDiscussionGroupMt> leftDiscussionMts = leftDiscussionGroupRequest.getMts();
-        if (null == leftDiscussionMts || leftDiscussionMts.isEmpty()){
+        if (null == leftDiscussionMts || leftDiscussionMts.isEmpty()) {
             leftDiscussionGroupRequest.makeSuccessResponseMsg();
             return;
         }
@@ -406,7 +417,7 @@ public class ConfInterfaceService {
             LeftDiscussionGroupMt leftDiscussionGroupMt = leftDiscussinMtIterator.next();
 
             TerminalService mtService = groupConfInfo.getMtMember(leftDiscussionGroupMt.getMtE164());
-            if (mtService.getInspectionParam() == null){
+            if (mtService.getInspectionParam() == null) {
                 leftDiscussinMtIterator.remove();
                 continue;
             }
@@ -421,7 +432,7 @@ public class ConfInterfaceService {
             groupConfInfo.addWaitDealTask(audioChannel, leftDiscussionGroupRequest);
 
             McuStatus mcuStatus = mcuRestClientService.cancelInspection(confId, InspectionModeEnum.ALL.getName(), mtService.getMtId());
-            if (mcuStatus.getValue() == 0 ) {
+            if (mcuStatus.getValue() == 0) {
                 //只要会议终端成功取消选看，则认为退出讨论成功，从列表中移除
                 TerminalService vmtService = groupConfInfo.getSrcInspectionTerminal(mtService);
                 if (leftDiscussionGroupMt.isStopInspection()) {
@@ -441,7 +452,7 @@ public class ConfInterfaceService {
                 leftDiscussinMtIterator.remove();
             }
 
-            if (mcuStatus.getValue() > 0){
+            if (mcuStatus.getValue() > 0) {
                 //其中一个终端退出失败,继续处理其他终端
                 groupConfInfo.delWaitDealTask(videochannel);
                 groupConfInfo.delWaitDealTask(audioChannel);
@@ -450,7 +461,7 @@ public class ConfInterfaceService {
             }
         }
 
-        if (bSendResponse){
+        if (bSendResponse) {
             leftDiscussionGroupRequest.makeSuccessResponseMsg();
         }
     }
@@ -472,7 +483,7 @@ public class ConfInterfaceService {
         String dstInspectionE164 = inspectionParam.getDstMtE164();
         String srcInspectionE164 = inspectionParam.getSrcMtE164();
 
-        if (dstInspectionE164.isEmpty() && srcInspectionE164.isEmpty()){
+        if (dstInspectionE164.isEmpty() && srcInspectionE164.isEmpty()) {
             System.out.println("startInspection, dstInspectionE164 & srcInspectionE164 are empty! not permitted!");
             inspectionRequest.makeErrorResponseMsg(ConfInterfaceResult.INVALID_PARAM.getCode(), HttpStatus.OK, ConfInterfaceResult.INVALID_PARAM.getMessage());
             return;
@@ -485,16 +496,16 @@ public class ConfInterfaceService {
         if (!srcInspectionE164.isEmpty()) {
             //如果选看源不空,则一定是会议终端,获取会议终端服务
             srcService = groupConfInfo.getMtMember(srcInspectionE164);
-            System.out.println("startInspection, srcInspectionE164 is not empty, e164:"+srcInspectionE164+", mtId:"+srcService.getMtId()+", dstInspectionE164:"+dstInspectionE164);
+            System.out.println("startInspection, srcInspectionE164 is not empty, e164:" + srcInspectionE164 + ", mtId:" + srcService.getMtId() + ", dstInspectionE164:" + dstInspectionE164);
 
-            if (dstInspectionE164.isEmpty()){
+            if (dstInspectionE164.isEmpty()) {
                 TerminalService dstVmtService = groupConfInfo.getDstInspectionVmtTerminal(srcService);
-                if (null != dstVmtService){
+                if (null != dstVmtService) {
                     InspectionSrcParam nowInspectionParam = dstVmtService.getInspectionParam();
                     nowMode = nowInspectionParam.getMode();
-                    System.out.println("startInspection, vmt("+dstVmtService.getE164()+") has inspect terminal("+srcInspectionE164+"), nowMode:"+nowMode+", inspectMode:"+inspectionParam.getMode());
+                    System.out.println("startInspection, vmt(" + dstVmtService.getE164() + ") has inspect terminal(" + srcInspectionE164 + "), nowMode:" + nowMode + ", inspectMode:" + inspectionParam.getMode());
                     //说明已经有虚拟终端选看了该会议终端,判断选看模式
-                    if (nowMode.equals(inspectionParam.getMode()) || nowMode.equals(InspectionModeEnum.ALL.getName())){
+                    if (nowMode.equals(inspectionParam.getMode()) || nowMode.equals(InspectionModeEnum.ALL.getName())) {
                         //选看模式一样，或者不一样时但当前选看已经是all，直接返回资源信息
                         List<DetailMediaResouce> reverseDetailResource = dstVmtService.getReverseChannel();
                         inspectionRequest.makeSuccessResponseMsg(TerminalMediaResource.convertToMediaResource(reverseDetailResource, inspectionParam.getMode()));
@@ -505,32 +516,32 @@ public class ConfInterfaceService {
                     nowInspectionParam.setMode(InspectionModeEnum.ALL.getName());
                     dstService.setInspectStatus(mode, InspectionStatusEnum.UNKNOWN.getCode());
                     bResume = true;
-                    System.out.println("startInspection, init status of mode("+inspectionParam.getMode()+","+mode+") to unknown! src:"+srcInspectionE164);
+                    System.out.println("startInspection, init status of mode(" + inspectionParam.getMode() + "," + mode + ") to unknown! src:" + srcInspectionE164);
                 } else {
                     //从使用的VMT中选择一个没有选看任何终端的服务
                     dstService = groupConfInfo.getNoInspectTerminalServiceFromUsedVmtMember();
-                    if (null != dstService){
-                        System.out.println("startInspection, choose vmt from usedVmt, e164:"+dstService.getE164());
+                    if (null != dstService) {
+                        System.out.println("startInspection, choose vmt from usedVmt, e164:" + dstService.getE164());
                     }
                 }
             }
         }
 
-        if (null == dstService && !dstInspectionE164.isEmpty()){
+        if (null == dstService && !dstInspectionE164.isEmpty()) {
             //目的是会议终端或者指定虚拟终端进行选看(指定虚拟终端的情况只发生在会议终端下线后再上线的选看恢复!!!!)
             dstService = groupConfInfo.getMember(dstInspectionE164);
-            System.out.println("startInspection, dstInspectionE164 is not empty, e164:"+dstInspectionE164+", mtId:"+dstService.getMtId());
+            System.out.println("startInspection, dstInspectionE164 is not empty, e164:" + dstInspectionE164 + ", mtId:" + dstService.getMtId());
 
             //判断是否存在选看
-            if (dstService.isInspection()){
+            if (dstService.isInspection()) {
                 InspectionSrcParam oldInspectionSrcParam = dstService.getInspectionParam();
                 String inspectE164 = oldInspectionSrcParam.getMtE164();
                 nowMode = oldInspectionSrcParam.getMode();
                 TerminalService srcInspectionService = groupConfInfo.getMember(inspectE164);
 
-                if (null == srcService && srcInspectionService.isVmt()){
+                if (null == srcService && srcInspectionService.isVmt()) {
                     //已经选看了虚拟终端，判断模式选看模式
-                    if (nowMode.equals(inspectionParam.getMode()) || nowMode.equals(InspectionModeEnum.ALL.getName())){
+                    if (nowMode.equals(inspectionParam.getMode()) || nowMode.equals(InspectionModeEnum.ALL.getName())) {
                         //选看模式一样，或者不一样时但当前选看已经是all，直接返回资源信息
                         List<DetailMediaResouce> forwardDetailResource = srcInspectionService.getForwardChannel();
                         inspectionRequest.makeSuccessResponseMsg(TerminalMediaResource.convertToMediaResource(forwardDetailResource, inspectionParam.getMode()));
@@ -541,29 +552,29 @@ public class ConfInterfaceService {
                     oldInspectionSrcParam.setMode(InspectionModeEnum.ALL.getName());
                     dstService.setInspectStatus(mode, InspectionStatusEnum.UNKNOWN.getCode());
                     srcService = srcInspectionService;
-                    System.out.println("startInspection, init status of mode("+inspectionParam.getMode()+","+mode+") to unknown! vmt src:"+srcInspectionE164+", mt dst:"+dstInspectionE164);
-                } else if (null != srcService && srcInspectionE164.equals(inspectE164)){
+                    System.out.println("startInspection, init status of mode(" + inspectionParam.getMode() + "," + mode + ") to unknown! vmt src:" + srcInspectionE164 + ", mt dst:" + dstInspectionE164);
+                } else if (null != srcService && srcInspectionE164.equals(inspectE164)) {
                     //选看了同一个会议终端，判断选看模式
-                    if (nowMode.equals(inspectionParam.getMode()) || nowMode.equals(InspectionModeEnum.ALL.getName())){
+                    if (nowMode.equals(inspectionParam.getMode()) || nowMode.equals(InspectionModeEnum.ALL.getName())) {
                         inspectionRequest.makeSuccessResponseMsg(new ArrayList<>());
                         return;
                     }
 
-                    System.out.println("startInspection, init status of mode("+inspectionParam.getMode()+","+mode+") to unknown! mt src:"+srcInspectionE164+", mt dst:"+dstInspectionE164);
+                    System.out.println("startInspection, init status of mode(" + inspectionParam.getMode() + "," + mode + ") to unknown! mt src:" + srcInspectionE164 + ", mt dst:" + dstInspectionE164);
                     bResume = true;
                     oldInspectionSrcParam.setMode(InspectionModeEnum.ALL.getName());
                     dstService.setInspectStatus(mode, InspectionStatusEnum.UNKNOWN.getCode());
                 } else {
                     //如果已经存在选看，此时又请求选看别的终端，直接返回失败
-                    System.out.println("startInspection, has inspected other terminal:"+inspectE164);
+                    System.out.println("startInspection, has inspected other terminal:" + inspectE164);
                     inspectionRequest.makeErrorResponseMsg(ConfInterfaceResult.INSPECTION_OTHER_TERMINAL.getCode(), HttpStatus.OK, ConfInterfaceResult.INSPECTION_OTHER_TERMINAL.getMessage());
                     return;
                 }
-            } else if (null == srcService){
+            } else if (null == srcService) {
                 //从使用的VMT中选择一个没有被任何会议终端选看的服务
                 srcService = groupConfInfo.getNotBeInspectedTerminalServiceFromUsedVmtMember();
-                if (null != srcService){
-                    System.out.println("startInspection, choose vmt from usedVmt for inspction src, e164:"+srcService.getE164());
+                if (null != srcService) {
+                    System.out.println("startInspection, choose vmt from usedVmt for inspction src, e164:" + srcService.getE164());
                 }
             }
         }
@@ -576,13 +587,13 @@ public class ConfInterfaceService {
             return;
         }
 
-        if (null == dstService || null == srcService){
+        if (null == dstService || null == srcService) {
             int freeVmtNum = groupConfInfo.getFreeVmtMemberNum();
             TerminalService vmtService = groupConfInfo.getAndUseVmt(null);
-            System.out.println("startInspection, dst or src is empty, choose free vmt, free vmt num:"+freeVmtNum);
+            System.out.println("startInspection, dst or src is empty, choose free vmt, free vmt num:" + freeVmtNum);
             if (null == vmtService) {
                 System.out.println("startInspection, vmtService == null!");
-                if (freeVmtNum > 0){
+                if (freeVmtNum > 0) {
                     inspectionRequest.makeErrorResponseMsg(ConfInterfaceResult.VMT_NOT_ONLINE.getCode(), HttpStatus.OK, ConfInterfaceResult.VMT_NOT_ONLINE.getMessage());
                     return;
                 }
@@ -603,7 +614,7 @@ public class ConfInterfaceService {
             }
         }
 
-        if (null == dstService.getInspectionParam()){
+        if (null == dstService.getInspectionParam()) {
             inspectionSrcParam.setMtE164(srcService.getE164());
             inspectionSrcParam.setMode(inspectionParam.getMode());
             //设置选看参数
@@ -619,7 +630,7 @@ public class ConfInterfaceService {
         }
 
         boolean bOk = inspectionMt(groupConfInfo, inspectionParam.getMode(), srcService.getMtId(), dstService.getMtId(), inspectionRequest);
-        if(!bOk && bResume){
+        if (!bOk && bResume) {
             //恢复选看模式
             dstService.getInspectionParam().setMode(nowMode);
         }
@@ -639,13 +650,13 @@ public class ConfInterfaceService {
         String srcE164 = cancleInspectionParam.getSrcMtE164();
         String dstE164 = cancleInspectionParam.getDstMtE164();
 
-        if (srcE164.isEmpty() && dstE164.isEmpty()){
+        if (srcE164.isEmpty() && dstE164.isEmpty()) {
             cancelInspectionRequest.makeErrorResponseMsg(ConfInterfaceResult.INVALID_PARAM.getCode(), HttpStatus.OK, ConfInterfaceResult.INVALID_PARAM.getMessage());
             return;
         }
 
         TerminalService dstService;
-        if (dstE164.isEmpty()){
+        if (dstE164.isEmpty()) {
             //如果目的为空，源一定不为空
             TerminalService srcService = groupConfInfo.getMtMember(srcE164);
             dstService = groupConfInfo.getDstInspectionVmtTerminal(srcService);
@@ -661,9 +672,9 @@ public class ConfInterfaceService {
         //校验选看模式
         InspectionSrcParam inspectionSrcParam = dstService.getInspectionParam();
         String nowMode = inspectionSrcParam.getMode();
-        if (!nowMode.equals(InspectionModeEnum.ALL.getName()) && !nowMode.equals(cancleInspectionParam.getMode())){
+        if (!nowMode.equals(InspectionModeEnum.ALL.getName()) && !nowMode.equals(cancleInspectionParam.getMode())) {
             //如果当前选看模式不是all，且与本次取消选看模式不同，则返回失败
-            System.out.println("cancelInspection, nowMode:"+nowMode+", cancelMode:"+cancleInspectionParam.getMode()+", not consistent!");
+            System.out.println("cancelInspection, nowMode:" + nowMode + ", cancelMode:" + cancleInspectionParam.getMode() + ", not consistent!");
             cancelInspectionRequest.makeErrorResponseMsg(ConfInterfaceResult.INVALID_PARAM.getCode(), HttpStatus.OK, ConfInterfaceResult.INVALID_PARAM.getMessage());
             return;
         }
@@ -682,11 +693,11 @@ public class ConfInterfaceService {
         }
 
         boolean bResume = false;
-        if (nowMode.equals(InspectionModeEnum.ALL.getName())){
-            if (InspectionModeEnum.VIDEO.getName().equals(cancleInspectionParam.getMode())){
+        if (nowMode.equals(InspectionModeEnum.ALL.getName())) {
+            if (InspectionModeEnum.VIDEO.getName().equals(cancleInspectionParam.getMode())) {
                 inspectionSrcParam.setMode(InspectionModeEnum.AUDIO.getName());
                 bResume = true;
-            } else if (InspectionModeEnum.AUDIO.getName().equals(cancleInspectionParam.getMode())){
+            } else if (InspectionModeEnum.AUDIO.getName().equals(cancleInspectionParam.getMode())) {
                 inspectionSrcParam.setMode(InspectionModeEnum.VIDEO.getName());
                 bResume = true;
             }
@@ -699,11 +710,11 @@ public class ConfInterfaceService {
 
         System.out.println("cancelInspection, cancel inspections failed!");
         List<String> channels = cancelInspectionRequest.getWaitMsg();
-        for (String channel : channels){
+        for (String channel : channels) {
             groupConfInfo.delWaitDealTask(channel);
         }
         cancelInspectionRequest.setWaitMsg(null);
-        if (bResume){
+        if (bResume) {
             inspectionSrcParam.setMode(nowMode);
         }
 
@@ -721,7 +732,7 @@ public class ConfInterfaceService {
 
         String confId = groupConfInfo.getConfId();
         TerminalService mtService = groupConfInfo.getMtMember(cameraCtrlRequest.getMtE164());
-        if (null == mtService){
+        if (null == mtService) {
             cameraCtrlRequest.makeErrorResponseMsg(ConfInterfaceResult.TERMINAL_NOT_EXIST.getCode(), HttpStatus.OK, ConfInterfaceResult.TERMINAL_NOT_EXIST.getMessage());
             return;
         }
@@ -736,7 +747,7 @@ public class ConfInterfaceService {
     }
 
     @Async("confTaskExecutor")
-    public void sendIFrame(SendIFrameRequest sendIFrameRequest){
+    public void sendIFrame(SendIFrameRequest sendIFrameRequest) {
         String groupId = sendIFrameRequest.getGroupId();
         GroupConfInfo groupConfInfo = groupConfInfoMap.get(groupId);
         if (null == groupConfInfo) {
@@ -747,19 +758,19 @@ public class ConfInterfaceService {
         //String confId = groupConfInfo.getConfId();
         SendIFrameParam sendIFrameParam = sendIFrameRequest.getSendIFrameParam();
         List<String> resourceIds = sendIFrameParam.getResourceIds();
-        if (sendIFrameParam.getMtE164().isEmpty() || resourceIds.isEmpty()){
+        if (sendIFrameParam.getMtE164().isEmpty() || resourceIds.isEmpty()) {
             sendIFrameRequest.makeErrorResponseMsg(ConfInterfaceResult.INVALID_PARAM.getCode(), HttpStatus.OK, ConfInterfaceResult.INVALID_PARAM.getMessage());
             return;
         }
 
         TerminalService mtService = groupConfInfo.getMtMember(sendIFrameParam.getMtE164());
-        if (null == mtService){
+        if (null == mtService) {
             sendIFrameRequest.makeErrorResponseMsg(ConfInterfaceResult.TERMINAL_NOT_EXIST.getCode(), HttpStatus.OK, ConfInterfaceResult.TERMINAL_NOT_EXIST.getMessage());
             return;
         }
 
         TerminalService vmtService = groupConfInfo.getDstInspectionVmtTerminal(mtService);
-        if (null ==  vmtService){
+        if (null == vmtService) {
             sendIFrameRequest.makeErrorResponseMsg(ConfInterfaceResult.INVALID_PARAM.getCode(), HttpStatus.OK, ConfInterfaceResult.INVALID_PARAM.getMessage());
             return;
         }
@@ -792,7 +803,7 @@ public class ConfInterfaceService {
     }
 
     @Async("confTaskExecutor")
-    public void ctrlVolume(CtrlVolumeRequest ctrlVolumeRequest){
+    public void ctrlVolume(CtrlVolumeRequest ctrlVolumeRequest) {
         String groupId = ctrlVolumeRequest.getGroupId();
         GroupConfInfo groupConfInfo = groupConfInfoMap.get(groupId);
         if (null == groupConfInfo) {
@@ -801,14 +812,14 @@ public class ConfInterfaceService {
         }
 
         CtrlVolumeParam ctrlVolumeParam = ctrlVolumeRequest.getCtrlVolumeParam();
-        if (ctrlVolumeRequest.getMtE164().isEmpty() || !ctrlVolumeParam.checkModeValidity()){
+        if (ctrlVolumeRequest.getMtE164().isEmpty() || !ctrlVolumeParam.checkModeValidity()) {
             ctrlVolumeRequest.makeErrorResponseMsg(ConfInterfaceResult.INVALID_PARAM.getCode(), HttpStatus.OK, ConfInterfaceResult.INVALID_PARAM.getMessage());
             return;
         }
 
         String confId = groupConfInfo.getConfId();
         TerminalService mtService = groupConfInfo.getMtMember(ctrlVolumeRequest.getMtE164());
-        if (null == mtService){
+        if (null == mtService) {
             ctrlVolumeRequest.makeErrorResponseMsg(ConfInterfaceResult.TERMINAL_NOT_EXIST.getCode(), HttpStatus.OK, ConfInterfaceResult.TERMINAL_NOT_EXIST.getMessage());
             return;
         }
@@ -816,16 +827,16 @@ public class ConfInterfaceService {
         McuCtrlVolumeParam mcuCtrlVolumeParam = new McuCtrlVolumeParam();
         mcuCtrlVolumeParam.setVol_mode(ctrlVolumeParam.getMode());
 
-        if (ctrlVolumeParam.getVolume() <= 0){
+        if (ctrlVolumeParam.getVolume() <= 0) {
             mcuCtrlVolumeParam.setVol_value(0);
-        } else if (ctrlVolumeParam.getVolume() >= 35){
+        } else if (ctrlVolumeParam.getVolume() >= 35) {
             mcuCtrlVolumeParam.setVol_value(35);
         } else {
             mcuCtrlVolumeParam.setVol_value(ctrlVolumeParam.getVolume());
         }
 
         McuStatus mcuStatus = mcuRestClientService.ctrlVolume(confId, mtService.getMtId(), mcuCtrlVolumeParam);
-        if (mcuStatus.getValue() == 0){
+        if (mcuStatus.getValue() == 0) {
             ctrlVolumeRequest.makeSuccessResponseMsg();
         } else {
             ctrlVolumeRequest.makeErrorResponseMsg(ConfInterfaceResult.CTRL_VOLUME.getCode(), HttpStatus.OK, mcuStatus.getDescription());
@@ -833,7 +844,7 @@ public class ConfInterfaceService {
     }
 
     @Async("confTaskExecutor")
-    public void silenceOrMute(CtrlSilenceOrMuteRequest ctrlSilenceOrMuteRequest){
+    public void silenceOrMute(CtrlSilenceOrMuteRequest ctrlSilenceOrMuteRequest) {
         String groupId = ctrlSilenceOrMuteRequest.getGroupId();
         GroupConfInfo groupConfInfo = groupConfInfoMap.get(groupId);
         if (null == groupConfInfo) {
@@ -843,13 +854,13 @@ public class ConfInterfaceService {
 
         String confId = groupConfInfo.getConfId();
         TerminalService mtService = groupConfInfo.getMtMember(ctrlSilenceOrMuteRequest.getMtE164());
-        if (null == mtService){
+        if (null == mtService) {
             ctrlSilenceOrMuteRequest.makeErrorResponseMsg(ConfInterfaceResult.TERMINAL_NOT_EXIST.getCode(), HttpStatus.OK, ConfInterfaceResult.TERMINAL_NOT_EXIST.getMessage());
             return;
         }
 
         McuStatus mcuStatus = mcuRestClientService.silenceOrMute(confId, mtService.getMtId(), ctrlSilenceOrMuteRequest.isSilence(), ctrlSilenceOrMuteRequest.getSilenceOrMuteParam());
-        if (mcuStatus.getValue() == 0){
+        if (mcuStatus.getValue() == 0) {
             ctrlSilenceOrMuteRequest.makeSuccessResponseMsg();
         } else {
             ctrlSilenceOrMuteRequest.makeErrorResponseMsg(ConfInterfaceResult.CTRL_SILENCE_OR_MUTE.getCode(), HttpStatus.OK, mcuStatus.getDescription());
@@ -857,7 +868,7 @@ public class ConfInterfaceService {
     }
 
     @Async("confTaskExecutor")
-    public void ctrlDualStream(BaseRequestMsg ctrlDualStreamRequest, String mtE164, boolean dual){
+    public void ctrlDualStream(BaseRequestMsg ctrlDualStreamRequest, String mtE164, boolean dual) {
         String groupId = ctrlDualStreamRequest.getGroupId();
         GroupConfInfo groupConfInfo = groupConfInfoMap.get(groupId);
         if (null == groupConfInfo) {
@@ -866,18 +877,18 @@ public class ConfInterfaceService {
         }
 
         TerminalService terminalService;
-        if (mtE164.isEmpty()){
+        if (mtE164.isEmpty()) {
             terminalService = groupConfInfo.getBroadcastVmtService();
         } else {
             terminalService = groupConfInfo.getMtMember(mtE164);
         }
 
-        if (null == terminalService){
+        if (null == terminalService) {
             ctrlDualStreamRequest.makeErrorResponseMsg(ConfInterfaceResult.TERMINAL_NOT_EXIST.getCode(), HttpStatus.OK, ConfInterfaceResult.TERMINAL_NOT_EXIST.getMessage());
             return;
         }
 
-        if (mtE164.isEmpty()){
+        if (mtE164.isEmpty()) {
             ctrlVmtDualStream(terminalService, dual, ctrlDualStreamRequest);
         } else {
             ctrlMtDualStream(terminalService, dual, groupConfInfo, ctrlDualStreamRequest);
@@ -885,7 +896,7 @@ public class ConfInterfaceService {
     }
 
     @Async("confTaskExecutor")
-    public void queryDualStream(QueryDualStreamRequest queryDualStreamRequest){
+    public void queryDualStream(QueryDualStreamRequest queryDualStreamRequest) {
         String groupId = queryDualStreamRequest.getGroupId();
         GroupConfInfo groupConfInfo = groupConfInfoMap.get(groupId);
         if (null == groupConfInfo) {
@@ -902,9 +913,9 @@ public class ConfInterfaceService {
         List<DetailMediaResouce> mediaResources = reverseResources;
         queryDualStreamRequest.setType(1);
 
-        do{
-            for (DetailMediaResouce detailMediaResouce : mediaResources){
-                if (detailMediaResouce.getDual() != 1){
+        do {
+            for (DetailMediaResouce detailMediaResouce : mediaResources) {
+                if (detailMediaResouce.getDual() != 1) {
                     continue;
                 }
 
@@ -917,28 +928,28 @@ public class ConfInterfaceService {
                 queryDualStreamRequest.addResource(mediaResource);
             }
 
-            if (bFindDual){
+            if (bFindDual) {
                 queryDualStreamRequest.makeSuccessResponseMsg();
                 return;
             } else {
                 mediaResources = forwardResources;
                 queryDualStreamRequest.setType(2);
             }
-        }while (--tryTimes > 0);
+        } while (--tryTimes > 0);
 
         queryDualStreamRequest.setType(0);
         queryDualStreamRequest.makeSuccessResponseMsg();
     }
 
     @Async("confTaskExecutor")
-    public void queryVmts(QueryVmtsRequest queryVmtsRequest){
+    public void queryVmts(QueryVmtsRequest queryVmtsRequest) {
         List<TerminalService> usedVmts = terminalManageService.queryAllUsedVmts();
         if (null == usedVmts) {
             queryVmtsRequest.makeSuccessResponseMsg();
             return;
         }
 
-        for(TerminalService usedVmt : usedVmts){
+        for (TerminalService usedVmt : usedVmts) {
             VmtDetailInfo vmtDetailInfo = new VmtDetailInfo();
             vmtDetailInfo.setGroupId(usedVmt.getGroupId());
             vmtDetailInfo.setVmtE164(usedVmt.getE164());
@@ -951,41 +962,51 @@ public class ConfInterfaceService {
         queryVmtsRequest.makeSuccessResponseMsg();
         usedVmts.clear();
     }
-	
-	@Async("confTaskExecutor")
-    public void p2pCall(P2PCallRequest p2PCallRequest, P2PCallParam p2PCallParam){
+
+    @Async("confTaskExecutor")
+    public void p2pCall(P2PCallRequest p2PCallRequest, P2PCallParam p2PCallParam) {
         final String groupId = p2PCallRequest.getGroupId();
         String mtAccount = p2PCallParam.getAccount();
 
-        P2PCallGroup p2PCallGroup = p2pCallGroupMap.computeIfAbsent(groupId, k->new P2PCallGroup(groupId));
-        TerminalService vmtService = terminalManageService.getFreeVmt();
-        vmtService.setGroupId(groupId);
-        //System.out.println("vmtService.getGroupId() : " +vmtService.getGroupId());
-
-        String waitMsg = P2PCallRequest.class.getName();
-        vmtService.addWaitMsg(waitMsg, p2PCallRequest);
-
-        if (!p2PCallParam.isDual()) {
-            p2PCallRequest.setWaitMsg(new ArrayList<>(Arrays.asList(waitMsg, waitMsg, waitMsg, waitMsg)));
-            if (vmtService.callMt(p2PCallParam)) {
-                vmtService.setDualStream(true);
-                System.out.println("添加vmtService : " +vmtService.getE164());
-                p2PCallGroup.addCallMember(mtAccount, vmtService);
+        P2PCallGroup p2PCallGroup = p2pCallGroupMap.computeIfAbsent(groupId, k -> new P2PCallGroup(groupId));
+        if (p2PCallParam.isDual()) {
+            System.out.println("mtAccount : " + mtAccount);
+            TerminalService vmt = p2PCallGroup.getVmt(mtAccount);
+            if (null != vmt) {
+                ctrlVmtDualStream(vmt, true, p2PCallRequest);
             } else {
-                vmtService.delWaitMsg(waitMsg);
-                terminalManageService.freeVmt(vmtService.getE164());
-                vmtService.setGroupId(null);
-                p2PCallRequest.makeErrorResponseMsg(ConfInterfaceResult.P2PCALL.getCode(), HttpStatus.OK, ConfInterfaceResult.P2PCALL.getMessage());
+                p2PCallRequest.makeErrorResponseMsg(ConfInterfaceResult.MAINSTREAM_NOT_EXIST.getCode(), HttpStatus.OK, ConfInterfaceResult.MAINSTREAM_NOT_EXIST.getMessage());
             }
+        } else {
+            TerminalService vmtService = terminalManageService.getFreeVmt();
+            if (null == vmtService) {
+                p2PCallRequest.makeErrorResponseMsg(ConfInterfaceResult.REACH_MAX_JOIN_MTS.getCode(), HttpStatus.OK, ConfInterfaceResult.REACH_MAX_JOIN_MTS.getMessage());
+            }
+            vmtService.setGroupId(groupId);
+            //System.out.println("vmtService.getGroupId() : " +vmtService.getGroupId());
 
-            return;
+            String waitMsg = P2PCallRequest.class.getName();
+            vmtService.addWaitMsg(waitMsg, p2PCallRequest);
+            if (!p2PCallParam.isDual()) {
+                p2PCallRequest.setWaitMsg(new ArrayList<>(Arrays.asList(waitMsg, waitMsg, waitMsg, waitMsg)));
+                if (vmtService.callMt(p2PCallParam)) {
+                    vmtService.setDualStream(true);
+                    System.out.println("添加vmtService : " + vmtService.getE164());
+                    p2PCallGroup.addCallMember(mtAccount, vmtService);
+                } else {
+                    vmtService.delWaitMsg(waitMsg);
+                    terminalManageService.freeVmt(vmtService.getE164());
+                    vmtService.setGroupId(null);
+                    p2PCallRequest.makeErrorResponseMsg(ConfInterfaceResult.P2PCALL.getCode(), HttpStatus.OK, ConfInterfaceResult.P2PCALL.getMessage());
+                }
+                //return;
+            }
         }
-
-        ctrlVmtDualStream(vmtService, true, p2PCallRequest);
     }
 
+
     @Async("confTaskExecutor")
-    public void cancelP2PCall(CancelP2PCallRequest cancelP2PCallRequest, CancelP2PCallParam cancelP2PCallParam){
+    public void cancelP2PCall(CancelP2PCallRequest cancelP2PCallRequest, CancelP2PCallParam cancelP2PCallParam) {
         String groupId = cancelP2PCallRequest.getGroupId();
         P2PCallGroup p2PCallGroup = p2pCallGroupMap.get(groupId);
         if (null == p2PCallGroup) {
@@ -995,12 +1016,12 @@ public class ConfInterfaceService {
 
         String account = cancelP2PCallParam.getAccount();
         TerminalService vmtService = p2PCallGroup.getVmt(account);
-        if (null == vmtService){
+        if (null == vmtService) {
             cancelP2PCallRequest.makeErrorResponseMsg(ConfInterfaceResult.TERMINAL_NOT_EXIST.getCode(), HttpStatus.OK, ConfInterfaceResult.TERMINAL_NOT_EXIST.getMessage());
             return;
         }
 
-        if (cancelP2PCallParam.isDual()){
+        if (cancelP2PCallParam.isDual()) {
             //停止双流呼叫
             ctrlVmtDualStream(vmtService, false, cancelP2PCallRequest);
             return;
@@ -1008,18 +1029,18 @@ public class ConfInterfaceService {
 
         //停止呼叫
         Boolean bOk = vmtService.cancelCallMt(vmtService);
-        if (bOk){
+        if (bOk) {
             vmtService.setGroupId(null);
             p2PCallGroup.removeCallMember(account);
             cancelP2PCallRequest.makeSuccessResponseMsg();
-        }else{
+        } else {
             cancelP2PCallRequest.makeErrorResponseMsg(ConfInterfaceResult.P2PCANCELCALL.getCode(), HttpStatus.OK, ConfInterfaceResult.P2PCANCELCALL.getMessage());
         }
 
     }
 
     public boolean inspectionMt(GroupConfInfo groupConfInfo, String mode, String srcMtId, String dstMtId, InspectionRequest inspectionRequest) {
-        System.out.println("inspectionMt, mode:"+mode+", srcMtId:"+srcMtId+", dstMtId:"+dstMtId);
+        System.out.println("inspectionMt, mode:" + mode + ", srcMtId:" + srcMtId + ", dstMtId:" + dstMtId);
 
         //需要将通道信息先添加,否则在订阅信息到来时,有可能还没有加入,出现消息无法正常移除的问题
         if (InspectionModeEnum.ALL.getName().equals(mode) || InspectionModeEnum.VIDEO.getName().equals(mode)) {
@@ -1043,7 +1064,7 @@ public class ConfInterfaceService {
 
         System.out.println("inspectionMt, inspections failed!");
         List<String> channels = inspectionRequest.getWaitMsg();
-        for (String channel : channels){
+        for (String channel : channels) {
             groupConfInfo.delWaitDealTask(channel);
         }
         inspectionRequest.setWaitMsg(null);
@@ -1051,7 +1072,7 @@ public class ConfInterfaceService {
         return false;
     }
 
-    public McuStatus startInspectionForDiscusion(GroupConfInfo groupConfInfo, TerminalService mtService, TerminalService vmtService, boolean bMutual, JoinDiscussionGroupRequest joinDiscussionGroupRequest){
+    public McuStatus startInspectionForDiscusion(GroupConfInfo groupConfInfo, TerminalService mtService, TerminalService vmtService, boolean bMutual, JoinDiscussionGroupRequest joinDiscussionGroupRequest) {
         String confId = groupConfInfo.getConfId();
         String vmtMtId = vmtService.getMtId();
         String mtId = mtService.getMtId();
@@ -1066,7 +1087,7 @@ public class ConfInterfaceService {
 
         boolean inspectAudioOk = false;
         McuStatus mcuStatus = mcuRestClientService.inspections(confId, InspectionModeEnum.AUDIO.getName(), vmtMtId, mtId);
-        if (mcuStatus.getValue() == 0){
+        if (mcuStatus.getValue() == 0) {
             inspectAudioOk = true;
             mcuStatus = mcuRestClientService.inspections(confId, InspectionModeEnum.VIDEO.getName(), vmtMtId, mtId);
         }
@@ -1153,10 +1174,10 @@ public class ConfInterfaceService {
         return McuStatus.resolve(0);
     }
 
-    public TerminalService chooseVmt(GroupConfInfo groupConfInfo, BaseRequestMsg<? extends BaseResponseMsg> requestMsg, boolean immediatelyResponse){
+    public TerminalService chooseVmt(GroupConfInfo groupConfInfo, BaseRequestMsg<? extends BaseResponseMsg> requestMsg, boolean immediatelyResponse) {
         System.out.println("chooseVmt, has no free vmt in group for discussion!");
         if (groupConfInfo.reachMaxJoinMts()) {
-            if (immediatelyResponse){
+            if (immediatelyResponse) {
                 requestMsg.makeErrorResponseMsg(ConfInterfaceResult.REACH_MAX_JOIN_MTS.getCode(), HttpStatus.OK, ConfInterfaceResult.REACH_MAX_JOIN_MTS.getMessage());
             }
             return null;
@@ -1164,15 +1185,15 @@ public class ConfInterfaceService {
 
         System.out.println("chooseVmt, start get vmt from free vmt list!");
         TerminalService vmtService = terminalManageService.getFreeVmt();
-        if (null == vmtService){
-            if (immediatelyResponse){
+        if (null == vmtService) {
+            if (immediatelyResponse) {
                 requestMsg.makeErrorResponseMsg(ConfInterfaceResult.NO_FREE_VMT.getCode(), HttpStatus.OK, ConfInterfaceResult.NO_FREE_VMT.getMessage());
             }
             return null;
         }
 
         String confId = groupConfInfo.getConfId();
-        System.out.println("chooseVmt, vmt start join conference! vmt:"+vmtService.getE164()+", confId:"+confId);
+        System.out.println("chooseVmt, vmt start join conference! vmt:" + vmtService.getE164() + ", confId:" + confId);
         vmtService.setGroupId(groupConfInfo.getGroupId());
         groupConfInfo.useVmt(vmtService);
         List<JoinConferenceRspMtInfo> mtInfos = joinConference(confId, vmtService);
@@ -1181,7 +1202,7 @@ public class ConfInterfaceService {
             vmtService.setGroupId(null);
             groupConfInfo.delMember(vmtService);
             terminalManageService.freeVmt(vmtService.getE164());
-            if (immediatelyResponse){
+            if (immediatelyResponse) {
                 requestMsg.makeErrorResponseMsg(ConfInterfaceResult.INSPECTION.getCode(), HttpStatus.OK, ConfInterfaceResult.INSPECTION.getMessage());
             }
             return null;
@@ -1195,7 +1216,7 @@ public class ConfInterfaceService {
         return vmtService;
     }
 
-    public boolean joinDiscusssion(GroupConfInfo groupConfInfo, Terminal terminal, JoinDiscussionGroupRequest joinDiscussionGroupRequest){
+    public boolean joinDiscusssion(GroupConfInfo groupConfInfo, Terminal terminal, JoinDiscussionGroupRequest joinDiscussionGroupRequest) {
         //获取一个vmt，与mt进行一对一选看
         TerminalService vmtServiceForSrc = null;
         TerminalService vmtServiceForDst = null;
@@ -1207,9 +1228,9 @@ public class ConfInterfaceService {
         InspectionSrcParam inspectionSrcParam = new InspectionSrcParam();
         inspectionSrcParam.setMode(InspectionModeEnum.ALL.getName());
 
-        System.out.println("joinDiscusssion, deal mt:"+mtService.getE164());
+        System.out.println("joinDiscusssion, deal mt:" + mtService.getE164());
         InspectionSrcParam mtNowInspectionParam = mtService.getInspectionParam();
-        if(null != mtNowInspectionParam){
+        if (null != mtNowInspectionParam) {
             //如果加入讨论组时，会议终端已经在选看，则认为会议终端正在忙，此时不能加入讨论组
             return false;
         }
@@ -1218,11 +1239,11 @@ public class ConfInterfaceService {
         ConcurrentHashMap<String, InspectedParam> inspectedParams = mtService.getInspentedTerminals();
         if (null != inspectedParams) {
             System.out.println("joinDiscusssion, terminal is inspected!");
-            for (ConcurrentHashMap.Entry<String, InspectedParam> inspectedParam : inspectedParams.entrySet()){
+            for (ConcurrentHashMap.Entry<String, InspectedParam> inspectedParam : inspectedParams.entrySet()) {
                 if (!inspectedParam.getValue().isVmt())
                     continue;
 
-                System.out.println("joinDiscusssion, get vmt("+inspectedParam.getKey()+") which is inspecting terminal("+terminal.getMtE164()+")");
+                System.out.println("joinDiscusssion, get vmt(" + inspectedParam.getKey() + ") which is inspecting terminal(" + terminal.getMtE164() + ")");
                 TerminalService terminalService = groupConfInfo.findUsedVmt(inspectedParam.getKey());
                 if (terminalService.getInspectionParam().getMode().equals(InspectionModeEnum.ALL.getName())) {
                     //判断vmt是否被别的会议终端选看
@@ -1238,7 +1259,7 @@ public class ConfInterfaceService {
                 }
             }
 
-            if (null != vmtServiceForDst && null == vmtServiceForSrc){
+            if (null != vmtServiceForDst && null == vmtServiceForSrc) {
                 //选看会议终端的虚拟终端已经被别的会议终端选看，在已经使用的VMT中选择一个没有被选看的虚拟终端
                 vmtServiceForSrc = groupConfInfo.getNotBeInspectedTerminalServiceFromUsedVmtMember();
             }
@@ -1247,22 +1268,22 @@ public class ConfInterfaceService {
         boolean bInspection = true;
         if (null == vmtServiceForDst || null == vmtServiceForSrc) {
             int freeVmtNums = groupConfInfo.getFreeVmtMemberNum();
-            System.out.println("joinDiscusssion, null == vmtService, start choose free vmt for discussion! mt:"+mtService.getE164()+", freeVmtNum:"+freeVmtNums);
+            System.out.println("joinDiscusssion, null == vmtService, start choose free vmt for discussion! mt:" + mtService.getE164() + ", freeVmtNum:" + freeVmtNums);
             TerminalService vmtService = groupConfInfo.getAndUseVmt(null);
             if (null == vmtService) {
-                if (freeVmtNums > 0){
+                if (freeVmtNums > 0) {
                     //说明vmt还没有成功加入会议，需要等待
                     return false;
                 }
 
                 vmtService = chooseVmt(groupConfInfo, joinDiscussionGroupRequest, false);
-                if (null == vmtService){
+                if (null == vmtService) {
                     return false;
                 }
                 bInspection = false;  //等待加入会议成功之后，再进行相互选看
             }
 
-            if (null == vmtServiceForDst){
+            if (null == vmtServiceForDst) {
                 //如果vmtServiceForDst为空，说明加入讨论组的会议终端没有被任何虚拟终端选看，此时
                 //的vmtServiceForSrc也就一定为NULL
                 vmtServiceForDst = vmtService;
@@ -1287,7 +1308,7 @@ public class ConfInterfaceService {
                 vmtServiceForSrc = vmtService;
             }
 
-            System.out.println("joinDiscusssion, startInspection to set inspection param! vmt for discussion, e164:"+vmtService.getE164());
+            System.out.println("joinDiscusssion, startInspection to set inspection param! vmt for discussion, e164:" + vmtService.getE164());
         }
 
         if (null == vmtServiceForSrc.getInspectedParam(mtService.getE164())) {
@@ -1305,7 +1326,7 @@ public class ConfInterfaceService {
         mtService.setInspectVideoStatus(InspectionStatusEnum.UNKNOWN.getCode());
         mtService.setInspectAudioStatus(InspectionStatusEnum.UNKNOWN.getCode());
 
-        System.out.println("joinDiscusssion, bInspection : "+ bInspection);
+        System.out.println("joinDiscusssion, bInspection : " + bInspection);
         if (!bInspection)
             return true;
 
@@ -1383,7 +1404,7 @@ public class ConfInterfaceService {
         return channel.toString();
     }
 
-    private String getDualStreamChannel(String confId){
+    private String getDualStreamChannel(String confId) {
         StringBuilder channel = new StringBuilder();
 
         channel.append("/confs/");
@@ -1401,14 +1422,14 @@ public class ConfInterfaceService {
         return mcuRestClientService.joinConference(confId, joinConfVmts);
     }
 
-    private void ctrlMtDualStream(TerminalService mtService, boolean dual, GroupConfInfo groupConfInfo, BaseRequestMsg ctrlDualStreamRequest){
+    private void ctrlMtDualStream(TerminalService mtService, boolean dual, GroupConfInfo groupConfInfo, BaseRequestMsg ctrlDualStreamRequest) {
         String confId = groupConfInfo.getConfId();
         String dualStreamChannel = getDualStreamChannel(confId);
         ctrlDualStreamRequest.addWaitMsg(dualStreamChannel);
         groupConfInfo.addWaitDealTask(dualStreamChannel, ctrlDualStreamRequest);
 
         McuStatus mcuStatus = mcuRestClientService.ctrlDualStream(confId, mtService.getMtId(), dual);
-        System.out.println("ctrlMtDualStream, dual:"+dual+", errorCode:" + mcuStatus.getValue() +", errMsg:"+mcuStatus.getDescription());
+        System.out.println("ctrlMtDualStream, dual:" + dual + ", errorCode:" + mcuStatus.getValue() + ", errMsg:" + mcuStatus.getDescription());
 
         if (mcuStatus.getValue() == McuStatus.OK.getValue()) {
             return;
@@ -1419,17 +1440,18 @@ public class ConfInterfaceService {
         ctrlDualStreamRequest.makeErrorResponseMsg(ConfInterfaceResult.CTRL_DUALSTREAM.getCode(), HttpStatus.OK, mcuStatus.getDescription());
     }
 
-    private void ctrlVmtDualStream(TerminalService vmtService, boolean dual, BaseRequestMsg ctrlDualStreamRequest){
-        if (dual){
+    private void ctrlVmtDualStream(TerminalService vmtService, boolean dual, BaseRequestMsg ctrlDualStreamRequest) {
+        if (dual) {
             vmtService.openDualStreamChannel(ctrlDualStreamRequest);
         } else {
             boolean bOk = vmtService.closeDualStreamChannel();
-            if (bOk){
+            System.out.println("bOk : "+bOk);
+            if (bOk) {
                 List<DetailMediaResouce> mediaResouces = vmtService.getForwardChannel();
                 TerminalMediaResource oldTerminalMediaResource = terminalMediaSourceService.getTerminalMediaResource(vmtService.getE164());
                 oldTerminalMediaResource.setForwardResources(TerminalMediaResource.convertToMediaResource(mediaResouces, "all"));
                 terminalMediaSourceService.setTerminalMediaResource(oldTerminalMediaResource);
-
+                System.out.println("ctrlVmtDualStream, closeDualStreamChannel succeed");
                 ctrlDualStreamRequest.makeSuccessResponseMsg();
             } else {
                 System.out.println("ctrlVmtDualStream, closeDualStreamChannel failed!");
@@ -1464,7 +1486,10 @@ public class ConfInterfaceService {
     @Autowired
     private ConfInterfacePublishService confInterfacePublishService;
 
+    @Autowired
+    private BaseSysConfig baseSysConfig;
+
     private Map<String, GroupConfInfo> groupConfInfoMap = new ConcurrentHashMap<>();
     private Map<String, String> confGroupMap = new ConcurrentHashMap<>();
-    private Map<String, P2PCallGroup> p2pCallGroupMap = new ConcurrentHashMap<>();
+    public static Map<String, P2PCallGroup> p2pCallGroupMap = new ConcurrentHashMap<>();
 }

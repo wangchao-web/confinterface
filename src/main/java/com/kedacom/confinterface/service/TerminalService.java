@@ -586,17 +586,17 @@ public abstract class TerminalService {
             //e164号呼叫
             remoteParticipantInfo.setParticipantId(account);
         }
-
-        boolean bOK = conferenceParticipant.CallRemote(remoteParticipantInfo);
-        System.out.println("conferenceParticipant.CallRemote");
-        if (bOK) {
-            remoteMtAccount = account;
-            System.out.println("conferenceParticipant.CallRemote : " + bOK);
-        } else {
-            remoteMtAccount = null;
+        synchronized (this) {
+            boolean bOK = conferenceParticipant.CallRemote(remoteParticipantInfo);
+            System.out.println("conferenceParticipant.CallRemote");
+            if (bOK) {
+                remoteMtAccount = account;
+                System.out.println("conferenceParticipant.CallRemote : " + bOK);
+            } else {
+                remoteMtAccount = null;
+            }
+            return bOK;
         }
-
-        return bOK;
     }
 
     public Boolean cancelCallMt(TerminalService terminalService) {
@@ -804,6 +804,16 @@ public abstract class TerminalService {
         sdp.append(mediaDescription.getRtcpAddress().getPort());
         sdp.append(" IN IP4 ");
         sdp.append(mediaDescription.getRtcpAddress().getIP());
+        sdp.append("\r\n");
+
+        sdp.append("a=rtcp-fb:");
+        sdp.append(mediaDescription.getPayload());
+        sdp.append(" nack");
+        sdp.append("\r\n");
+
+        sdp.append("a=rtcp-fb:");
+        sdp.append(mediaDescription.getPayload());
+        sdp.append(" nack kdv");
         sdp.append("\r\n");
 
         if (mediaDescription.getDirection().equals(TransportDirectionEnum.SEND.getName())) {
@@ -1018,6 +1028,7 @@ public abstract class TerminalService {
         System.out.println("exchangeSdp:");
         System.out.println(resourceResponse.getSdp());
 
+
         DetailMediaResouce detailMediaResouce = new DetailMediaResouce();
         detailMediaResouce.setStreamIndex(streamIndex);
         detailMediaResouce.setId(resourceResponse.getResourceID());
@@ -1041,21 +1052,25 @@ public abstract class TerminalService {
         if (resourceResponse.getSdp().contains("a=sendonly")) {
             addForwardChannel(detailMediaResouce);
         } else {
-            System.out.println("添加反向资源");
             synchronized (this) {
                 addReverseChannel(detailMediaResouce);
-                if (null != remoteMtAccount) {
-                    //点对点呼叫,在此处处理反向资源
-                    MediaResource mediaResource = new MediaResource();
-                    mediaResource.setDual(detailMediaResouce.getDual() == 1);
-                    mediaResource.setId(detailMediaResouce.getId());
-                    mediaResource.setType(detailMediaResouce.getType());
+                System.out.println("dual : "+dual);
+                if (!dual) {
+                    if (null != remoteMtAccount) {
+                        //点对点呼叫,在此处处理反向资源
+                        System.out.println("remoteMtAccount : " + remoteMtAccount);
+                        MediaResource mediaResource = new MediaResource();
+                        mediaResource.setDual(detailMediaResouce.getDual() == 1);
+                        mediaResource.setId(detailMediaResouce.getId());
+                        mediaResource.setType(detailMediaResouce.getType());
 
 
-                    P2PCallRequest p2PCallRequest = (P2PCallRequest) waitMsg.get(P2PCallRequest.class.getName());
-                    p2PCallRequest.addReverseResource(mediaResource);
-                    System.out.println("在此处处理反向资源");
-                    p2PCallRequest.removeMsg(P2PCallRequest.class.getName());
+                        P2PCallRequest p2PCallRequest = (P2PCallRequest) waitMsg.get(P2PCallRequest.class.getName());
+                        p2PCallRequest.addReverseResource(mediaResource);
+                        System.out.println("在此处处理反向资源");
+                        System.out.println("P2PCallRequest.class.getName() : " + P2PCallRequest.class.getName());
+                        p2PCallRequest.removeMsg(P2PCallRequest.class.getName());
+                    }
                 }
             }
         }

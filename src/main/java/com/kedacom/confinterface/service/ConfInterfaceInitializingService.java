@@ -8,9 +8,13 @@ import com.kedacom.confinterface.dto.*;
 import com.kedacom.confinterface.h323.H323TerminalManageService;
 import com.kedacom.confinterface.inner.*;
 import com.kedacom.confinterface.restclient.McuRestClientService;
+import com.kedacom.confinterface.restclient.McuSdkClientService;
 import com.kedacom.confinterface.restclient.mcu.*;
 import com.kedacom.confinterface.syssetting.BaseSysConfig;
 import com.kedacom.confinterface.util.ProtocalTypeEnum;
+import com.kedacom.mcuadapter.IMcuClientManager;
+import com.kedacom.mcuadapter.McuClientManagerFactory;
+import com.kedacom.mcuadapter.McuClientManagerTypeEnum;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
@@ -31,6 +35,22 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
 
         createConferenceManage();
         registerVmts();
+        if ("sdk".equals(baseSysConfig.getMcuMode())) {
+            createAndInitMcuSdkClientManage();
+            while (true){
+                System.out.println("sdk登陆");
+                boolean bOk = mcuSdkClientService.login();
+                if (bOk)
+                    break;
+
+                try{
+                    TimeUnit.SECONDS.sleep(1);
+                } catch (InterruptedException e){
+                    System.out.println("ConfInterfaceInitializingService ..... currentTime : " + System.currentTimeMillis());
+                }
+            }
+        }
+
         if ("mcu".equals(baseSysConfig.getMcuMode())) {
             System.out.println("5.2mcu登陆");
             loginMcuRestSrv();
@@ -161,6 +181,20 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
             }
 
         } catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    private void createAndInitMcuSdkClientManage(){
+        System.out.println("now in createMcuSdkClientManage.............");
+        try {
+            IMcuClientManager mcuClientManager = McuClientManagerFactory.createManager(McuClientManagerTypeEnum.KD_MCU_MCS_SDK);
+
+            mcuSdkClientService.setMcuClientManager(mcuClientManager);
+            mcuSdkClientService.initMcuSdk();
+
+        } catch (Exception e){
+            System.out.println("createManager failed!");
             e.printStackTrace();
         }
     }
@@ -349,6 +383,9 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
 
     @Autowired
     private DefaultListableBeanFactory defaultListableBeanFactory;
+
+    @Autowired
+    private McuSdkClientService mcuSdkClientService;
 
     protected final org.slf4j.Logger logger = LoggerFactory.getLogger(this.getClass());
 }

@@ -1,5 +1,7 @@
 package com.kedacom.confinterface.dao;
 
+import com.kedacom.confinterface.LogService.LogOutputTypeEnum;
+import com.kedacom.confinterface.LogService.LogTools;
 import com.kedacom.confinterface.dto.TerminalMediaResource;
 import com.kedacom.confinterface.redis.RedisClient;
 import net.sf.json.JSONObject;
@@ -262,6 +264,7 @@ public class RedisTerminalMediaSourceDao implements TerminalMediaSourceDao {
     public TerminalMediaResource delTerminalMediaResource(String mtE164) {
         String key = keyGenernate(mediaResourcePrefix, mtE164);
         if (!redisClient.keyExist(key)) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"RedisTerminalMediaSourceDao, delTerminalMediaResource:"+mtE164+", not found terminal media resources!");
             System.out.println("RedisTerminalMediaSourceDao, delTerminalMediaResource:"+mtE164+", not found terminal media resources!");
             return null;
         }
@@ -275,6 +278,7 @@ public class RedisTerminalMediaSourceDao implements TerminalMediaSourceDao {
     public BroadcastSrcMediaInfo getBroadcastSrcInfo(String groupId){
         String key = keyGenernate(broadcastSrcPrefix, groupId);
         if (!redisClient.keyExist(key)){
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"getBroadcastSrcInfo, not exist key:"+key);
             System.out.println("getBroadcastSrcInfo, not exist key:"+key);
             return null;
         }
@@ -289,7 +293,7 @@ public class RedisTerminalMediaSourceDao implements TerminalMediaSourceDao {
         if (bOk) {
             return broadcastSrcMediaInfo;
         }
-
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"setBroadcastSrcInfo , Failed!!! key:"+key);
         System.out.println("setBroadcastSrcInfo , Failed!!! key:"+key);
         return null;
     }
@@ -298,6 +302,7 @@ public class RedisTerminalMediaSourceDao implements TerminalMediaSourceDao {
     public BroadcastSrcMediaInfo delBroadcastSrcInfo(String groupId){
         String key = keyGenernate(broadcastSrcPrefix, groupId);
         if (!redisClient.keyExist(key)) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"delBroadcastSrcInfo, groupId:"+groupId+" not exist broadcast src info!");
             System.out.println("delBroadcastSrcInfo, groupId:"+groupId+" not exist broadcast src info!");
             return null;
         }

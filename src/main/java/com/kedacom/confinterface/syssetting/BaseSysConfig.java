@@ -90,6 +90,14 @@ public class BaseSysConfig {
         this.e164Start = e164Start;
     }
 
+    public String getCdeviceManageSrvAddr() {
+        return cdeviceManageSrvAddr;
+    }
+
+    public void setCdeviceManageSrvAddr(String cdeviceManageSrvAddr) {
+        this.cdeviceManageSrvAddr = cdeviceManageSrvAddr;
+    }
+
     public void setVideoCapSet(String videoCapSet) {
         this.videoCapSet = videoCapSet;
     }
@@ -155,6 +163,38 @@ public class BaseSysConfig {
         }
     }
 
+    public String getPushServiceType() {
+        return pushServiceType;
+    }
+
+    public void setPushServiceType(String pushServiceType) {
+        this.pushServiceType = pushServiceType;
+    }
+
+    public int getLogFileSize() {
+        return logFileSize;
+    }
+
+    public void setLogFileSize(int logFileSize) {
+        this.logFileSize = logFileSize;
+    }
+
+    public int getLogFileNum() {
+        return logFileNum;
+    }
+
+    public void setLogFileNum(int logFileNum) {
+        this.logFileNum = logFileNum;
+    }
+
+    public String getLogPath() {
+        return logPath;
+    }
+
+    public void setLogPath(String logPath) {
+        this.logPath = logPath;
+    }
+
     @Override
     public String toString() {
         return new StringBuffer()
@@ -178,6 +218,8 @@ public class BaseSysConfig {
                 .append(vmtNamePrefix)
                 .append(", e164Start:")
                 .append(e164Start)
+                .append(", pushServiceType:")
+                .append(pushServiceType)
                 .append(", videoCaps:")
                 .append(videoCapSet)
                 .append(", audioCaps:")
@@ -203,6 +245,8 @@ public class BaseSysConfig {
     private int maxVmts = 3;
     private String vmtNamePrefix = "confInterface_";
     private String e164Start = "1234560100000";
+    private String cdeviceManageSrvAddr = "dev.ctsp.kedacom.com";
+    private String pushServiceType = "mediaSchedule"; // ctsp向统一设备推送状态 ; mediaSchedule 向媒体调度推送状态
     /*编码格式/分辨率/帧率/码率类型/码率
      * 编码格式：1：MPEG-4，2：H264， 3：SVAC，4：3GP
      * 分辨率：1：QCIF，2：CIF，3：4CIF，4：D1，5：720P，6：1080P
@@ -221,6 +265,12 @@ public class BaseSysConfig {
      * 通道数：>=1的整型值
      * */
     private String audioCapSet = "1/8/1/2";
+
+    private int logFileSize = 1048576;
+
+    private int logFileNum = 2;
+
+    private String logPath = "/usr/";
 
     private List<VideoCap> videoCapList;
     private List<AudioCap> audioCapList;
