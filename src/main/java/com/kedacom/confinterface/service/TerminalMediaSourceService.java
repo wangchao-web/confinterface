@@ -1,5 +1,7 @@
 package com.kedacom.confinterface.service;
 
+import com.kedacom.confinterface.LogService.LogOutputTypeEnum;
+import com.kedacom.confinterface.LogService.LogTools;
 import com.kedacom.confinterface.dao.InspectionSrcParam;
 import com.kedacom.confinterface.dao.TerminalMediaSourceDao;
 import com.kedacom.confinterface.dao.BroadcastSrcMediaInfo;
@@ -23,6 +25,7 @@ public class TerminalMediaSourceService {
 
     @Cacheable(value = "vmtList", key = "caches[0].name")
     public List<String> getVmtList() {
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"getVmtList in TerminalMediaSourceService");
         System.out.println("getVmtList in TerminalMediaSourceService");
         return terminalMediaSourceDao.getVmtList();
     }

@@ -1,5 +1,7 @@
 package com.kedacom.confinterface.inner;
 
+import com.kedacom.confinterface.LogService.LogOutputTypeEnum;
+import com.kedacom.confinterface.LogService.LogTools;
 import com.kedacom.confinterface.dao.InspectionSrcParam;
 import com.kedacom.confinterface.dao.Terminal;
 import com.kedacom.confinterface.dto.BaseRequestMsg;
@@ -271,6 +273,7 @@ public class GroupConfInfo {
             }
 
             if (null == freeTerminalService) {
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"getVmt2Use, has get no free vmt!!!");
                 System.out.println("getVmt2Use, has get no free vmt!!!");
                 return null;
             }
@@ -331,6 +334,7 @@ public class GroupConfInfo {
     public TerminalService getDstInspectionVmtTerminal(TerminalService srcService){
         Map<String, InspectedParam> inspentedTerminals = srcService.getInspentedTerminals();
         if (null == inspentedTerminals) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"getDstInspectionVmtTerminal, null == inspentedTerminals");
             System.out.println("getDstInspectionVmtTerminal, null == inspentedTerminals");
             return null;
         }
@@ -347,6 +351,7 @@ public class GroupConfInfo {
 
     public TerminalService getSrcInspectionTerminal(TerminalService dstTerminal){
         if (null == dstTerminal) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"getSrcInspectionTerminal, null == dstTerminal");
             System.out.println("getSrcInspectionTerminal, null == dstTerminal");
             return null;
         }

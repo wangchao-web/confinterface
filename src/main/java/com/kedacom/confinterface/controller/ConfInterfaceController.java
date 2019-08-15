@@ -27,7 +27,7 @@ public class ConfInterfaceController {
     @Autowired
     private ConfInterfacePublishService confInterfacePublishService;
 
-    //private final org.slf4j.Logger logger = LoggerFactory.getLogger(this.getClass());
+    private final org.slf4j.Logger logger = LoggerFactory.getLogger(this.getClass());
 
     public ConfInterfaceController(ConfInterfaceService confInterfaceService) {
 
@@ -217,7 +217,7 @@ public class ConfInterfaceController {
     }
 
     @PostMapping(value = "p2pcall")
-    public DeferredResult<ResponseEntity<P2PCallResponse>> p2pCall(@RequestParam("GroupId") String groupId, @Valid @RequestBody P2PCallParam p2PCallParam){
+    public DeferredResult<ResponseEntity<BaseResponseMsg>> p2pCall(@RequestParam("GroupId") String groupId, @Valid @RequestBody P2PCallParam p2PCallParam){
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "now in p2pCall, groupId:"+groupId+", p2pCallParam:"+p2PCallParam);
         System.out.println("now in p2pCall, groupId:"+groupId+", p2pCallParam:"+p2PCallParam);
         P2PCallRequest p2PCallRequest = new P2PCallRequest(groupId, p2PCallParam.getAccount());
@@ -228,10 +228,19 @@ public class ConfInterfaceController {
     @DeleteMapping(value = "p2pcall")
     public DeferredResult<ResponseEntity<BaseResponseMsg>> cancelP2PCall(@RequestParam("GroupId") String groupId, @Valid @RequestBody CancelP2PCallParam cancelP2PCallParam){
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now in p2pCall, groupId:"+groupId+", p2pCallParam:"+cancelP2PCallParam);
-        System.out.println("now in p2pCall, groupId:"+groupId+", p2pCallParam:"+cancelP2PCallParam);
+        System.out.println("cancel p2pCall, groupId:"+groupId+", p2pCallParam:"+cancelP2PCallParam);
         CancelP2PCallRequest cancelP2PCallRequest = new CancelP2PCallRequest(groupId);
         confInterfaceService.cancelP2PCall(cancelP2PCallRequest, cancelP2PCallParam);
         return cancelP2PCallRequest.getResponseMsg();
+    }
+
+    @PostMapping(value = "/p2pdualStream")
+    public DeferredResult<ResponseEntity<StartDualResponse>> p2pStartDual(@RequestParam("GroupId") String groupId, @Valid @RequestBody DualStreamParam dualStreamParam){
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now in p2pstartDual, groupId:"+groupId + ", dualStreamParam:" + dualStreamParam);
+        System.out.println("now in p2pstartDual, groupId:"+groupId + ", dualStreamParam:" + dualStreamParam);
+        StartDualStreamRequest startDualStreamRequest = new StartDualStreamRequest(groupId, dualStreamParam);
+        confInterfaceService.p2pctrlDualStream(startDualStreamRequest, dualStreamParam.getMtE164(), true);
+        return startDualStreamRequest.getResponseMsg();
     }
 
     private DeferredResult<ResponseEntity<BaseResponseMsg>> silenceOrMute(String groupId, String mtE164, boolean silence, SilenceOrMuteParam silenceOrMuteParam){

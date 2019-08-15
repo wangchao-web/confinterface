@@ -259,10 +259,13 @@ public class H323TerminalService extends TerminalService {
                 return false;
 
             resourceInfo.add(resourceResponse.getResourceID());
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"resourceResponse" + resourceResponse.getSdp());
+            System.out.println("resourceResponse" + resourceResponse.getSdp());
             newMediaDescription.add(constructRequestMediaDescription(mediaDescriptions.get(0), resourceResponse.getSdp()));
         }
         boolean bOk = false;
         synchronized (this) {
+
             bOk = conferenceParticipant.RequestRemoteMedia(newMediaDescription);
             if (!bOk) {
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"H323, openLogicalChannel, RequestRemoteMedia failed! participartId : " + e164);
@@ -288,6 +291,7 @@ public class H323TerminalService extends TerminalService {
         if (null != forwardChannel) {
             for (DetailMediaResouce detailMediaResouce : forwardChannel) {
                 if (detailMediaResouce.getDual() == 1) {
+                    LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"50022 : exist dual stream!");
                     startDualStreamRequest.makeErrorResponseMsg(ConfInterfaceResult.EXIST_DUALSTREAM.getCode(), HttpStatus.OK, ConfInterfaceResult.EXIST_DUALSTREAM.getMessage());
                     return;
                 }
@@ -305,6 +309,7 @@ public class H323TerminalService extends TerminalService {
         if (null == resourceResponse) {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"openDualStreamChannel, addExchange failed!");
             System.out.println("openDualStreamChannel, addExchange failed!");
+            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"50020 : add exchange node failed!");
             startDualStreamRequest.makeErrorResponseMsg(ConfInterfaceResult.ADD_EXCHANGENODE_FAILED.getCode(), HttpStatus.OK, ConfInterfaceResult.ADD_EXCHANGENODE_FAILED.getMessage());
             return;
         }

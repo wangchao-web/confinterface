@@ -1,11 +1,22 @@
 package com.kedacom.confinterface.dto;
 
+import java.util.List;
+
 public class TerminalStatus {
     public TerminalStatus(String deviceId, String type, int status) {
         super();
         this.deviceId = deviceId;
         this.type = type;
         this.status = status;
+    }
+
+    public TerminalStatus(String deviceId, String type, int status, List<MediaResource> forwardResources, List<MediaResource> reverseResources) {
+        super();
+        this.deviceId = deviceId;
+        this.type = type;
+        this.status = status;
+        this.forwardResources = forwardResources;
+        this.reverseResources = reverseResources;
     }
 
     public String getDeviceId() {
@@ -32,7 +43,25 @@ public class TerminalStatus {
         this.type = type;
     }
 
+    public List<MediaResource> getForwardResources() {
+        return forwardResources;
+    }
+
+    public void setForwardResources(List<MediaResource> forwardResources) {
+        this.forwardResources = forwardResources;
+    }
+
+    public List<MediaResource> getReverseResources() {
+        return reverseResources;
+    }
+
+    public void setReverseResources(List<MediaResource> reverseResources) {
+        this.reverseResources = reverseResources;
+    }
+
     private String deviceId;
     private String type;
     private int status;
+    private List<MediaResource> forwardResources;
+    private List<MediaResource> reverseResources;
 }

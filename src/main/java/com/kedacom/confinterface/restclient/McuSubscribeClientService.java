@@ -1,5 +1,7 @@
 package com.kedacom.confinterface.restclient;
 
+import com.kedacom.confinterface.LogService.LogOutputTypeEnum;
+import com.kedacom.confinterface.LogService.LogTools;
 import com.kedacom.confinterface.event.SubscribeEvent;
 import com.kedacom.confinterface.restclient.mcu.InspectionSrcInfo;
 import com.kedacom.confinterface.restclient.mcu.JoinConfFailInfo;
@@ -40,6 +42,7 @@ public class McuSubscribeClientService implements ApplicationContextAware{
     }
 
     public boolean handshake(List<String> cookies) {
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now start hand shake..............");
         System.out.println("now start hand shake..............");
 
         HttpClient httpclient = new HttpClient();
@@ -70,11 +73,13 @@ public class McuSubscribeClientService implements ApplicationContextAware{
             CookieStore store = handle.getCookieStore();
             List<HttpCookie> lstCookie = store.getCookies();
             if (null == lstCookie || lstCookie.isEmpty()){
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"getCookies null, input cookie :" + cookies);
                 System.out.println("getCookies null, input cookie :" + cookies);
 
                 if (null != cookies && !cookies.isEmpty()) {
                     for (String cookie : cookies) {
                         String[] keyValue = cookie.split("=");
+                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"handshake, cookie:"+cookie+", keyvalue[0]:"+keyValue[0]+", keyvalue[1]:"+keyValue[1]);
                         System.out.println("handshake, cookie:"+cookie+", keyvalue[0]:"+keyValue[0]+", keyvalue[1]:"+keyValue[1]);
                         HttpCookie httpCookie = new HttpCookie(keyValue[0], keyValue[1]);
                         bayeuxClient.putCookie(httpCookie);
@@ -116,6 +121,7 @@ public class McuSubscribeClientService implements ApplicationContextAware{
                 //握手成功，获取domain_id
                 Map<String, Object> map = message.getExt();
                 domainId = map.get("user_domain_moid").toString();
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"handshake ok, user domain id: " + domainId);
                 System.out.println("handshake ok, user domain id: " + domainId);
                 userDomain = "/userdomains/" + domainId;
 
@@ -124,6 +130,7 @@ public class McuSubscribeClientService implements ApplicationContextAware{
                 }
 
             } else {
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"handshake failed!");
                 System.out.println("handshake failed!");
                 handShakeOk = false;
             }
@@ -139,8 +146,10 @@ public class McuSubscribeClientService implements ApplicationContextAware{
                 String strChannel = message.get("subscription").toString();
                 channelList.add(strChannel);
 
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"Subsription successful! channel:"+strChannel);
                 System.out.println("Subsription successful! channel:"+strChannel);
             } else {
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"Subsription failed!");
                 System.out.println("Subsription failed!");
             }
         }
@@ -151,6 +160,7 @@ public class McuSubscribeClientService implements ApplicationContextAware{
 
         @Override
         public void onMessage(ClientSessionChannel clientSessionChannel, Message message) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"subcontent: " + message.getJSON());
             System.out.println("subcontent: " + message.getJSON());
 
             //获取订阅返回的通道消息
@@ -168,10 +178,12 @@ public class McuSubscribeClientService implements ApplicationContextAware{
             String subChannel = strChannel.substring(userDomain.length());
             String[] subString = subChannel.split("/", 4);
             String confId = subString[2];
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"subscribe channel: " + strChannel + ", channel: " + subChannel + ", confId: "+ confId + ", method: " + method + ", errCode: "+errorCode);
             System.out.println("subscribe channel: " + strChannel + ", channel: " + subChannel + ", confId: "+ confId + ", method: " + method + ", errCode: "+errorCode);
 
             if (subChannel.contains("mts")){
                 if (subChannel.contains("cascades")) {
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"publishEvent, confId:"+confId+", method:"+method+", channel:"+subChannel);
                     System.out.println("publishEvent, confId:"+confId+", method:"+method+", channel:"+subChannel);
                     SubscribeEvent subscribeEvent = new SubscribeEvent(this, confId, method, errorCode, subChannel, null);
                     applicationContext.publishEvent(subscribeEvent);
@@ -184,12 +196,14 @@ public class McuSubscribeClientService implements ApplicationContextAware{
                     joinConfFailInfo.setJoinConfFailMt(joinConfFailMt);
                     if (20423 == errorCode) {
                         String occupyConfName = data.get("occupy_confname").toString();
+                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"occupyConfName : " + occupyConfName);
                         System.out.println("occupyConfName : " + occupyConfName);
                         joinConfFailInfo.setOccupy_confname(occupyConfName);
                     } else {
                         joinConfFailInfo.setOccupy_confname(null);
                     }
 
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"publish event, errCode :"+errorCode+", account_type :"+joinConfFailMt.getAccount_type()+", account:"+joinConfFailMt.getAccount());
                     System.out.println("publish event, errCode :"+errorCode+", account_type :"+joinConfFailMt.getAccount_type()+", account:"+joinConfFailMt.getAccount());
                     SubscribeEvent subscribeEvent = new SubscribeEvent(this, confId, method, errorCode, subChannel, joinConfFailInfo);
                     applicationContext.publishEvent(subscribeEvent);
@@ -215,6 +229,7 @@ public class McuSubscribeClientService implements ApplicationContextAware{
                 SubscribeEvent subscribeEvent = new SubscribeEvent(this, confId, method, errorCode, subChannel, null);
                 applicationContext.publishEvent(subscribeEvent);
             } else {
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"other channel : " + strChannel);
                 System.out.println("other channel : " + strChannel);
                 SubscribeEvent subscribeEvent = new SubscribeEvent(this, confId, method, errorCode, subChannel, null);
                 applicationContext.publishEvent(subscribeEvent);

@@ -1,6 +1,8 @@
 package com.kedacom.confinterface.service;
 
 import com.kedacom.confadapter.*;
+import com.kedacom.confinterface.LogService.LogOutputTypeEnum;
+import com.kedacom.confinterface.LogService.LogTools;
 import com.kedacom.confinterface.dao.BroadcastSrcMediaInfo;
 import com.kedacom.confinterface.dao.InspectionSrcParam;
 import com.kedacom.confinterface.dao.Terminal;
@@ -31,6 +33,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now in ConfInterfaceInitializingService, protocalType:"+baseSysConfig.getProtocalType());
         System.out.println("now in ConfInterfaceInitializingService, protocalType:"+baseSysConfig.getProtocalType());
 
         createConferenceManage();
@@ -38,6 +41,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
         if ("sdk".equals(baseSysConfig.getMcuMode())) {
             createAndInitMcuSdkClientManage();
             while (true){
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"sdk登陆");
                 System.out.println("sdk登陆");
                 boolean bOk = mcuSdkClientService.login();
                 if (bOk)
@@ -46,16 +50,33 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
                 try{
                     TimeUnit.SECONDS.sleep(1);
                 } catch (InterruptedException e){
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"ConfInterfaceInitializingService ..... currentTime : " + System.currentTimeMillis());
                     System.out.println("ConfInterfaceInitializingService ..... currentTime : " + System.currentTimeMillis());
                 }
             }
         }
 
         if ("mcu".equals(baseSysConfig.getMcuMode())) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"5.2mcu登陆");
             System.out.println("5.2mcu登陆");
             loginMcuRestSrv();
         }
 
+        /*if("p2p".equals(baseSysConfig.getMcuMode())){
+            while (true){
+                if ("172.16.0.40".equals(baseSysConfig.getLocalIp())){
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"登陆");
+                    System.out.println("登陆");
+                    break;
+                }
+                try{
+                    TimeUnit.SECONDS.sleep(1);
+                } catch (InterruptedException e){
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"ConfInterfaceInitializingService ..... currentTime : " + System.currentTimeMillis());
+                    System.out.println("ConfInterfaceInitializingService ..... currentTime : " + System.currentTimeMillis());
+                }
+            }
+        }*/
 
         Map<String, String> groups = confInterfaceService.getGroups();
         if (null == groups || groups.isEmpty()){
@@ -64,12 +85,14 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
             //启动终端注册Gk
             terminalManageService.StartUp();
 
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"no groups in db, init OK! current time : " + System.currentTimeMillis());
             System.out.println("no groups in db, init OK! current time : " + System.currentTimeMillis());
             return;
         }
 
         for (Map.Entry<String, String> groupConf : groups.entrySet()){
             //获取所有组的媒体资源信息
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"ConfInterfaceInitializingService, groupId : " + groupConf.getKey()+", confId : "+groupConf.getValue());
             System.out.println("ConfInterfaceInitializingService, groupId : " + groupConf.getKey()+", confId : "+groupConf.getValue());
             String groupId = groupConf.getKey();
             String confId = groupConf.getValue();
@@ -78,6 +101,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
             //不会因为会议接入微服务的重启而掉线，也不需要重新呼叫入会
             List<Terminal> confMtMembers = confInterfaceService.getGroupMtMembers(groupId);
             if (null == confMtMembers){
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"groupId("+groupId+") has no terminal!!");
                 System.out.println("groupId("+groupId+") has no terminal!!");
                 continue;
             }
@@ -90,10 +114,12 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
             GroupConfInfo groupConfInfo = new GroupConfInfo(groupId, confId);
             loadMtInfo(groupConfInfo, confMtMembers);
 
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"start getGroupVmtMembers..................");
             System.out.println("start getGroupVmtMembers..................");
             int joinConfVmtNum = 0;
             List<Terminal> confVmtMembers = confInterfaceService.getGroupVmtMembers(groupId);
             if (null == confVmtMembers){
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"groupId("+groupId+") has no virtual terminal!!");
                 System.out.println("groupId("+groupId+") has no virtual terminal!!");
                 joinConfVmtNum = confMtMembers.size();
             } else {
@@ -112,6 +138,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
             //构造被选看信息
             constructInspectedParam(groupConfInfo);
             confInterfaceService.addGroupConfInfo(groupConfInfo);
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"groupId : " + groupId + ", wait vmts online! joinConfVmtNum : " + joinConfVmtNum);
             System.out.println("groupId : " + groupId + ", wait vmts online! joinConfVmtNum : " + joinConfVmtNum);
         }
 
@@ -122,6 +149,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
     }
 
     private void createConferenceManage() {
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now in createConferenceManage.............");
         System.out.println("now in createConferenceManage.............");
         IConferenceManager conferenceManager;
         if (baseSysConfig.getProtocalType().equals(ProtocalTypeEnum.H323.getName())) {
@@ -134,13 +162,16 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
     }
 
     private void initConfAdapter(){
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now in initConfAdapter................");
         System.out.println("now in initConfAdapter................");
         IConferenceAdapterController conferenceAdapterController = terminalManageService.getConferenceManager().CreateAdapterController();
         conferenceAdapterController.SetEventHandler((H323TerminalManageService) terminalManageService);
         boolean bInitOk = conferenceAdapterController.Init("");
         if (bInitOk) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"init conferenceAdapterController successfully");
             System.out.println("init conferenceAdapterController successfully");
         } else {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"init conferenceAdapterController fail");
             System.out.println("init conferenceAdapterController fail");
         }
     }
@@ -150,10 +181,12 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
             //查询数据库中是否已经存在vmt信息，如果存在，则直接使用Vmt中数据重新构建
             List<String> vmtList = confInterfaceService.getVmts();
 
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"++++++++++++++baseSysSetting+++++++++++++\r\n" + baseSysConfig.toString());
             System.out.println("++++++++++++++baseSysSetting+++++++++++++\r\n" + baseSysConfig.toString());
             if (null == vmtList || vmtList.isEmpty()) {
                 //会议接入服务第一次启动，根据配置文件中的起始E164号及虚拟终端数量
                 //生成E164号
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"first start conf interface service.................");
                 System.out.println("first start conf interface service.................");
                 GenerateE164Service.InitE164(baseSysConfig.getE164Start());
                 int maxVmts = baseSysConfig.getMaxVmts();
@@ -166,6 +199,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
 
             }
 
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"vmtList size : " + vmtList.size());
             System.out.println("vmtList size : " + vmtList.size());
 
             for (String vmtE164 : vmtList) {
@@ -177,6 +211,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
                 defaultListableBeanFactory.registerSingleton(vmtE164, vmtService);
                 defaultListableBeanFactory.autowireBean(vmtService);
 
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"registerSingleton, vmtE164 : " + vmtE164);
                 System.out.println("registerSingleton, vmtE164 : " + vmtE164);
             }
 
@@ -186,6 +221,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
     }
 
     private void createAndInitMcuSdkClientManage(){
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now in createMcuSdkClientManage.............");
         System.out.println("now in createMcuSdkClientManage.............");
         try {
             IMcuClientManager mcuClientManager = McuClientManagerFactory.createManager(McuClientManagerTypeEnum.KD_MCU_MCS_SDK);
@@ -194,6 +230,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
             mcuSdkClientService.initMcuSdk();
 
         } catch (Exception e){
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"createManager failed!");
             System.out.println("createManager failed!");
             e.printStackTrace();
         }
@@ -208,6 +245,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
             try{
                 TimeUnit.SECONDS.sleep(1);
             } catch (InterruptedException e){
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"ConfInterfaceInitializingService ..... currentTime : " + System.currentTimeMillis());
                 System.out.println("ConfInterfaceInitializingService ..... currentTime : " + System.currentTimeMillis());
             }
         }
@@ -218,6 +256,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
         String confId = groupConfInfo.getConfId();
         Map<String, CascadeTerminalInfo> terminalInfoMap = mcuRestClientService.getCascadesTerminal(confId, "0", true);
 
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"groupId("+groupId+") has "+confMtMembers.size()+" terminals in db!");
         System.out.println("groupId("+groupId+") has "+confMtMembers.size()+" terminals in db!");
         Iterator<Terminal> iterator = confMtMembers.iterator();
         OnlineMtsInfo onlineMtsInfo = null;
@@ -232,6 +271,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
 
             if (null == terminalInfo){
                 //在会议中没有找到相应的会议终端，有可能是会议终端在微服务重启过程中退出了会议
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"not find mt("+mtE164+") in conf, del from db!");
                 System.out.println("not find mt("+mtE164+") in conf, del from db!");
                 confInterfaceService.delGroupMtMember(groupId, terminal);
                 confInterfaceService.delGroupInspectionParam(mtE164);
@@ -239,6 +279,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
                 continue;
             }
 
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"groupId : " + groupId + ", mtE164 : " + mtE164);
             System.out.println("groupId : " + groupId + ", mtE164 : " + mtE164);
             TerminalService mtService = terminalManageService.createTerminal(mtE164, false);
             mtService.setGroupId(groupId);
@@ -264,10 +305,12 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
             }
 
             if (terminalInfo.getOnline() == 1){
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"mt(e164:"+mtE164+", mtId:"+terminalInfo.getMt_id()+") is online in conf("+confId+")");
                 System.out.println("mt(e164:"+mtE164+", mtId:"+terminalInfo.getMt_id()+") is online in conf("+confId+")");
                 mtService.setOnline(TerminalOnlineStatusEnum.ONLINE.getCode());
             } else {
                 mtService.setOnline(TerminalOnlineStatusEnum.OFFLINE.getCode());
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"mt("+mtService.getE164()+") hang off during conf interface microservice reboot");
                 System.out.println("mt("+mtService.getE164()+") hang off during conf interface microservice reboot");
                 if (null == onlineMtsInfo){
                     onlineMtsInfo = new OnlineMtsInfo();
@@ -290,6 +333,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
 
     private void loadVmtInfo(GroupConfInfo groupConfInfo, List<Terminal> confVmtMembers){
         String groupId = groupConfInfo.getGroupId();
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"loadVmtInfo, group("+groupConfInfo.getGroupId()+") has "+confVmtMembers.size()+" vmts!");
         System.out.println("loadVmtInfo, group("+groupConfInfo.getGroupId()+") has "+confVmtMembers.size()+" vmts!");
         for (Terminal vmt : confVmtMembers) {
             String vmtE164 = vmt.getMtE164();
@@ -301,9 +345,11 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
 
             TerminalMediaResource terminalMediaResource = confInterfaceService.getTerminalMediaResource(vmtE164);
             if (null != terminalMediaResource) {
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"loadVmtInfo, vmt("+vmtE164+") has terminal media resource!");
                 System.out.println("loadVmtInfo, vmt("+vmtE164+") has terminal media resource!");
                 List<MediaResource> forwardResources = terminalMediaResource.getForwardResources();
                 if (null != forwardResources) {
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"loadVmtInfo, forwardResource:"+forwardResources.size());
                     System.out.println("loadVmtInfo, forwardResource:"+forwardResources.size());
                     for (MediaResource mediaResource : forwardResources) {
                         DetailMediaResouce detailMediaResouce = new DetailMediaResouce(mediaResource);
@@ -313,6 +359,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
 
                 List<MediaResource> reverseResources = terminalMediaResource.getReverseResources();
                 if (null != reverseResources) {
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"loadVmtInfo, reverseResource:"+reverseResources.size());
                     System.out.println("loadVmtInfo, reverseResource:"+reverseResources.size());
                     for (MediaResource mediaResource : reverseResources) {
                         DetailMediaResouce detailMediaResouce = new DetailMediaResouce(mediaResource);
@@ -327,6 +374,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
     }
 
     private void loadBroadcastInfo(GroupConfInfo groupConfInfo, BroadcastSrcMediaInfo broadcastSrcMediaInfo){
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"group(" + groupConfInfo.getGroupId() + ") exist broadcast src! broadcastInfo:"+broadcastSrcMediaInfo);
         System.out.println("group(" + groupConfInfo.getGroupId() + ") exist broadcast src! broadcastInfo:"+broadcastSrcMediaInfo);
         TerminalService broadcastService = groupConfInfo.getVmtMember(broadcastSrcMediaInfo.getVmtE164());
         groupConfInfo.setBroadcastType(broadcastSrcMediaInfo.getType());
@@ -387,5 +435,5 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
     @Autowired
     private McuSdkClientService mcuSdkClientService;
 
-    protected final org.slf4j.Logger logger = LoggerFactory.getLogger(this.getClass());
+    //protected final org.slf4j.Logger logger = LoggerFactory.getLogger(this.getClass());
 }

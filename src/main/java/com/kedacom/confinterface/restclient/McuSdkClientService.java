@@ -1,5 +1,7 @@
 package com.kedacom.confinterface.restclient;
 
+import com.kedacom.confinterface.LogService.LogOutputTypeEnum;
+import com.kedacom.confinterface.LogService.LogTools;
 import com.kedacom.confinterface.syssetting.BaseSysConfig;
 import com.kedacom.mcuadapter.IMcuClient;
 import com.kedacom.mcuadapter.IMcuClientManager;
@@ -24,6 +26,7 @@ public class McuSdkClientService {
                 mcuClient = mcuClientManager.createMcuClient();
             }
 
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"McuSdkClientService, mcuSdkConfig:" + baseSysConfig);
             System.out.println("McuSdkClientService, mcuSdkConfig:" + baseSysConfig);
 
             McuClientLoginInfo mcuClientLoginInfo = new McuClientLoginInfo();
@@ -36,10 +39,12 @@ public class McuSdkClientService {
             }else{
                 loginSuccess = false;
             }
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"loginSuccess : " +loginSuccess);
             System.out.println("loginSuccess : " +loginSuccess);
             return loginSuccess;
 
         } catch (Exception e) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"sdk mcu, login failed!");
             System.out.println("sdk mcu, login failed!");
             e.printStackTrace();
             return false;
@@ -64,6 +69,7 @@ public class McuSdkClientService {
             try {
                 TimeUnit.SECONDS.sleep(1);
             } catch (InterruptedException e) {
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"initMcuSdk ..... currentTime : " + System.currentTimeMillis());
                 System.out.println("initMcuSdk ..... currentTime : " + System.currentTimeMillis());
             }
         }

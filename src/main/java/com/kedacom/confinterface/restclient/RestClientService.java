@@ -1,10 +1,21 @@
 package com.kedacom.confinterface.restclient;
 
+import com.kedacom.confinterface.LogService.LogOutputTypeEnum;
+import com.kedacom.confinterface.LogService.LogTools;
+import org.apache.http.client.HttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
+import org.springframework.http.converter.HttpMessageConverter;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -47,11 +58,13 @@ public class RestClientService {
             HttpEntity httpEntity = new HttpEntity(param, httpHeaders);
             ResponseEntity<T> resultEntity = restTemplate.exchange(url, method, httpEntity, returnType, args);
             if (null == resultEntity){
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"exchange failed, null == resultEntity!");
                 System.out.println("exchange failed, null == resultEntity!");
                 return null;
             }
 
             if (!resultEntity.getStatusCode().is2xxSuccessful()){
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"exchange failed! status : "+resultEntity.getStatusCodeValue());
                 System.out.println("exchange failed! status : "+resultEntity.getStatusCodeValue());
                 return null;
             }
@@ -82,6 +95,41 @@ public class RestClientService {
         return null;
     }
 
-    @Autowired
-    private RestTemplate restTemplate;
+    private static RestTemplate initRestTemplate() {
+        HttpClientBuilder httpClientBuilder = HttpClientBuilder.create();
+        PoolingHttpClientConnectionManager poolingHttpClientConnectionManager = new PoolingHttpClientConnectionManager();
+        //poolingHttpClientConnectionManager.setMaxTotal(2700); // 最大连接数2700
+        poolingHttpClientConnectionManager.setDefaultMaxPerRoute(50); // 同路由并发数50
+        httpClientBuilder.setConnectionManager(poolingHttpClientConnectionManager);
+        //httpClientBuilder.setRetryHandler(new DefaultHttpRequestRetryHandler(3, true)); // 重试次数
+        HttpClient httpClient = httpClientBuilder.build();
+
+        HttpComponentsClientHttpRequestFactory clientHttpRequestFactory = new HttpComponentsClientHttpRequestFactory(httpClient);
+        clientHttpRequestFactory.setConnectTimeout(10000);
+        //clientHttpRequestFactory.setConnectionRequestTimeout(20000);
+        clientHttpRequestFactory.setReadTimeout(20000);
+        RestTemplate restTemplate = new RestTemplate(clientHttpRequestFactory);
+        /*List<HttpMessageConverter<?>> messageConverters = new ArrayList<>();
+        MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter();
+        MediaType[] mediaTypes = new MediaType[]{
+                MediaType.ALL,
+                MediaType.APPLICATION_JSON,
+                MediaType.APPLICATION_OCTET_STREAM,
+                MediaType.TEXT_HTML,
+                MediaType.TEXT_PLAIN,
+                MediaType.TEXT_XML,
+                MediaType.APPLICATION_JSON,
+                MediaType.APPLICATION_ATOM_XML,
+                MediaType.APPLICATION_FORM_URLENCODED,
+                MediaType.APPLICATION_JSON_UTF8,
+                MediaType.APPLICATION_PDF,
+        };
+        converter.setSupportedMediaTypes(Arrays.asList(mediaTypes));
+        messageConverters.add(converter);
+        restTemplate.setMessageConverters(messageConverters);*/
+        return restTemplate;
+    }
+
+    private RestTemplate restTemplate =initRestTemplate();
+
 }

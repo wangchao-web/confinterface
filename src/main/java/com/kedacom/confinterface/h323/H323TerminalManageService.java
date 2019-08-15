@@ -463,7 +463,7 @@ public class H323TerminalManageService extends TerminalManageService implements 
             break;
         }
 
-        if (null == terminalService.getRemoteMtAccount()) {
+        /*if (null == terminalService.getRemoteMtAccount()) {*/
             //非点对点呼叫
             StartDualStreamRequest startDualStreamRequest = (StartDualStreamRequest) terminalService.getWaitMsg(StartDualStreamRequest.class.getName());
             if (null == startDualStreamRequest)
@@ -474,9 +474,9 @@ public class H323TerminalManageService extends TerminalManageService implements 
             terminalService.delWaitMsg(StartDualStreamRequest.class.getName());
 
             return;
-        }
+        //}
 
-        P2PCallRequest p2PCallRequest = (P2PCallRequest) terminalService.getWaitMsg(P2PCallRequest.class.getName());
+       /* P2PCallRequest p2PCallRequest = (P2PCallRequest) terminalService.getWaitMsg(P2PCallRequest.class.getName());
         if (null == p2PCallRequest)
             return;
 
@@ -484,7 +484,7 @@ public class H323TerminalManageService extends TerminalManageService implements 
         p2PCallRequest.makeSuccessResponseMsg();
         terminalService.delWaitMsg(P2PCallRequest.class.getName());
 
-        return;
+        return;*/
     }
 
     private void DualStreamRequestFail(H323TerminalService terminalService) {
@@ -502,6 +502,7 @@ public class H323TerminalManageService extends TerminalManageService implements 
         if (null == dualStreamRequest)
             return;
 
+        LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"50021 : update exchange node failed!");
         dualStreamRequest.makeErrorResponseMsg(ConfInterfaceResult.UPDATE_EXCHANGENODE_FAILED.getCode(), HttpStatus.OK, ConfInterfaceResult.UPDATE_EXCHANGENODE_FAILED.getMessage());
         terminalService.delWaitMsg(waitMsgKey);
 
@@ -551,6 +552,7 @@ public class H323TerminalManageService extends TerminalManageService implements 
 
         p2PCallRequest.getWaitMsg().clear();
         terminalService.delWaitMsg(P2PCallRequest.class.getName());
+        LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"50024 : p2p call failed!");
         p2PCallRequest.makeErrorResponseMsg(ConfInterfaceResult.P2PCALL.getCode(), HttpStatus.OK, ConfInterfaceResult.P2PCALL.getMessage());
 
         terminalService.cancelCallMt(terminalService);

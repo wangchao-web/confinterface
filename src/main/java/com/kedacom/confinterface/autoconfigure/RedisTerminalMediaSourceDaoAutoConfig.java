@@ -1,5 +1,7 @@
 package com.kedacom.confinterface.autoconfigure;
 
+import com.kedacom.confinterface.LogService.LogOutputTypeEnum;
+import com.kedacom.confinterface.LogService.LogTools;
 import com.kedacom.confinterface.dao.RedisTerminalMediaSourceDao;
 import com.kedacom.confinterface.dao.TerminalMediaSourceDao;
 import com.kedacom.confinterface.redis.RedisClient;
@@ -71,6 +73,7 @@ public class RedisTerminalMediaSourceDaoAutoConfig {
     @Bean
     @ConditionalOnProperty(name = "confinterface.redis.mode", havingValue = "single", matchIfMissing = true)
     public JedisConnectionFactory standaloneConnectionFactory(){
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"create standalone connection factory, hostName:"+redisConfig.getHostName());
         System.out.println("create standalone connection factory, hostName:"+redisConfig.getHostName());
 
         RedisStandaloneConfiguration redisStandaloneConfiguration = new RedisStandaloneConfiguration(redisConfig.getHostName(), redisConfig.getPort());
@@ -87,6 +90,7 @@ public class RedisTerminalMediaSourceDaoAutoConfig {
     @Bean
     @ConditionalOnProperty(name = "confinterface.redis.mode", havingValue = "cluster", matchIfMissing = false)
     public JedisConnectionFactory clusterConnectionFactory(){
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"create cluster connection factory!!!!");
         System.out.println("create cluster connection factory!!!!");
 
         JedisPoolConfig jedisPoolConfig = jedisPoolConfig();

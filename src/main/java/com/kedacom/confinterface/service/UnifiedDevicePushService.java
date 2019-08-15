@@ -1,5 +1,7 @@
 package com.kedacom.confinterface.service;
 
+import com.kedacom.confinterface.LogService.LogOutputTypeEnum;
+import com.kedacom.confinterface.LogService.LogTools;
 import com.kedacom.confinterface.dto.BaseResponseMsg;
 import com.kedacom.confinterface.dto.UnifiedDevicePushTerminalStatus;
 import com.kedacom.confinterface.restclient.RestClientService;
@@ -28,6 +30,7 @@ public class UnifiedDevicePushService {
 
         ResponseEntity<BaseResponseMsg> publishResponse = restClientService.exchangeJson(statusUrl.toString(), HttpMethod.PUT, unifiedDevicePushTerminalStatus, null, BaseResponseMsg.class);
         if (publishResponse.getStatusCode().is2xxSuccessful() && publishResponse.getBody().getCode() == 0) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"publishMtStatus OK! callCode:"+unifiedDevicePushTerminalStatus.getCallCode());
             System.out.println("publishMtStatus OK! callCode:"+unifiedDevicePushTerminalStatus.getCallCode());
             return;
         }
@@ -35,8 +38,10 @@ public class UnifiedDevicePushService {
         publishFail.add(unifiedDevicePushTerminalStatus);
 
         if (!publishResponse.getStatusCode().is2xxSuccessful()){
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"publishMtStatus failed! , statusCode : "+publishResponse.getStatusCode());
             System.out.println("publishMtStatus failed! , statusCode : "+publishResponse.getStatusCode());
         } else if (publishResponse.getBody().getCode() != 0){
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"publishMtStatus failed! , errCode:"+publishResponse.getBody().getCode()+", errmsg:"+publishResponse.getBody().getMessage());
             System.out.println("publishMtStatus failed! , errCode:"+publishResponse.getBody().getCode()+", errmsg:"+publishResponse.getBody().getMessage());
         }
     }
@@ -52,15 +57,18 @@ public class UnifiedDevicePushService {
             UnifiedDevicePushTerminalStatus unifiedDevicePushTerminalStatus = iterator.next();
             ResponseEntity<BaseResponseMsg> publishResponse = restClientService.exchangeJson(statusUrl.toString(), HttpMethod.PUT, unifiedDevicePushTerminalStatus, null, BaseResponseMsg.class);
             if (!publishResponse.getStatusCode().is2xxSuccessful()){
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"checkPublishFail, publishMtStatus failed! callCode:"+unifiedDevicePushTerminalStatus.getCallCode()+", statusCode:"+publishResponse.getStatusCode());
                 System.out.println("checkPublishFail, publishMtStatus failed! callCode:"+unifiedDevicePushTerminalStatus.getCallCode()+", statusCode:"+publishResponse.getStatusCode());
                 continue;
             }
 
             if (publishResponse.getBody().getCode() != 0){
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"checkPublishFail, publishMtStatus failed! errmsg:"+publishResponse.getBody().getMessage());
                 System.out.println("checkPublishFail, publishMtStatus failed! errmsg:"+publishResponse.getBody().getMessage());
                 continue;
             }
 
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"checkPublishFail, publishMtStatus OK! callCode:"+unifiedDevicePushTerminalStatus.getCallCode());
             System.out.println("checkPublishFail, publishMtStatus OK! callCode:"+unifiedDevicePushTerminalStatus.getCallCode());
             iterator.remove();
         }

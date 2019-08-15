@@ -1,5 +1,7 @@
 package com.kedacom.confinterface.service;
 
+import com.kedacom.confinterface.LogService.LogOutputTypeEnum;
+import com.kedacom.confinterface.LogService.LogTools;
 import com.kedacom.confinterface.dto.BaseResponseMsg;
 import com.kedacom.confinterface.dto.TerminalStatusNotify;
 import com.kedacom.confinterface.inner.SubscribeMsgTypeEnum;
@@ -18,7 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 @EnableScheduling
-public class ConfInterfacePublishService {
+public class  ConfInterfacePublishService {
 
     @Async("confTaskExecutor")
     public void addSubscribeMessage(int type, String groupId, String url){
@@ -36,19 +38,23 @@ public class ConfInterfacePublishService {
     public void publishMessage(SubscribeMsgTypeEnum type, String groupId, Object publishMsg){
         Map<String, String> groupUrls = subscribeMsgs.get(type.getType());
         if (null == groupUrls) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"publishMessage, has no client subscribe message, type :"+type.getType()+", name:"+type.getName());
             System.out.println("publishMessage, has no client subscribe message, type :"+type.getType()+", name:"+type.getName());
             return;
         }
 
         String publishUrl = groupUrls.get(groupId);
         if (null == publishUrl){
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"publishMessage, has no client subscribe message("+type.getName()+") of group("+groupId+")");
             System.out.println("publishMessage, has no client subscribe message("+type.getName()+") of group("+groupId+")");
             return;
         }
 
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"publishMessage, groupId:"+groupId);
         System.out.println("publishMessage, groupId:"+groupId);
         ResponseEntity<BaseResponseMsg> publishResponse = restClientService.exchangeJson(publishUrl, HttpMethod.POST, publishMsg, null, BaseResponseMsg.class);
         if (publishResponse.getStatusCode().is2xxSuccessful() && publishResponse.getBody().getCode() == 0) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"publishMessage OK! type:"+type.getName()+", publishUrl:"+publishUrl);
             System.out.println("publishMessage OK! type:"+type.getName()+", publishUrl:"+publishUrl);
             return;
         }
@@ -64,8 +70,10 @@ public class ConfInterfacePublishService {
         }
 
         if (!publishResponse.getStatusCode().is2xxSuccessful()){
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"publishMessage failed! , type:"+type.getName()+", publishUrl : "+publishUrl);
             System.out.println("publishMessage failed! , type:"+type.getName()+", publishUrl : "+publishUrl);
         } else if (publishResponse.getBody().getCode() != 0){
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"publishMessage failed! , type:"+type.getName()+", publishUrl:"+publishUrl+", errmsg:"+publishResponse.getBody().getMessage());
             System.out.println("publishMessage failed! , type:"+type.getName()+", publishUrl:"+publishUrl+", errmsg:"+publishResponse.getBody().getMessage());
         }
     }
@@ -81,23 +89,26 @@ public class ConfInterfacePublishService {
             Map.Entry<String, Object> publishMsg = iterator.next();
             ResponseEntity<BaseResponseMsg> publishResponse = restClientService.exchangeJson(publishMsg.getKey(), HttpMethod.POST, publishMsg.getValue(), null, BaseResponseMsg.class);
             if (!publishResponse.getStatusCode().is2xxSuccessful()){
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"publishMessage failed! publishUrl : "+publishMsg.getKey());
                 System.out.println("publishMessage failed! publishUrl : "+publishMsg.getKey());
                 continue;
             }
 
             if (publishResponse.getBody().getCode() != 0){
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"publishMessage failed! publishUrl:"+publishMsg.getKey()+", errmsg:"+publishResponse.getBody().getMessage());
                 System.out.println("publishMessage failed! publishUrl:"+publishMsg.getKey()+", errmsg:"+publishResponse.getBody().getMessage());
                 continue;
             }
 
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"publishMessage OK! publishUrl:"+publishMsg.getKey());
             System.out.println("publishMessage OK! publishUrl:"+publishMsg.getKey());
             iterator.remove();
         }
     }
 
-    private Map<Integer, Map<String, String>> subscribeMsgs = new ConcurrentHashMap<>();
+    private static Map<Integer, Map<String, String>> subscribeMsgs = new ConcurrentHashMap<>();
     private Map<String, Object> publishFail = new ConcurrentHashMap<>();
 
-    @Autowired
-    private RestClientService restClientService;
+
+    private RestClientService restClientService = new RestClientService();
 }
