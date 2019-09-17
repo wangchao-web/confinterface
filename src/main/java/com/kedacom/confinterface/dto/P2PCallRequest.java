@@ -5,7 +5,6 @@ import com.kedacom.confinterface.LogService.LogTools;
 import com.kedacom.confinterface.inner.SubscribeMsgTypeEnum;
 import com.kedacom.confinterface.service.ConfInterfacePublishService;
 import com.kedacom.confinterface.util.ConfInterfaceResult;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
@@ -15,7 +14,7 @@ import java.util.List;
 
 public class P2PCallRequest extends BaseRequestMsg<BaseResponseMsg> {
 
-    private ConfInterfacePublishService confInterfacePublishService = new ConfInterfacePublishService();
+    //private ConfInterfacePublishService confInterfacePublishService = new ConfInterfacePublishService();
 
     public P2PCallRequest(String groupId, String account) {
         super(groupId);
@@ -30,11 +29,43 @@ public class P2PCallRequest extends BaseRequestMsg<BaseResponseMsg> {
     }
 
     public void addReverseResource(MediaResource mediaResource) {
-            if (null == reverseResources)
-                reverseResources = new ArrayList<>();
+        if (null == reverseResources)
+            reverseResources = new ArrayList<>();
 
-            reverseResources.add(mediaResource);
-        }
+        reverseResources.add(mediaResource);
+    }
+
+    public String getAccount() {
+        return account;
+    }
+
+    public void setAccount(String account) {
+        this.account = account;
+    }
+
+    public List<MediaResource> getForwardResources() {
+        return forwardResources;
+    }
+
+    public void setForwardResources(List<MediaResource> forwardResources) {
+        this.forwardResources = forwardResources;
+    }
+
+    public List<MediaResource> getReverseResources() {
+        return reverseResources;
+    }
+
+    public void setReverseResources(List<MediaResource> reverseResources) {
+        this.reverseResources = reverseResources;
+    }
+
+    public boolean isSuccessResponseMsg() {
+        return SuccessResponseMsg;
+    }
+
+    public void setSuccessResponseMsg(boolean successResponseMsg) {
+        SuccessResponseMsg = successResponseMsg;
+    }
 
     @Override
     public void removeMsg(String msg) {
@@ -53,12 +84,15 @@ public class P2PCallRequest extends BaseRequestMsg<BaseResponseMsg> {
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "移除成功");
                 System.out.println("移除成功");
                 //makeSuccessResponseMsg();
-                TerminalStatusNotify terminalStatusNotify = new TerminalStatusNotify();
+                SuccessResponseMsg = true;
+                /*TerminalStatusNotify terminalStatusNotify = new TerminalStatusNotify();
                 TerminalStatus terminalStatus = new TerminalStatus(account, "MT", 1, forwardResources, reverseResources);
                 terminalStatusNotify.addMtStatus(terminalStatus);
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"terminalService.getE164() " + account + ",terminalService.getGroupId() : " + groupId + ", forwardResources" + forwardResources.toString() + ", reverseResources" + reverseResources.toString());
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "terminalService.getE164() " + account + ",terminalService.getGroupId() : " + groupId + ", forwardResources" + forwardResources.toString() + ", reverseResources" + reverseResources.toString());
                 System.out.println("terminalService.getE164() " + account + ",terminalService.getGroupId() : " + groupId + ", forwardResources" + forwardResources.toString() + ", reverseResources" + reverseResources.toString());
-                confInterfacePublishService.publishMessage(SubscribeMsgTypeEnum.TERMINAL_STATUS, groupId, terminalStatusNotify);
+
+                System.out.println("confInterfacePublishService : "+confInterfacePublishService);
+                confInterfacePublishService.publishMessage(SubscribeMsgTypeEnum.TERMINAL_STATUS, groupId, terminalStatusNotify);*/
             }
         }
     }
@@ -81,13 +115,15 @@ public class P2PCallRequest extends BaseRequestMsg<BaseResponseMsg> {
         p2PCallResponse.setReverseResources(reverseResources);
         ResponseEntity<P2PCallResponse> responseEntity = new ResponseEntity<>(p2PCallResponse, HttpStatus.OK);
         responseMsg.setResult(responseEntity);*/
-        BaseResponseMsg  p2PCallResponse = new BaseResponseMsg(ConfInterfaceResult.OK.getCode(), HttpStatus.OK.value(), ConfInterfaceResult.OK.getMessage());
-        ResponseEntity<BaseResponseMsg> responseEntity = new ResponseEntity<>( p2PCallResponse, HttpStatus.OK);
+        BaseResponseMsg p2PCallResponse = new BaseResponseMsg(ConfInterfaceResult.OK.getCode(), HttpStatus.OK.value(), ConfInterfaceResult.OK.getMessage());
+        ResponseEntity<BaseResponseMsg> responseEntity = new ResponseEntity<>(p2PCallResponse, HttpStatus.OK);
         responseMsg.setResult(responseEntity);
     }
 
     private String account;
     private List<MediaResource> forwardResources;
     private List<MediaResource> reverseResources;
+
+    public boolean SuccessResponseMsg = false;
 
 }

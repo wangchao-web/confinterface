@@ -18,7 +18,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-@Service
+@Service("ConfInterfacePublishService")
 @EnableScheduling
 public class  ConfInterfacePublishService {
 
@@ -37,6 +37,7 @@ public class  ConfInterfacePublishService {
 
     public void publishMessage(SubscribeMsgTypeEnum type, String groupId, Object publishMsg){
         Map<String, String> groupUrls = subscribeMsgs.get(type.getType());
+        System.out.println("restClientService : "+restClientService);
         if (null == groupUrls) {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"publishMessage, has no client subscribe message, type :"+type.getType()+", name:"+type.getName());
             System.out.println("publishMessage, has no client subscribe message, type :"+type.getType()+", name:"+type.getName());
@@ -107,8 +108,10 @@ public class  ConfInterfacePublishService {
     }
 
     private static Map<Integer, Map<String, String>> subscribeMsgs = new ConcurrentHashMap<>();
-    private Map<String, Object> publishFail = new ConcurrentHashMap<>();
+    private  Map<String, Object> publishFail = new ConcurrentHashMap<>();
 
 
-    private RestClientService restClientService = new RestClientService();
+    @Autowired
+    private RestClientService restClientService;
+    //private RestClientService restClientService = new RestClientService();
 }

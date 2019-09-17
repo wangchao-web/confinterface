@@ -403,6 +403,14 @@ public class GroupConfInfo {
         this.mtIdMap = null;
     }
 
+    public boolean isConfinterface() {
+        return confinterface;
+    }
+
+    public void setConfinterface(boolean confinterface) {
+        this.confinterface = confinterface;
+    }
+
     private String groupId;
     private String confId;
     private int broadcastType;   //0-未知，1-终端，2-其他
@@ -413,4 +421,5 @@ public class GroupConfInfo {
     private ConcurrentHashMap<String, TerminalService> mtMembers;        //E164号为key
     private Map<String, BaseRequestMsg<? extends BaseResponseMsg>> waitDealTask; //E164号为key
     private ConcurrentHashMap<String, String> mtIdMap;
+    private boolean confinterface = false;
 }

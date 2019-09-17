@@ -130,6 +130,8 @@ public class RestClientService {
         return restTemplate;
     }
 
-    private RestTemplate restTemplate =initRestTemplate();
+    @Autowired
+    private RestTemplate restTemplate;
+    //private RestTemplate restTemplate =new RestTemplate();
 
 }

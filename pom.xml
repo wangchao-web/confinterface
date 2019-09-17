@@ -111,6 +111,12 @@
         </dependency>
 
         <dependency>
+            <groupId>com.kedacom</groupId>
+            <artifactId>mcuadapter</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.cometd.java</groupId>
             <artifactId>cometd-java-client</artifactId>
             <version>3.1.4</version>

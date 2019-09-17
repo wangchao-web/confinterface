@@ -7,6 +7,7 @@ import com.kedacom.confadapter.media.MediaDescription;
 import com.kedacom.confinterface.LogService.LogOutputTypeEnum;
 import com.kedacom.confinterface.LogService.LogTools;
 import com.kedacom.confinterface.dto.BaseRequestMsg;
+import com.kedacom.confinterface.dto.MediaResource;
 import com.kedacom.confinterface.exchange.*;
 import com.kedacom.confinterface.inner.DetailMediaResouce;
 import com.kedacom.confinterface.inner.MediaTypeEnum;
@@ -35,6 +36,7 @@ public class H323TerminalService extends TerminalService {
         this.resumeDualStream = new AtomicBoolean(false);
         this.forwardGenericStreamNum = new AtomicInteger(0);
     }
+
 
     public Future<Boolean> startRegGK() {
         if (regGK)
@@ -65,16 +67,16 @@ public class H323TerminalService extends TerminalService {
             localRasAddress.setPort(localRasPort);
             registerInfo.setRegClientAddr(localRasAddress);
 
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"e164(" + e164 + ") start register gk, time : " + System.currentTimeMillis() + ", threadName:" + Thread.currentThread().getName());
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "e164(" + e164 + ") start register gk, time : " + System.currentTimeMillis() + ", threadName:" + Thread.currentThread().getName());
             System.out.println("e164(" + e164 + ") start register gk, time : " + System.currentTimeMillis() + ", threadName:" + Thread.currentThread().getName());
 
             regGK = conferenceParticipant.RegisterToConfSys(registerInfo);
             if (regGK) {
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"register gk ok, time : " + System.currentTimeMillis());
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "register gk ok, time : " + System.currentTimeMillis());
                 System.out.println("register gk ok, time : " + System.currentTimeMillis());
                 return new AsyncResult<>(true);
             } else {
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"register gk failed, time : " + System.currentTimeMillis());
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "register gk failed, time : " + System.currentTimeMillis());
                 System.out.println("register gk failed, time : " + System.currentTimeMillis());
                 return new AsyncResult<>(false);
             }
@@ -90,16 +92,16 @@ public class H323TerminalService extends TerminalService {
         * */
         boolean bCreate = true;
         boolean bOnlyDualStream = true;
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"mediaDescriptions.get(0).getDual() : " + mediaDescriptions.get(0).getDual());
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "mediaDescriptions.get(0).getDual() : " + mediaDescriptions.get(0).getDual());
         System.out.println("mediaDescriptions.get(0).getDual() : " + mediaDescriptions.get(0).getDual());
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"mediaDescriptions.get(0).getMediaType() :" + mediaDescriptions.get(0).getMediaType());
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "mediaDescriptions.get(0).getMediaType() :" + mediaDescriptions.get(0).getMediaType());
         System.out.println("mediaDescriptions.get(0).getMediaType() :" + mediaDescriptions.get(0).getMediaType());
         if (!mediaDescriptions.get(0).getDual()) {
             bOnlyDualStream = false;
             if (null == videoDualStreamMediaDesc
                     && mediaDescriptions.get(0).getMediaType().equals(MediaTypeEnum.VIDEO.getName())) {
                 videoDualStreamMediaDesc = mediaDescriptions.get(0);
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"OnLocalMediaRequested, request terminal: " + videoDualStreamMediaDesc.getDirection() + ",: " + videoDualStreamMediaDesc.getEncodingFormat()
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "OnLocalMediaRequested, request terminal: " + videoDualStreamMediaDesc.getDirection() + ",: " + videoDualStreamMediaDesc.getEncodingFormat()
                         + ",: " + videoDualStreamMediaDesc.getMediaType() + ", :" + videoDualStreamMediaDesc.getDual() + ",:" + videoDualStreamMediaDesc.getStreamIndex());
                 System.out.println("OnLocalMediaRequested, request terminal: " + videoDualStreamMediaDesc.getDirection() + ",: " + videoDualStreamMediaDesc.getEncodingFormat()
                         + ",: " + videoDualStreamMediaDesc.getMediaType() + ", :" + videoDualStreamMediaDesc.getDual() + ",:" + videoDualStreamMediaDesc.getStreamIndex());
@@ -132,7 +134,7 @@ public class H323TerminalService extends TerminalService {
             }
 
             if (resourceInfo.size() > 0) {
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"H323, onOpenLogicalChannel, exist reverseChannel info, start query exchange info, resourceInfoSize:" + resourceInfo.size());
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "H323, onOpenLogicalChannel, exist reverseChannel info, start query exchange info, resourceInfoSize:" + resourceInfo.size());
                 System.out.println("H323, onOpenLogicalChannel, exist reverseChannel info, start query exchange info, resourceInfoSize:" + resourceInfo.size());
                 bCreate = false;
 
@@ -163,27 +165,57 @@ public class H323TerminalService extends TerminalService {
         }
 
         if (bCreate) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"H323, onOpenLogicalChannel, start add exchange info!! threadName:" + Thread.currentThread().getName());
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "H323, onOpenLogicalChannel, start add exchange info!! threadName:" + Thread.currentThread().getName());
             System.out.println("H323, onOpenLogicalChannel, start add exchange info!! threadName:" + Thread.currentThread().getName());
 
             for (MediaDescription mediaDescription : mediaDescriptions) {
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"mediaDescription:" + mediaDescription.toString());
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "mediaDescription:" + mediaDescription.toString());
                 System.out.println("mediaDescription:" + mediaDescription.toString());
+                if (dualSource.size() == 0 || !mediaDescription.getDual()) {
+                    CreateResourceParam createResourceParam = new CreateResourceParam();
+                    createResourceParam.setSdp(constructSdp(mediaDescription));
+                    CreateResourceResponse resourceResponse = addExchange(createResourceParam);
+                    if (null == resourceResponse)
+                        return false;
 
-                CreateResourceParam createResourceParam = new CreateResourceParam();
-                createResourceParam.setSdp(constructSdp(mediaDescription));
-                CreateResourceResponse resourceResponse = addExchange(createResourceParam);
-                if (null == resourceResponse)
-                    return false;
-
-                resourceInfo.add(resourceResponse.getResourceID());
-                addMediaResource(mediaDescription.getStreamIndex(), mediaDescription.getDual(), resourceResponse);
+                    resourceInfo.add(resourceResponse.getResourceID());
+                    addMediaResource(mediaDescription.getStreamIndex(), mediaDescription.getDual(), resourceResponse);
+                } else if (mediaDescription.getDual()) {
+                    System.out.println("进入资源节点更新");
+                    List<String> dualResourceInfo = new ArrayList<>();
+                    List<UpdateResourceParam> updateResourceParams = new ArrayList<>();
+                    for (Map.Entry<String, MediaResource> entry : dualSource.entrySet()) {
+                        System.out.println("增加流媒体资源节点更新 : dualSource.size() :" + dualSource.size());
+                        System.out.println("E164 = " + entry.getKey() + " dualResourceInfo.getId()= " + entry.getValue().toString());
+                        dualResourceInfo.add(entry.getValue().getId());
+                        UpdateResourceParam updateResourceParam = new UpdateResourceParam(entry.getValue().getId());
+                        updateResourceParam.setSdp(constructSdp(mediaDescriptions.get(0)));
+                        updateResourceParams.add(updateResourceParam);
+                    }
+                    List<ExchangeInfo> exchangeInfos = getExchange(dualResourceInfo);
+                    if (null == exchangeInfos) {
+                        System.out.println("流媒体资源节点不存在,没法更新");
+                        updateResourceParams.clear();
+                        dualResourceInfo.clear();
+                        break;
+                    } else {
+                        boolean bOk = requestUpdateResource(updateResourceParams);
+                        if (!bOk) {
+                            removeMediaResource(false, dualResourceInfo);
+                            return false;
+                        }
+                        updateMediaResource(true, exchangeInfos);
+                        dualAddMediaResource();
+                    }
+                }
             }
         }
 
         boolean bOk = ackOpenLogicalChannel(mediaDescriptions);
         if (!bOk) {
             //反向通道打开失败,释放流媒体资源
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Reverse channel opening failed" + resourceInfo.toString());
+            System.out.println("Reverse channel opening failed" + resourceInfo.toString());
             removeMediaResource(false, resourceInfo);
             resourceInfo.clear();
             return bOk;
@@ -195,7 +227,7 @@ public class H323TerminalService extends TerminalService {
             return true;
 
         //在收到主流的反向的通道打开时，发起正向主流通道的打开
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"H323, start open forward logical channel...........");
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "H323, start open forward logical channel...........");
         System.out.println("H323, start open forward logical channel...........");
         return openLogicalChannel(mediaDescriptions);
     }
@@ -218,7 +250,7 @@ public class H323TerminalService extends TerminalService {
                 //如果存在音视频都支持多条流时，避免重复处理同一条流
                 if (detailMediaResouce.compareAndSetStreamIndex(-1, -2)) {
                     //说明是异常重启后的恢复
-                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"H323, openLogicalChannel, exist forward channel info, query exchange info!!!");
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "H323, openLogicalChannel, exist forward channel info, query exchange info!!!");
                     System.out.println("H323, openLogicalChannel, exist forward channel info, query exchange info!!!");
                     needUpdateDetailMediaResouce = detailMediaResouce;
                     bCreate = false;
@@ -249,7 +281,7 @@ public class H323TerminalService extends TerminalService {
 
         CreateResourceResponse resourceResponse = null;
         if (bCreate) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"H323, openLogicalChannel, start add exchange info!!! threadName:" + Thread.currentThread().getName());
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "H323, openLogicalChannel, start add exchange info!!! threadName:" + Thread.currentThread().getName());
             System.out.println("H323, openLogicalChannel, start add exchange info!!! threadName:" + Thread.currentThread().getName());
 
             CreateResourceParam createResourceParam = new CreateResourceParam();
@@ -259,20 +291,19 @@ public class H323TerminalService extends TerminalService {
                 return false;
 
             resourceInfo.add(resourceResponse.getResourceID());
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"resourceResponse" + resourceResponse.getSdp());
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "resourceResponse" + resourceResponse.getSdp());
             System.out.println("resourceResponse" + resourceResponse.getSdp());
             newMediaDescription.add(constructRequestMediaDescription(mediaDescriptions.get(0), resourceResponse.getSdp()));
         }
         boolean bOk = false;
         synchronized (this) {
-
             bOk = conferenceParticipant.RequestRemoteMedia(newMediaDescription);
             if (!bOk) {
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"H323, openLogicalChannel, RequestRemoteMedia failed! participartId : " + e164);
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "H323, openLogicalChannel, RequestRemoteMedia failed! participartId : " + e164);
                 System.out.println("H323, openLogicalChannel, RequestRemoteMedia failed! participartId : " + e164);
                 removeMediaResource(true, resourceInfo);
             } else {
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"H323, openLogicalChannel, RequestRemoteMedia Ok, participartId : " + e164);
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "H323, openLogicalChannel, RequestRemoteMedia Ok, participartId : " + e164);
                 System.out.println("H323, openLogicalChannel, RequestRemoteMedia Ok, participartId : " + e164);
                 if (bCreate) {
                     addMediaResource(newMediaDescription.get(0).getStreamIndex(), newMediaDescription.get(0).getDual(), resourceResponse);
@@ -291,13 +322,13 @@ public class H323TerminalService extends TerminalService {
         if (null != forwardChannel) {
             for (DetailMediaResouce detailMediaResouce : forwardChannel) {
                 if (detailMediaResouce.getDual() == 1) {
-                    LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"50022 : exist dual stream!");
+                    LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50022 : exist dual stream!");
                     startDualStreamRequest.makeErrorResponseMsg(ConfInterfaceResult.EXIST_DUALSTREAM.getCode(), HttpStatus.OK, ConfInterfaceResult.EXIST_DUALSTREAM.getMessage());
                     return;
                 }
             }
         }
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"videoDualStreamMediaDesc : " + videoDualStreamMediaDesc.getDirection() + ",: " + videoDualStreamMediaDesc.getEncodingFormat()
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "videoDualStreamMediaDesc : " + videoDualStreamMediaDesc.getDirection() + ",: " + videoDualStreamMediaDesc.getEncodingFormat()
                 + ",: " + videoDualStreamMediaDesc.getMediaType() + ", :" + videoDualStreamMediaDesc.getDual() + ",:" + videoDualStreamMediaDesc.getStreamIndex());
         System.out.println("videoDualStreamMediaDesc : " + videoDualStreamMediaDesc.getDirection() + ",: " + videoDualStreamMediaDesc.getEncodingFormat()
                 + ",: " + videoDualStreamMediaDesc.getMediaType() + ", :" + videoDualStreamMediaDesc.getDual() + ",:" + videoDualStreamMediaDesc.getStreamIndex());
@@ -307,9 +338,9 @@ public class H323TerminalService extends TerminalService {
         createResourceParam.setSdp(constructCreateSdp(videoDualStreamMediaDesc));
         CreateResourceResponse resourceResponse = addExchange(createResourceParam);
         if (null == resourceResponse) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"openDualStreamChannel, addExchange failed!");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "openDualStreamChannel, addExchange failed!");
             System.out.println("openDualStreamChannel, addExchange failed!");
-            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"50020 : add exchange node failed!");
+            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50020 : add exchange node failed!");
             startDualStreamRequest.makeErrorResponseMsg(ConfInterfaceResult.ADD_EXCHANGENODE_FAILED.getCode(), HttpStatus.OK, ConfInterfaceResult.ADD_EXCHANGENODE_FAILED.getMessage());
             return;
         }
@@ -319,10 +350,10 @@ public class H323TerminalService extends TerminalService {
         newMediaDescription.add(requestRemoteMedia);
 
         boolean bOk = conferenceParticipant.RequestRemoteMedia(newMediaDescription);
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"bOk ; " + bOk);
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "bOk ; " + bOk);
         System.out.println("bOk ; " + bOk);
         if (!bOk) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"H323, openDualStreamChannel, RequestRemoteMedia failed! participartId : " + e164);
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "H323, openDualStreamChannel, RequestRemoteMedia failed! participartId : " + e164);
             System.out.println("H323, openDualStreamChannel, RequestRemoteMedia failed! participartId : " + e164);
             //释放交换资源
             List<String> resourceIds = new ArrayList<>();
@@ -338,7 +369,7 @@ public class H323TerminalService extends TerminalService {
         addWaitMsg(startDualStreamRequest.getClass().getName(), startDualStreamRequest);
         addMediaResource(dualStreamIndex, videoDualStreamMediaDesc.getDual(), resourceResponse);
 
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"openDualStreamChannel, RequestRemoteMedia Ok! streamIndex:" + dualStreamIndex);
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "openDualStreamChannel, RequestRemoteMedia Ok! streamIndex:" + dualStreamIndex);
         System.out.println("openDualStreamChannel, RequestRemoteMedia Ok! streamIndex:" + dualStreamIndex);
 
         newMediaDescription.clear();
@@ -353,7 +384,7 @@ public class H323TerminalService extends TerminalService {
         resourceInfo.add(dualStreamResourceId);
         List<ExchangeInfo> exchangeInfos = getExchange(resourceInfo);
         if (null == exchangeInfos) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"resumeDualStream, getExchange failed! resourceId:" + dualStreamResourceId);
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "resumeDualStream, getExchange failed! resourceId:" + dualStreamResourceId);
             System.out.println("resumeDualStream, getExchange failed! resourceId:" + dualStreamResourceId);
             return false;
         }
@@ -365,7 +396,7 @@ public class H323TerminalService extends TerminalService {
 
         boolean bOk = conferenceParticipant.RequestRemoteMedia(requestMediaDescription);
         if (!bOk) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"H323, openDualStreamChannel, RequestRemoteMedia failed! participartId : " + e164);
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "H323, openDualStreamChannel, RequestRemoteMedia failed! participartId : " + e164);
             System.out.println("H323, openDualStreamChannel, RequestRemoteMedia failed! participartId : " + e164);
             //释放交换资源
             removeMediaResource(true, resourceInfo);
@@ -393,11 +424,11 @@ public class H323TerminalService extends TerminalService {
         if (null == videoDualStreamMediaDesc || null == forwardChannel || null == dualStreamResourceId)
             return true;
 
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"closeDualStreamChannel, streamIndex : " + videoDualStreamMediaDesc.getStreamIndex());
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "closeDualStreamChannel, streamIndex : " + videoDualStreamMediaDesc.getStreamIndex());
         System.out.println("closeDualStreamChannel, streamIndex : " + videoDualStreamMediaDesc.getStreamIndex());
         boolean bOk = conferenceParticipant.RequestCleanupMediaById(videoDualStreamMediaDesc.getStreamIndex());
         if (!bOk) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"closeDualStreamChannel, RequestCleanupMediaById failed!");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "closeDualStreamChannel, RequestCleanupMediaById failed!");
             System.out.println("closeDualStreamChannel, RequestCleanupMediaById failed!");
             return false;
         }

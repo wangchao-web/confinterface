@@ -9,6 +9,17 @@ import java.util.List;
 
 public class JoinConferenceRequest extends BaseRequestMsg<BaseResponseMsg> {
 
+    public JoinConferenceRequest(String groupId, List<Terminal> mts,int confinterface) {
+        super(groupId);
+        this.mts = mts;
+        if(confinterface == 1){
+            this.confinterface = true;
+        }else{
+            this.confinterface = false;
+        }
+
+    }
+
     public JoinConferenceRequest(String groupId, List<Terminal> mts) {
         super(groupId);
         this.mts = mts;
@@ -20,6 +31,14 @@ public class JoinConferenceRequest extends BaseRequestMsg<BaseResponseMsg> {
 
     public List<Terminal> getMts() {
         return mts;
+    }
+
+    public boolean isConfinterface() {
+        return confinterface;
+    }
+
+    public void setConfinterface(boolean confinterface) {
+        this.confinterface = confinterface;
     }
 
     @Override
@@ -37,4 +56,6 @@ public class JoinConferenceRequest extends BaseRequestMsg<BaseResponseMsg> {
     }
 
     private List<Terminal> mts;
+
+    private boolean confinterface = false;
 }

@@ -67,6 +67,14 @@ public class H323ProtocalConfig {
         this.registerGkThreadNum = registerGkThreadNum;
     }
 
+    public String getProtocolStack() {
+        return protocolStack;
+    }
+
+    public void setProtocolStack(String protocolStack) {
+        this.protocolStack = protocolStack;
+    }
+
     @Override
     public String toString() {
         return new StringBuilder().append("baseSysConf{").append(baseSysConfig).append("},useGK:").append(useGK)
@@ -76,6 +84,7 @@ public class H323ProtocalConfig {
                 .append(",localRasPort:").append(localRasPort)
                 .append(",localCallPort:").append(localCallPort)
                 .append(",registerGkThreadNum:").append(registerGkThreadNum)
+                .append(",protocolStack:").append(protocolStack)
                 .toString();
     }
 
@@ -88,5 +97,6 @@ public class H323ProtocalConfig {
     private int gkCallPort = 1720;
     private int localRasPort = 1729;
     private int localCallPort = 1730;
-    private int registerGkThreadNum = 10;
+    private int registerGkThreadNum = 32;
+    private String protocolStack = "H323Plus"; //H323代表使用H323协议栈,H323Plus代表使用H323Plus协议栈
 }

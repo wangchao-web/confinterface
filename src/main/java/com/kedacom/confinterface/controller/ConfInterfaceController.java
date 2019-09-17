@@ -37,8 +37,8 @@ public class ConfInterfaceController {
     @PostMapping(value = "/participants")
     public DeferredResult<ResponseEntity<BaseResponseMsg>> joinConference(@RequestParam("GroupId") String groupId, @Valid @RequestBody JoinConferenceParam joinConferenceParam) {
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now in joinConference, groupId : " + groupId + ", time : " + System.currentTimeMillis() );
-        System.out.println("now in joinConference, groupId : " + groupId + ", time : " + System.currentTimeMillis());
-        JoinConferenceRequest joinConferenceRequest = new JoinConferenceRequest(groupId, joinConferenceParam.getMts());
+        System.out.println("now in joinConference, groupId : " + groupId + "joinConferenceParam.getConfinterface() : " +joinConferenceParam.getConfinterface() + ", time : " + System.currentTimeMillis());
+        JoinConferenceRequest joinConferenceRequest = new JoinConferenceRequest(groupId, joinConferenceParam.getMts(),joinConferenceParam.getConfinterface());
         confInterfaceService.joinConference(joinConferenceRequest);
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now finished joinConference, time : " + System.currentTimeMillis());
         System.out.println("now finished joinConference, time : " + System.currentTimeMillis());
@@ -220,6 +220,7 @@ public class ConfInterfaceController {
     public DeferredResult<ResponseEntity<BaseResponseMsg>> p2pCall(@RequestParam("GroupId") String groupId, @Valid @RequestBody P2PCallParam p2PCallParam){
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "now in p2pCall, groupId:"+groupId+", p2pCallParam:"+p2PCallParam);
         System.out.println("now in p2pCall, groupId:"+groupId+", p2pCallParam:"+p2PCallParam);
+        LogTools.debug(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"startCallDevice(GroupID: " + groupId + ", account: "+ p2PCallParam.getAccount() +") - [YYYY-MM-DDThh:mm:ss.SSSZ] start");
         P2PCallRequest p2PCallRequest = new P2PCallRequest(groupId, p2PCallParam.getAccount());
         confInterfaceService.p2pCall(p2PCallRequest, p2PCallParam);
         return p2PCallRequest.getResponseMsg();
@@ -229,6 +230,7 @@ public class ConfInterfaceController {
     public DeferredResult<ResponseEntity<BaseResponseMsg>> cancelP2PCall(@RequestParam("GroupId") String groupId, @Valid @RequestBody CancelP2PCallParam cancelP2PCallParam){
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now in p2pCall, groupId:"+groupId+", p2pCallParam:"+cancelP2PCallParam);
         System.out.println("cancel p2pCall, groupId:"+groupId+", p2pCallParam:"+cancelP2PCallParam);
+        LogTools.debug(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"stopCallDevice(GroupID: " + groupId + ", account: "+ cancelP2PCallParam.getAccount() +") - [YYYY-MM-DDThh:mm:ss.SSSZ] start");
         CancelP2PCallRequest cancelP2PCallRequest = new CancelP2PCallRequest(groupId);
         confInterfaceService.cancelP2PCall(cancelP2PCallRequest, cancelP2PCallParam);
         return cancelP2PCallRequest.getResponseMsg();
@@ -241,6 +243,11 @@ public class ConfInterfaceController {
         StartDualStreamRequest startDualStreamRequest = new StartDualStreamRequest(groupId, dualStreamParam);
         confInterfaceService.p2pctrlDualStream(startDualStreamRequest, dualStreamParam.getMtE164(), true);
         return startDualStreamRequest.getResponseMsg();
+    }
+
+    @GetMapping(value = "/version")
+    public String queryVersion(){
+        return "confinterface-V.1.0.3";
     }
 
     private DeferredResult<ResponseEntity<BaseResponseMsg>> silenceOrMute(String groupId, String mtE164, boolean silence, SilenceOrMuteParam silenceOrMuteParam){

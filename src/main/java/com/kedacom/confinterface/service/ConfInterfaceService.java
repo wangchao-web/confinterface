@@ -115,6 +115,7 @@ public class ConfInterfaceService {
         boolean endConf = false;
         int joinConfVmtNum = 0;
         String confId = null;
+        boolean confinterface = joinConferenceRequest.isConfinterface();
 
         if (null == groupConfInfo) {
             groupConfInfo = new GroupConfInfo(joinConferenceRequest.getGroupId(), null);
@@ -125,80 +126,89 @@ public class ConfInterfaceService {
                 return;
             }
 
+            groupConfInfo.setConfinterface(confinterface);
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "create conference OK, confId : " + confId);
             System.out.println("create conference OK, confId : " + confId);
             groupConfInfo.setConfId(confId);
             addGroupConfInfo(groupConfInfo);
 
-            bSetBroadcast = true;
             endConf = true;
+            if(!groupConfInfo.isConfinterface()) {
+                System.out.println("groupConfInfo.isConfinterface() : " +groupConfInfo.isConfinterface());
+                bSetBroadcast = true;
+                //endConf = true;
 
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "no groupConfInfo, mtNum : " + mtNum);
-            System.out.println("no groupConfInfo, mtNum : " + mtNum);
-            joinConfVmtNum = mtNum + 1;
-            joinConfVmtNum = joinConfVmtNum > maxVmtNum ? maxVmtNum : joinConfVmtNum;
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "no groupConfInfo, mtNum : " + mtNum);
+                System.out.println("no groupConfInfo, mtNum : " + mtNum);
+                joinConfVmtNum = mtNum + 1;
+                joinConfVmtNum = joinConfVmtNum > maxVmtNum ? maxVmtNum : joinConfVmtNum;
+            }
         } else {
             confId = groupConfInfo.getConfId();
-            int vmtNum = groupConfInfo.getVmtMemberNum();
             int mtNumTotal = groupConfInfo.getMtMemberNum() + mtNum;
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "joinConference, vmtNum:" + vmtNum + ", mtNumTotal:" + mtNumTotal);
-            System.out.println("joinConference, vmtNum:" + vmtNum + ", mtNumTotal:" + mtNumTotal);
-            if (vmtNum < mtNumTotal + 1) {
-                if (vmtNum < maxVmtNum) {
-                    joinConfVmtNum = (maxVmtNum - vmtNum) > mtNum ? mtNum : (maxVmtNum - vmtNum);
+            if(!groupConfInfo.isConfinterface()) {
+                int vmtNum = groupConfInfo.getVmtMemberNum();
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "joinConference, vmtNum:" + vmtNum + ", mtNumTotal:" + mtNumTotal);
+                System.out.println("joinConference, vmtNum:" + vmtNum + ", mtNumTotal:" + mtNumTotal);
+                if (vmtNum < mtNumTotal + 1) {
+                    if (vmtNum < maxVmtNum) {
+                        joinConfVmtNum = (maxVmtNum - vmtNum) > mtNum ? mtNum : (maxVmtNum - vmtNum);
+                    }
                 }
             }
         }
 
         List<Terminal> joinConfVmts = new ArrayList<>();
-        if (joinConfVmtNum > 0) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "joinConfVmtNum : " + joinConfVmtNum + ", bSetBroadcast :" + bSetBroadcast);
-            System.out.println("joinConfVmtNum : " + joinConfVmtNum + ", bSetBroadcast :" + bSetBroadcast);
-            List<TerminalService> terminalServices = terminalManageService.getFreeVmts(joinConfVmtNum);
-            if (null == terminalServices) {
-                //todo:遍历目前所有的group，将空闲的vmt进行退会
-                if (endConf) {
-                    mcuRestClientService.endConference(confId, true);
-                    delGroupConfInfo(groupConfInfo);
-                }
-                LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50004 : reach max interface capacity!!");
-                joinConferenceRequest.makeErrorResponseMsg(ConfInterfaceResult.NO_FREE_VMT.getCode(), HttpStatus.OK, ConfInterfaceResult.NO_FREE_VMT.getMessage());
-                return;
-            }
-
-            for (TerminalService terminalService : terminalServices) {
-                terminalService.setGroupId(groupId);
-                groupConfInfo.addMember(terminalService);
-
-                Terminal terminal = new Terminal(terminalService.getE164());
-                joinConfVmts.add(terminal);
-            }
-
-            //设置广播源VMT
-            if (bSetBroadcast) {
-                groupConfInfo.setBroadcastVmtService(null);
-            }
-
-            List<JoinConferenceRspMtInfo> vmtTerminals = mcuRestClientService.joinConference(confId, joinConfVmts);
-            if (null == vmtTerminals) {
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "vmt join conference failed!............");
-                System.out.println("vmt join conference failed!............");
-                if (joinConfVmtNum > 0) {
-                    groupConfInfo.delVmtMembers(joinConfVmts);
-                    joinConfVmts.clear();
+        if(!groupConfInfo.isConfinterface()) {
+            if (joinConfVmtNum > 0) {
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "joinConfVmtNum : " + joinConfVmtNum + ", bSetBroadcast :" + bSetBroadcast);
+                System.out.println("joinConfVmtNum : " + joinConfVmtNum + ", bSetBroadcast :" + bSetBroadcast);
+                List<TerminalService> terminalServices = terminalManageService.getFreeVmts(joinConfVmtNum);
+                if (null == terminalServices) {
+                    //todo:遍历目前所有的group，将空闲的vmt进行退会
+                    if (endConf) {
+                        mcuRestClientService.endConference(confId, true);
+                        delGroupConfInfo(groupConfInfo);
+                    }
+                    LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50004 : reach max interface capacity!!");
+                    joinConferenceRequest.makeErrorResponseMsg(ConfInterfaceResult.NO_FREE_VMT.getCode(), HttpStatus.OK, ConfInterfaceResult.NO_FREE_VMT.getMessage());
+                    return;
                 }
 
-                if (endConf) {
-                    mcuRestClientService.endConference(confId, true);
-                    delGroupConfInfo(groupConfInfo);
+                for (TerminalService terminalService : terminalServices) {
+                    terminalService.setGroupId(groupId);
+                    groupConfInfo.addMember(terminalService);
+
+                    Terminal terminal = new Terminal(terminalService.getE164());
+                    joinConfVmts.add(terminal);
                 }
 
-                LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50001 : add terminal into conference failed!");
-                joinConferenceRequest.makeErrorResponseMsg(ConfInterfaceResult.ADD_TERMINAL_INTO_CONFERENCE.getCode(), HttpStatus.OK, ConfInterfaceResult.ADD_TERMINAL_INTO_CONFERENCE.getMessage());
-                return;
+                //设置广播源VMT
+                if (bSetBroadcast) {
+                    groupConfInfo.setBroadcastVmtService(null);
+                }
+
+                List<JoinConferenceRspMtInfo> vmtTerminals = mcuRestClientService.joinConference(confId, joinConfVmts);
+                if (null == vmtTerminals) {
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "vmt join conference failed!............");
+                    System.out.println("vmt join conference failed!............");
+                    if (joinConfVmtNum > 0) {
+                        groupConfInfo.delVmtMembers(joinConfVmts);
+                        joinConfVmts.clear();
+                    }
+
+                    if (endConf) {
+                        mcuRestClientService.endConference(confId, true);
+                        delGroupConfInfo(groupConfInfo);
+                    }
+
+                    LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50001 : add terminal into conference failed!");
+                    joinConferenceRequest.makeErrorResponseMsg(ConfInterfaceResult.ADD_TERMINAL_INTO_CONFERENCE.getCode(), HttpStatus.OK, ConfInterfaceResult.ADD_TERMINAL_INTO_CONFERENCE.getMessage());
+                    return;
+                }
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "vmt join conference OK ********************");
+                System.out.println("vmt join conference OK ********************");
             }
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "vmt join conference OK ********************");
-            System.out.println("vmt join conference OK ********************");
         }
 
         for (Terminal terminal : joinConfMts) {
@@ -322,6 +332,15 @@ public class ConfInterfaceService {
 
         boolean isTerminal = broadCastRequest.getBroadCastParam().isTerminalType();
         String broadcastE164 = broadCastRequest.getBroadCastParam().getMtE164();
+
+        if(groupConfInfo.isConfinterface()){
+            if(!isTerminal || broadcastE164.equals("")){
+                LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "500012 : confinterface setBroadcastSrc invalid param!");
+                broadCastRequest.makeErrorResponseMsg(ConfInterfaceResult.INVALID_PARAM.getCode(), HttpStatus.OK,ConfInterfaceResult.INVALID_PARAM.getMessage());
+                return;
+            }
+        }
+
         TerminalService broadcastVmtService = groupConfInfo.getBroadcastVmtService();
 
         if (groupConfInfo.getBroadcastType() != 0) {
@@ -513,6 +532,15 @@ public class ConfInterfaceService {
         String dstInspectionE164 = inspectionParam.getDstMtE164();
         String srcInspectionE164 = inspectionParam.getSrcMtE164();
 
+        if(groupConfInfo.isConfinterface()){
+            if("".equals(srcInspectionE164) || "".equals(dstInspectionE164)){
+                System.out.println(" confinterface startInspection, dstInspectionE164 || srcInspectionE164 are empty! not permitted!");
+                LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, " 50012 : confinterface cancelInspectionRequest invalid param!");
+                inspectionRequest.makeErrorResponseMsg(ConfInterfaceResult.INVALID_PARAM.getCode(), HttpStatus.OK, ConfInterfaceResult.INVALID_PARAM.getMessage());
+                return;
+            }
+        }
+
         if (dstInspectionE164.isEmpty() && srcInspectionE164.isEmpty()) {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "startInspection, dstInspectionE164 & srcInspectionE164 are empty! not permitted!");
             System.out.println("startInspection, dstInspectionE164 & srcInspectionE164 are empty! not permitted!");
@@ -701,6 +729,15 @@ public class ConfInterfaceService {
         String srcE164 = cancleInspectionParam.getSrcMtE164();
         String dstE164 = cancleInspectionParam.getDstMtE164();
 
+        if(groupConfInfo.isConfinterface()){
+            if("".equals(srcE164) || "".equals(dstE164)){
+                System.out.println(" confinterface cancelInspection, dstInspectionE164 || srcInspectionE164 are empty! not permitted!");
+                LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, " 50012 : cancelInspectionRequest invalid param!");
+                cancelInspectionRequest.makeErrorResponseMsg(ConfInterfaceResult.INVALID_PARAM.getCode(), HttpStatus.OK, ConfInterfaceResult.INVALID_PARAM.getMessage());
+                return;
+            }
+        }
+
         if (srcE164.isEmpty() && dstE164.isEmpty()) {
             LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50012 : invalid param!");
             cancelInspectionRequest.makeErrorResponseMsg(ConfInterfaceResult.INVALID_PARAM.getCode(), HttpStatus.OK, ConfInterfaceResult.INVALID_PARAM.getMessage());
@@ -807,7 +844,7 @@ public class ConfInterfaceService {
 
     @Async("confTaskExecutor")
     public void sendIFrame(SendIFrameRequest sendIFrameRequest) {
-        String groupId = sendIFrameRequest.getGroupId();
+        /*String groupId = sendIFrameRequest.getGroupId();
         GroupConfInfo groupConfInfo = groupConfInfoMap.get(groupId);
         if (null == groupConfInfo) {
             LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50002 : group not exist!");
@@ -831,10 +868,31 @@ public class ConfInterfaceService {
             return;
         }
 
-        TerminalService vmtService = groupConfInfo.getDstInspectionVmtTerminal(mtService);
-        if (null == vmtService) {
+        Termin
+        alService vmtService = groupConfInfo.getDstInspectionVmtTerminal(mtService);
+        if
+
+        (null == vmtService) {
             LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50012 : invalid param!");
             sendIFrameRequest.makeErrorResponseMsg(ConfInterfaceResult.INVALID_PARAM.getCode(), HttpStatus.OK, ConfInterfaceResult.INVALID_PARAM.getMessage());
+            return;
+        }*/
+
+        String groupId = sendIFrameRequest.getGroupId();
+        P2PCallGroup p2PCallGroup = p2pCallGroupMap.get(groupId);
+        if (null == p2PCallGroup) {
+            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50002 : group not exist!");
+            sendIFrameRequest.makeErrorResponseMsg(ConfInterfaceResult.GROUP_NOT_EXIST.getCode(), HttpStatus.OK, ConfInterfaceResult.GROUP_NOT_EXIST.getMessage());
+            return;
+        }
+
+
+        SendIFrameParam sendIFrameParam = sendIFrameRequest.getSendIFrameParam();
+        String account = sendIFrameParam.getMtE164();
+        TerminalService vmtService = p2PCallGroup.getVmt(account);
+        if (null == vmtService) {
+            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50015 : terminal not exist in this conference!");
+            sendIFrameRequest.makeErrorResponseMsg(ConfInterfaceResult.TERMINAL_NOT_EXIST.getCode(), HttpStatus.OK, ConfInterfaceResult.TERMINAL_NOT_EXIST.getMessage());
             return;
         }
 
@@ -1056,6 +1114,7 @@ public class ConfInterfaceService {
         TerminalService vmtService = terminalManageService.getFreeVmt();
         if (null == vmtService) {
             LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50008 : reach max join terminal numbers!");
+            LogTools.debug(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"startCallDevice(GroupID:" + groupId + " ,account: " + mtAccount +") - [YYYY-MM-DDThh:mm:ss.SSSZ] failed Errcode:" + 50008 +"Error: reach max join terminal numbers!");
             p2PCallRequest.makeErrorResponseMsg(ConfInterfaceResult.REACH_MAX_JOIN_MTS.getCode(), HttpStatus.OK, ConfInterfaceResult.REACH_MAX_JOIN_MTS.getMessage());
             return;
         }
@@ -1093,6 +1152,8 @@ public class ConfInterfaceService {
         P2PCallGroup p2PCallGroup = p2pCallGroupMap.get(groupId);
         if (null == p2PCallGroup) {
             LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50002 : group not exist!");
+            System.out.println("50002 : group not exist!");
+            LogTools.debug(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"stopCallDevice(GroupID:" + groupId + " ,account: " + cancelP2PCallParam.getAccount() +") - [YYYY-MM-DDThh:mm:ss.SSSZ] failed Errcode:" + 50002 +"Error: group not exist!");
             cancelP2PCallRequest.makeErrorResponseMsg(ConfInterfaceResult.GROUP_NOT_EXIST.getCode(), HttpStatus.OK, ConfInterfaceResult.GROUP_NOT_EXIST.getMessage());
             return;
         }
@@ -1101,6 +1162,8 @@ public class ConfInterfaceService {
         TerminalService vmtService = p2PCallGroup.getVmt(account);
         if (null == vmtService) {
             LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50015 : terminal not exist in this conference!");
+            System.out.println("50015 : terminal not exist in this conference!");
+            LogTools.debug(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"stopCallDevice(GroupID:" + groupId + " ,account: " + cancelP2PCallParam.getAccount() +") - [YYYY-MM-DDThh:mm:ss.SSSZ] failed Errcode:" + 50015 +"Error: terminal not exist in this conference!");
             cancelP2PCallRequest.makeErrorResponseMsg(ConfInterfaceResult.TERMINAL_NOT_EXIST.getCode(), HttpStatus.OK, ConfInterfaceResult.TERMINAL_NOT_EXIST.getMessage());
             return;
         }
@@ -1117,12 +1180,18 @@ public class ConfInterfaceService {
         System.out.println("bOk : " + bOk);
         if (bOk) {
             vmtService.setGroupId(null);
+            if(vmtService.dualSource.size() > 0){
+                System.out.println("vmtService.dualSource.size() : " +vmtService.dualSource.size());
+                vmtService.dualSource.remove(account);
+            }
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "p2PCallGroup.removeCallMember : " + account);
             System.out.println("p2PCallGroup.removeCallMember : " + account);
+            LogTools.debug(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"stopCallDevice(GroupID:"+ groupId +",account:"+ account+") - [YYYY-MM-DDThh:mm:ss.SSSZ] success");
             p2PCallGroup.removeCallMember(account);
             cancelP2PCallRequest.makeSuccessResponseMsg();
         } else {
             LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50025 : p2p cancelCallMt failed!");
+            LogTools.debug(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"stopCallDevice(GroupID:" + groupId + " ,account: " + cancelP2PCallParam.getAccount() +") - [YYYY-MM-DDThh:mm:ss.SSSZ] failed Errcode:" + 50025 +"Error: p2p cancelCallMt failed!");
             cancelP2PCallRequest.makeErrorResponseMsg(ConfInterfaceResult.P2PCANCELCALL.getCode(), HttpStatus.OK, ConfInterfaceResult.P2PCANCELCALL.getMessage());
         }
 
@@ -1609,6 +1678,7 @@ public class ConfInterfaceService {
             });
         }
     */
+
     @Autowired
     private TerminalManageService terminalManageService;
 
