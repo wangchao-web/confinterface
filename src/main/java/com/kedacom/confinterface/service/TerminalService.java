@@ -4,10 +4,7 @@ package com.kedacom.confinterface.service;
 import com.kedacom.confadapter.ILocalConferenceParticipant;
 import com.kedacom.confadapter.common.NetAddress;
 import com.kedacom.confadapter.common.RemoteParticipantInfo;
-import com.kedacom.confadapter.media.AudioMediaDescription;
-import com.kedacom.confadapter.media.H264Description;
-import com.kedacom.confadapter.media.MediaDescription;
-import com.kedacom.confadapter.media.VideoMediaDescription;
+import com.kedacom.confadapter.media.*;
 import com.kedacom.confinterface.LogService.LogOutputTypeEnum;
 import com.kedacom.confinterface.LogService.LogTools;
 import com.kedacom.confinterface.dao.InspectionSrcParam;
@@ -679,31 +676,37 @@ public abstract class TerminalService {
     protected String constructCreateSdp(MediaDescription mediaDescription) {
         StringBuilder sdp = new StringBuilder();
 
+        sdp.append("c=IN IP4 ");
+        sdp.append("0.0.0.0");
+        sdp.append("\r\n");
         /*此处暂时将mcu向会议接入微服务打开逻辑通道时使用的媒体参数作为接受媒体信息携带的流媒体
          * todo:等到赵智琛将能力集协商结果提供出来后，此处可以需填写能力集协商内容*/
         if (mediaDescription.getMediaType().equals(MediaTypeEnum.VIDEO.getName())) {
             sdp.append("m=video 0 RTP/AVP ");
             sdp.append(mediaDescription.getPayload());
             VideoMediaDescription videoMediaDescription = (VideoMediaDescription) mediaDescription;
+            sdp.append("\r\n");
             sdp.append("a=rtpmap:");
             sdp.append(mediaDescription.getPayload());
             sdp.append(" ");
-            sdp.append(mediaDescription.getEncodingFormat());
+            sdp.append(mediaDescription.getEncodingFormat().name());
             sdp.append("/90000\r\n");
             sdp.append("a=framerate:");
             sdp.append(videoMediaDescription.getFramerate());
 
-            if (mediaDescription.getEncodingFormat().equals(VideoMediaDescription.ENCODING_FORMAT_H264)) {
+            System.out.println("mediaDescription.getEncodingFormat()1.name() : " +mediaDescription.getEncodingFormat().name());
+            if (mediaDescription.getEncodingFormat() == EncodingFormatEnum.H264) {
                 constructH264Fmtp(sdp, mediaDescription.getPayload(), videoMediaDescription.getH264Desc());
             }
         } else {
             sdp.append("m=audio 0 RTP/AVP ");
             sdp.append(mediaDescription.getPayload());
             AudioMediaDescription audioMediaDescription = (AudioMediaDescription) mediaDescription;
+            sdp.append("\r\n");
             sdp.append("a=rtpmap:");
             sdp.append(mediaDescription.getPayload());
             sdp.append(" ");
-            sdp.append(mediaDescription.getEncodingFormat());
+            sdp.append(mediaDescription.getEncodingFormat().name());
             sdp.append("/");
             sdp.append(audioMediaDescription.getSampleRate());
             sdp.append("/");
@@ -804,6 +807,9 @@ public abstract class TerminalService {
     }
 
     protected String constructSdp(MediaDescription mediaDescription) {
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"mediaDescription.getEncodingFormat().name() : " +mediaDescription.getEncodingFormat().name());
+        System.out.println("mediaDescription.getEncodingFormat().name() : " +mediaDescription.getEncodingFormat().name());
+
         if (null == mediaDescription)
             return "";
 
@@ -844,10 +850,10 @@ public abstract class TerminalService {
                 sdp.append(mediaDescription.getPayload());
             }
             sdp.append(" ");
-            sdp.append(mediaDescription.getEncodingFormat());
+            sdp.append(mediaDescription.getEncodingFormat().name());
             sdp.append("/90000\r\n");
 
-            if (mediaDescription.getEncodingFormat().equals(VideoMediaDescription.ENCODING_FORMAT_H264)) {
+            if (mediaDescription.getEncodingFormat() == (EncodingFormatEnum.H264)) {
                 constructH264Fmtp(sdp, mediaDescription.getPayload(), videoMediaDescription.getH264Desc());
             }
         } else {
@@ -878,7 +884,7 @@ public abstract class TerminalService {
                 sdp.append(mediaDescription.getPayload());
             }
             sdp.append(" ");
-            sdp.append(mediaDescription.getEncodingFormat());
+            sdp.append(mediaDescription.getEncodingFormat().name());
             sdp.append("/");
             sdp.append(audioMediaDescription.getSampleRate());
             sdp.append("/");
@@ -997,9 +1003,17 @@ public abstract class TerminalService {
         if (null == h264Description)
             return;
 
-        String profile = h264Description.getProfile();
+
+        ProfileEnum profile = h264Description.getProfile();
         int level = h264Description.getLevel();
         String nalMode = h264Description.getNalMode();
+
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"nalMode : " + nalMode);
+        System.out.println("nalMode : " + nalMode);
+
+        Integer intLevel = getH264LevelNum(level);
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"profile : " + profile);
+        System.out.println("profile : " + profile);
 
         sdp.append("a=fmtp:");
         if (isExternalDocking) {
@@ -1014,33 +1028,47 @@ public abstract class TerminalService {
         }
 
         sdp.append(" ");
-
         /*profile-level-id由三部分构成，profile_idc，profile_iop, level_idc*/
         sdp.append("profile-level-id=");
-        switch (profile) {
-            case H264Description.PROFILE_BASELINE:
-                //66
-                sdp.append("4200");
-                break;
-            case H264Description.PROFILE_MAIN:
-                //77
-                sdp.append("4D00");
-                break;
-            case H264Description.PROFILE_EXTEND:
-                //88
-                sdp.append("5800");
-                break;
-            case H264Description.PROFILE_HIGH:
-                //100
-                sdp.append("6400");
-                break;
-            default:
-                sdp.append("0000");
-                break;
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"profile-level-id= " + h264Description.getProfileLevelId());
+        System.out.println("profile-level-id= " + h264Description.getProfileLevelId());
+
+        if("".equals(h264Description.getProfileLevelId()) || h264Description.getProfileLevelId() == null){
+            switch (profile) {
+                case BASELINE:
+                    //66
+                    sdp.append("4200");
+                    sdp.append(Integer.toHexString(intLevel));
+                    break;
+                case MAIN:
+                    //77
+                    sdp.append("4D00");
+                    sdp.append(Integer.toHexString(intLevel));
+                    break;
+                case EXTENDED:
+                    //88
+                    sdp.append("5800");
+                    sdp.append(Integer.toHexString(intLevel));
+                    break;
+                case HIGH:
+                    //100
+                    sdp.append("6400");
+                    sdp.append(Integer.toHexString(intLevel));
+                    break;
+                default:
+                    sdp.append("0000");
+                    sdp.append(Integer.toHexString(intLevel));
+                    break;
+            }
+        }else{
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"h264Description.getProfileLevelId()  : " + h264Description.getProfileLevelId());
+            System.out.println("h264Description.getProfileLevelId()  : " + h264Description.getProfileLevelId());
+            sdp.append(h264Description.getProfileLevelId());
         }
 
-        Integer intLevel = getH264LevelNum(level);
-        sdp.append(Integer.toHexString(intLevel));
+
+        //Integer intLevel = getH264LevelNum(level);
+        //sdp.append(Integer.toHexString(intLevel));
 
         sdp.append(";packetization-mode=");
         switch (nalMode) {
@@ -1063,16 +1091,17 @@ public abstract class TerminalService {
 
     protected void constructH264Desc(String profileLevelId, String packetizationMode, H264Description h264Description) {
         if (profileLevelId.contains("42"))
-            h264Description.setProfile(H264Description.PROFILE_BASELINE);
+            h264Description.setProfile(ProfileEnum.BASELINE);
         else if (profileLevelId.contains("4D"))
-            h264Description.setProfile(H264Description.PROFILE_MAIN);
+            h264Description.setProfile(ProfileEnum.MAIN);
         else if (profileLevelId.contains("58"))
-            h264Description.setProfile(H264Description.PROFILE_EXTEND);
+            h264Description.setProfile(ProfileEnum.EXTENDED);
         else if (profileLevelId.contains("64"))
-            h264Description.setProfile(H264Description.PROFILE_HIGH);
-        else
-            h264Description.setProfile(H264Description.PROFILE_BASELINE);
-
+            h264Description.setProfile(ProfileEnum.HIGH);
+        else {
+            //h264Description.setProfileLevelId(profileLevelId);
+            h264Description.setProfile(ProfileEnum.BASELINE);
+        }
         String level = profileLevelId.substring(4);
         int levelNum = Integer.valueOf(level, 16);
         h264Description.setLevel(getH264LevelParamValue(levelNum));
@@ -1179,6 +1208,7 @@ public abstract class TerminalService {
                         p2PCallRequest.removeMsg(P2PCallRequest.class.getName());
                     }
                 } else {
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"remoteMtAccount : " + remoteMtAccount);
                     System.out.println("remoteMtAccount : " + remoteMtAccount);
                     MediaResource mediaResource = new MediaResource();
                     mediaResource.setDual(detailMediaResouce.getDual() == 1);
@@ -1186,8 +1216,8 @@ public abstract class TerminalService {
                     mediaResource.setType(detailMediaResouce.getType());
                     System.out.println(mediaResource.toString());
                     dualSource.put(remoteMtAccount, mediaResource);
-                    System.out.println("通过Map.entrySet遍历key和value");
                     for (Map.Entry<String, MediaResource> entry : dualSource.entrySet()) {
+
                         System.out.println("dualSource.size() :" + dualSource.size());
                         System.out.println("key= " + entry.getKey() + " and value= " + entry.getValue().toString());
                     }
@@ -1207,6 +1237,7 @@ public abstract class TerminalService {
     }
 
     protected void dualAddMediaResource() {
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"remoteMtAccount : " + remoteMtAccount);
         System.out.println("remoteMtAccount : " + remoteMtAccount);
         MediaResource mediaResource = dualSource.get(remoteMtAccount);
         System.out.println(mediaResource.toString());
@@ -1223,6 +1254,7 @@ public abstract class TerminalService {
     }
 
     public void dualPublish() {
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"remoteMtAccount : " + remoteMtAccount);
         System.out.println("remoteMtAccount : " + remoteMtAccount);
         MediaResource mediaResource = dualSource.get(remoteMtAccount);
         System.out.println(mediaResource.toString());
@@ -1285,10 +1317,14 @@ public abstract class TerminalService {
             startIndex = endIndex + 1;
             endIndex = mediaSdp.indexOf("/");
             String encName = mediaSdp.substring(startIndex, endIndex);
-            mediaDescription.setEncodingFormat(encName);
+            mediaDescription.setEncodingFormat( EncodingFormatEnum.FromName(encName));
             getRtpMap = true;
 
-            if (!encName.equals(VideoMediaDescription.ENCODING_FORMAT_H264))
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"!encName.equals(EncodingFormatEnum.H264.name()) : " +!encName.equals(EncodingFormatEnum.H264.name()));
+            System.out.println("!encName.equals(EncodingFormatEnum.H264.name()) : " +!encName.equals(EncodingFormatEnum.H264.name()));
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"EncodingFormatEnum.H264.name()) : " + encName);
+            System.out.println("EncodingFormatEnum.H264.name()) : " + encName);
+            if (!encName.equals(EncodingFormatEnum.H264.name()))
                 break;
         }
 
@@ -1301,6 +1337,9 @@ public abstract class TerminalService {
         int endIndex = fmtp.indexOf(";");
         startIndex += profileLevelIdToken.length();
         String profileLevelId = fmtp.substring(startIndex, endIndex);
+
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"parseRtpMapAndFmtp : profileLevelId : " + profileLevelId);
+        System.out.println("parseRtpMapAndFmtp : profileLevelId : " + profileLevelId);
 
         startIndex = fmtp.indexOf(packetizationModeToken);
         startIndex += packetizationModeToken.length();
@@ -1441,11 +1480,11 @@ public abstract class TerminalService {
         MediaDescription videoMediaDescription = new VideoMediaDescription();
         videoMediaDescription.setPayload(106);
         videoMediaDescription.setBitrate(24);
-        videoMediaDescription.setEncodingFormat("H264");
+        videoMediaDescription.setEncodingFormat(EncodingFormatEnum.FromName("H264"));
         videoMediaDescription.setMediaType("video");
         videoMediaDescription.setDirection("sendAndrecv");
         H264Description h264Description = new H264Description();
-        h264Description.setProfile("High Profile");
+        h264Description.setProfile(ProfileEnum.HIGH);
         h264Description.setNalMode("single");
         h264Description.setLevel(0);
         ((VideoMediaDescription) videoMediaDescription).setH264Desc(h264Description);
@@ -1453,7 +1492,7 @@ public abstract class TerminalService {
 
         MediaDescription audioMediaDescription = new AudioMediaDescription();
         audioMediaDescription.setPayload(8);
-        audioMediaDescription.setEncodingFormat("PCMA");
+        audioMediaDescription.setEncodingFormat(EncodingFormatEnum.FromName("PCMA"));
         audioMediaDescription.setMediaType("audio");
         audioMediaDescription.setChannelIndex(0);
         audioMediaDescription.setDirection("sendAndrecv");

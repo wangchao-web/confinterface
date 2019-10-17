@@ -228,7 +228,7 @@ public class ConfInterfaceController {
 
     @DeleteMapping(value = "p2pcall")
     public DeferredResult<ResponseEntity<BaseResponseMsg>> cancelP2PCall(@RequestParam("GroupId") String groupId, @Valid @RequestBody CancelP2PCallParam cancelP2PCallParam){
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now in p2pCall, groupId:"+groupId+", p2pCallParam:"+cancelP2PCallParam);
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"cancel p2pCall, groupId:"+groupId+", p2pCallParam:"+cancelP2PCallParam);
         System.out.println("cancel p2pCall, groupId:"+groupId+", p2pCallParam:"+cancelP2PCallParam);
         LogTools.debug(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"stopCallDevice(GroupID: " + groupId + ", account: "+ cancelP2PCallParam.getAccount() +") - [YYYY-MM-DDThh:mm:ss.SSSZ] start");
         CancelP2PCallRequest cancelP2PCallRequest = new CancelP2PCallRequest(groupId);
@@ -247,7 +247,7 @@ public class ConfInterfaceController {
 
     @GetMapping(value = "/version")
     public String queryVersion(){
-        return "confinterface-V.1.0.3";
+        return "confinterface-V.1.0.4";
     }
 
     private DeferredResult<ResponseEntity<BaseResponseMsg>> silenceOrMute(String groupId, String mtE164, boolean silence, SilenceOrMuteParam silenceOrMuteParam){

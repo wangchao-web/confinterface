@@ -181,11 +181,14 @@ public class H323TerminalService extends TerminalService {
                     resourceInfo.add(resourceResponse.getResourceID());
                     addMediaResource(mediaDescription.getStreamIndex(), mediaDescription.getDual(), resourceResponse);
                 } else if (mediaDescription.getDual()) {
-                    System.out.println("进入资源节点更新");
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"Enter dual node update");
+                    System.out.println("Enter dual node update");
                     List<String> dualResourceInfo = new ArrayList<>();
                     List<UpdateResourceParam> updateResourceParams = new ArrayList<>();
                     for (Map.Entry<String, MediaResource> entry : dualSource.entrySet()) {
-                        System.out.println("增加流媒体资源节点更新 : dualSource.size() :" + dualSource.size());
+                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"Added streaming media resource node update: dualSource.size() :" + dualSource.size());
+                        System.out.println("Added streaming media resource node update: dualSource.size() :" + dualSource.size());
+                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"E164 = " + entry.getKey() + " dualResourceInfo.getId()= " + entry.getValue().toString());
                         System.out.println("E164 = " + entry.getKey() + " dualResourceInfo.getId()= " + entry.getValue().toString());
                         dualResourceInfo.add(entry.getValue().getId());
                         UpdateResourceParam updateResourceParam = new UpdateResourceParam(entry.getValue().getId());
@@ -194,7 +197,7 @@ public class H323TerminalService extends TerminalService {
                     }
                     List<ExchangeInfo> exchangeInfos = getExchange(dualResourceInfo);
                     if (null == exchangeInfos) {
-                        System.out.println("流媒体资源节点不存在,没法更新");
+                        System.out.println("The streaming media resource node does not exist. Update failed");
                         updateResourceParams.clear();
                         dualResourceInfo.clear();
                         break;

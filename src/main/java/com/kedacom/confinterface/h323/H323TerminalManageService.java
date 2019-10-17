@@ -17,9 +17,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Async;
-import org.springframework.stereotype.Service;
 
-import javax.annotation.PostConstruct;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -214,6 +212,7 @@ public class H323TerminalManageService extends TerminalManageService implements 
             return;
         }
         if(terminalService.dualSource.size() > 0){
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"OnKickedOff dualSource.size() : " + terminalService.dualSource.size());
             System.out.println("OnKickedOff dualSource.size() : " + terminalService.dualSource.size());
             terminalService.dualSource.clear();
         }
@@ -399,6 +398,7 @@ public class H323TerminalManageService extends TerminalManageService implements 
                     break;
                 }
             }else{
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"dualPublish() 双流发关闭的状态通知: ");
                 System.out.println("dualPublish() 双流发关闭的状态通知: ");
                 terminalService.dualPublish();
             }

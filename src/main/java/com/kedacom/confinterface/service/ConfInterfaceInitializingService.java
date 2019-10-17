@@ -40,6 +40,8 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
         System.out.println("now in ConfInterfaceInitializingService, protocalType:" + baseSysConfig.getProtocalType());
 
         createConferenceManage();
+        //初始化协议栈
+        initConfAdapter();
         registerVmts();
         if ("sdk".equals(baseSysConfig.getMcuMode())) {
             createAndInitMcuSdkClientManage();
@@ -61,7 +63,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "5.2mcu登陆");
             System.out.println("5.2mcu登陆");
             loginMcuRestSrv();
-        } else {
+        }/* else {
             InetAddress ia = InetAddress.getLocalHost();
             System.out.println("getMACAddress(ia)" + getMACAddress(ia));
             if (!"a4:bf:01:1c:68:c3".equalsIgnoreCase(getMACAddress(ia))) {
@@ -70,7 +72,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
                 return;
             }
             System.out.println("登陆成功");
-        }
+        }*/
 
         /*if("p2p".equals(baseSysConfig.getMcuMode())){
             while (true){
@@ -90,8 +92,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
 
         Map<String, String> groups = confInterfaceService.getGroups();
         if (null == groups || groups.isEmpty()) {
-            //初始化协议栈
-            initConfAdapter();
+
             //启动终端注册Gk
             terminalManageService.StartUp();
 
@@ -152,8 +153,6 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
             System.out.println("groupId : " + groupId + ", wait vmts online! joinConfVmtNum : " + joinConfVmtNum);
         }
 
-        //初始化协议栈
-        initConfAdapter();
         //启动终端注册Gk
         terminalManageService.StartUp();
     }
