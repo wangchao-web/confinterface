@@ -464,14 +464,6 @@ public class H323TerminalService extends TerminalService {
         this.gkRasPort = gkRasPort;
     }
 
-    public String getLocalIp() {
-        return localIp;
-    }
-
-    public void setLocalIp(String localIp) {
-        this.localIp = localIp;
-    }
-
     public int getLocalRasPort() {
         return localRasPort;
     }
@@ -510,7 +502,6 @@ public class H323TerminalService extends TerminalService {
     private boolean regGK;
     private String gkIp;
     private int gkRasPort;
-    private String localIp;
     private int localRasPort;
     private int localCallPort;
     protected static MediaDescription videoDualStreamMediaDesc;

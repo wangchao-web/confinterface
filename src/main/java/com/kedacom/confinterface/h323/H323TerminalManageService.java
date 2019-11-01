@@ -57,12 +57,6 @@ public class H323TerminalManageService extends TerminalManageService implements 
         this.protocalConfig = h323ProtocalConfig;
     }
 
-    /*public void publishMessage(SubscribeMsgTypeEnum type, String groupId, Object publishMsg){
-        System.out.println("5585");
-        System.out.println("confInterfacePublishService  : " + confInterfacePublishService);
-        confInterfacePublishService.publishMessage(type, groupId, publishMsg);
-    }*/
-
     public H323ProtocalConfig getProtocalConfig() {
         return protocalConfig;
     }
@@ -139,8 +133,39 @@ public class H323TerminalManageService extends TerminalManageService implements 
         TerminalService terminalService = usedVmtServiceMap.get(participantid);
         if (null == terminalService) {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "OnInvited, not found participant!!");
-            System.out.println("OnInvited, not found participant!!");
-            return;
+            System.out.println("OnInvited, not found participant!! in used vmt map");
+
+            terminalService = freeVmtServiceMap.get(participantid);
+            if (null == terminalService) {
+                System.out.println("OnInvited, not found participant!! in free vmt map!");
+                return;
+            }
+
+            if (null == terminalService.getProxyMTE164()){
+                System.out.println("OnInvited, found participant in free vmt map, proxyMt is null, ignore message!!");
+                return;
+            }
+
+            //走入此处，表明有系统外的设备需要主动呼叫该虚拟终端代理的实体终端
+            String groupId = terminalService.translateCall(participantid);
+            if (null != groupId) {
+                terminalService = getVmt(participantid);
+                terminalService.setGroupId(groupId);
+
+                P2PCallGroup p2PCallGroup = new P2PCallGroup(groupId);
+                p2PCallGroup.addCallMember(terminalService.getProxyMTE164(), terminalService);
+                confInterfaceService.getP2pCallGroupMap().put(groupId, p2PCallGroup);
+
+                String waitMsg = P2PCallRequest.class.getName();
+                P2PCallRequest p2PCallRequest = new P2PCallRequest(groupId, participantid);
+                terminalService.addWaitMsg(waitMsg, p2PCallRequest);
+                p2PCallRequest.setWaitMsg(new ArrayList<>(Arrays.asList(waitMsg, waitMsg, waitMsg, waitMsg)));
+
+                conferenceInfo.setId(groupId);
+            }
+            else {
+                return;
+            }
         }
 
         terminalService.setConfId(conferenceInfo.getId());
@@ -204,7 +229,7 @@ public class H323TerminalManageService extends TerminalManageService implements 
     @Async("confTaskExecutor")
     public void OnKickedOff(String participantid) {
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "OnKickedOff, terminal: " + participantid + " is kicked off conference, threadName: " + Thread.currentThread().getName());
-        System.out.println("OnKickedOff, terminal: " + participantid + " is kicked off conference, threadName: " + Thread.currentThread().getName());
+        System.out.println("OnKickedOff, terminal: " + participantid + " is kicked off conference,threadName:" + Thread.currentThread().getName());
         H323TerminalService terminalService = (H323TerminalService) usedVmtServiceMap.get(participantid);
         if (null == terminalService) {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "OnKickedOff, not found terminal!");
@@ -218,27 +243,35 @@ public class H323TerminalManageService extends TerminalManageService implements 
         }
         usedVmtServiceMap.remove(participantid);
         freeVmtServiceMap.put(participantid, terminalService);
+
         Map<String, P2PCallGroup> p2pCallGroupMap = ConfInterfaceService.p2pCallGroupMap;
-        if (null != p2pCallGroupMap) {
-            for (Map.Entry<String, P2PCallGroup> entry : p2pCallGroupMap.entrySet()) {
-                for (Map.Entry<String, TerminalService> entrys : entry.getValue().getCallMap().entrySet()) {
-                    if (entrys.getValue() == terminalService) {
-                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "entrys.getKey() " + entrys.getKey());
-                        System.out.println("entrys.getKey() " + entrys.getKey());
-                        entry.getValue().removeCallMember(entrys.getKey());
-                        if ("mediaSchedule".equals(protocalConfig.getBaseSysConfig().getPushServiceType())) {
-                            TerminalStatusNotify terminalStatusNotify = new TerminalStatusNotify();
-                            TerminalStatus terminalStatus = new TerminalStatus(entrys.getKey(), "MT", 0);
-                            terminalStatusNotify.addMtStatus(terminalStatus);
-                            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "terminalService.getE164() " + terminalService.getE164() + ",terminalService.getGroupId() : " + terminalService.getGroupId());
-                            System.out.println("terminalService.getE164() " + terminalService.getE164() + ",terminalService.getGroupId() : " + terminalService.getGroupId());
-                            confInterfacePublishService.publishMessage(SubscribeMsgTypeEnum.TERMINAL_STATUS, terminalService.getGroupId(), terminalStatusNotify);
-                        } else {
-                            UnifiedDevicePushTerminalStatus unifiedDevicePushTerminalStatus = new UnifiedDevicePushTerminalStatus(entrys.getKey(), terminalService.getGroupId(), TerminalOnlineStatusEnum.OFFLINE.getCode());
-                            unifiedDevicePushService.publishMtStatus(unifiedDevicePushTerminalStatus);
-                        }
-                    }
-                }
+        if (null != p2pCallGroupMap && p2pCallGroupMap.containsKey(terminalService.getGroupId())) {
+            P2PCallGroup p2PCallGroup = p2pCallGroupMap.get(terminalService.getGroupId());
+            String mtAccount = terminalService.getRemoteMtAccount();
+            if (null != terminalService.getProxyMTE164()) {
+                //如果是被叫，key为代理会议终端的E164号
+                mtAccount = terminalService.getProxyMTE164();
+                System.out.println("OnKickedOff, proxyMtE164 : " + mtAccount);
+            }
+
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "mtAccount: " + mtAccount);
+            System.out.println("OnKickedOff, mtAccount " + mtAccount);
+            p2PCallGroup.removeCallMember(mtAccount);
+
+            //被叫时，因为拿不到主叫的E164，因此使用虚拟终端的E164做为标识
+            if (null != terminalService.getProxyMTE164())
+                mtAccount = terminalService.getE164();
+
+            if ("mediaSchedule".equals(protocalConfig.getBaseSysConfig().getPushServiceType())) {
+                TerminalStatusNotify terminalStatusNotify = new TerminalStatusNotify();
+                TerminalStatus terminalStatus = new TerminalStatus(mtAccount, "MT", 0);
+                terminalStatusNotify.addMtStatus(terminalStatus);
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "terminalService.getE164() " + terminalService.getE164() + ",terminalService.getGroupId() : " + terminalService.getGroupId());
+                System.out.println("terminalService.getE164() " + terminalService.getE164() + ",terminalService.getGroupId() : " + terminalService.getGroupId());
+                confInterfacePublishService.publishMessage(SubscribeMsgTypeEnum.TERMINAL_STATUS, terminalService.getGroupId(), terminalStatusNotify);
+            } else {
+                UnifiedDevicePushTerminalStatus unifiedDevicePushTerminalStatus = new UnifiedDevicePushTerminalStatus(mtAccount, terminalService.getGroupId(), TerminalOnlineStatusEnum.OFFLINE.getCode());
+                unifiedDevicePushService.publishMtStatus(unifiedDevicePushTerminalStatus);
             }
         }
 
@@ -266,7 +299,8 @@ public class H323TerminalManageService extends TerminalManageService implements 
             System.out.println("OnLocalMediaRequested, not found terminal : " + participantid);
             return;
         }
-         Boolean  bOK= terminalService.onOpenLogicalChannel(mediaDescriptions);
+
+        Boolean  bOK= terminalService.onOpenLogicalChannel(mediaDescriptions);
 
         if (!bOK) {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "OnLocalMediaRequested, onOpenLogicalChannel failed! participantid :" + participantid);
@@ -347,7 +381,7 @@ public class H323TerminalManageService extends TerminalManageService implements 
         System.out.println("bOk : " + bOk);
         if (bOk) {
             if (!mediaDescriptions.get(0).getDual()) {
-                if (null != terminalService.getRemoteMtAccount()) {
+                if (null != terminalService.getRemoteMtAccount() || null != terminalService.getProxyMTE164()) {
                     P2PCallRequestSuccess(terminalService, mediaDescriptions.get(0).getStreamIndex());
                 }
                 if (terminalService.getForwardGenericStreamNum().decrementAndGet() != 0)
@@ -363,7 +397,7 @@ public class H323TerminalManageService extends TerminalManageService implements 
 
         if (mediaDescriptions.get(0).getDual()) {
             DualStreamRequestFail(terminalService);
-        } else if (null != terminalService.getRemoteMtAccount()) {
+        } else if (null != terminalService.getRemoteMtAccount() || null != terminalService.getProxyMTE164()) {
             P2PCallRequestFail(terminalService);
         }
     }
@@ -507,7 +541,7 @@ public class H323TerminalManageService extends TerminalManageService implements 
         //失败处理
         BaseRequestMsg dualStreamRequest;
         String waitMsgKey;
-        if (null == terminalService.getRemoteMtAccount()) {
+        if (null == terminalService.getRemoteMtAccount() && null == terminalService.getProxyMTE164()) {
             waitMsgKey = StartDualStreamRequest.class.getName();
             dualStreamRequest = terminalService.getWaitMsg(waitMsgKey);
         } else {
@@ -519,7 +553,8 @@ public class H323TerminalManageService extends TerminalManageService implements 
             return;
 
         LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50021 : update exchange node failed!");
-        dualStreamRequest.makeErrorResponseMsg(ConfInterfaceResult.UPDATE_EXCHANGENODE_FAILED.getCode(), HttpStatus.OK, ConfInterfaceResult.UPDATE_EXCHANGENODE_FAILED.getMessage());
+        if (null == terminalService.getProxyMTE164())
+            dualStreamRequest.makeErrorResponseMsg(ConfInterfaceResult.UPDATE_EXCHANGENODE_FAILED.getCode(), HttpStatus.OK, ConfInterfaceResult.UPDATE_EXCHANGENODE_FAILED.getMessage());
         terminalService.delWaitMsg(waitMsgKey);
 
         boolean bOk = terminalService.closeDualStreamChannel();
@@ -534,13 +569,12 @@ public class H323TerminalManageService extends TerminalManageService implements 
 
     private void P2PCallRequestSuccess(H323TerminalService terminalService, int streamIndex) {
         P2PCallRequest p2PCallRequest = (P2PCallRequest) terminalService.getWaitMsg(P2PCallRequest.class.getName());
-        if (null == p2PCallRequest)
+        if (null == p2PCallRequest) {
             return;
-        //System.out.println("p2PCallRequest : " +p2PCallRequest);
+        }
+
         List<DetailMediaResouce> mediaResouces = terminalService.getForwardChannel();
         for (DetailMediaResouce detailMediaResouce : mediaResouces) {
-            //System.out.println("detailMediaResouce.getStreamIndex() != streamIndex : "+detailMediaResouce.getStreamIndex());
-            //System.out.println("streamIndex : " +streamIndex);
             if (detailMediaResouce.getStreamIndex() != streamIndex)
                 continue;
 
@@ -556,6 +590,7 @@ public class H323TerminalManageService extends TerminalManageService implements 
             synchronized (this) {
                 p2PCallRequest.removeMsg(P2PCallRequest.class.getName());
             }
+
             if(p2PCallRequest.isSuccessResponseMsg()){
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"上线状态推送 : " + p2PCallRequest.getAccount());
                 System.out.println("上线状态推送 : " + p2PCallRequest.getAccount());
@@ -565,7 +600,7 @@ public class H323TerminalManageService extends TerminalManageService implements 
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "terminalService.getE164() " + p2PCallRequest.getAccount() + ",terminalService.getGroupId() : " + p2PCallRequest.getGroupId() + ", forwardResources" + p2PCallRequest.getForwardResources().toString() + ", reverseResources" + p2PCallRequest.getReverseResources().toString());
                 System.out.println("terminalService.getE164() " + p2PCallRequest.getAccount() + ",terminalService.getGroupId() : " + p2PCallRequest.getGroupId() + ", forwardResources" + p2PCallRequest.getForwardResources().toString() + ", reverseResources" + p2PCallRequest.getReverseResources().toString());
 
-                System.out.println("confInterfacePublishService : "+confInterfacePublishService);
+                System.out.println("confInterfacePublishService : " + confInterfacePublishService);
                 confInterfacePublishService.publishMessage(SubscribeMsgTypeEnum.TERMINAL_STATUS, p2PCallRequest.getGroupId(), terminalStatusNotify);
             }
             break;
@@ -583,7 +618,11 @@ public class H323TerminalManageService extends TerminalManageService implements 
         p2PCallRequest.getWaitMsg().clear();
         terminalService.delWaitMsg(P2PCallRequest.class.getName());
         LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50024 : p2p call failed!");
-        p2PCallRequest.makeErrorResponseMsg(ConfInterfaceResult.P2PCALL.getCode(), HttpStatus.OK, ConfInterfaceResult.P2PCALL.getMessage());
+        if (0 != p2PCallRequest.getAccount().compareTo(terminalService.getE164())){
+            //如果请求消息中的账号与虚拟终端的账号不一致，说明是实际的点对点请求，
+            // 否则则说明是有MT从系统外部主动呼叫虚拟终端
+            p2PCallRequest.makeErrorResponseMsg(ConfInterfaceResult.P2PCALL.getCode(), HttpStatus.OK, ConfInterfaceResult.P2PCALL.getMessage());
+        }
 
         terminalService.cancelCallMt(terminalService);
 

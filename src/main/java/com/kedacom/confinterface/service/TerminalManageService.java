@@ -124,6 +124,14 @@ public abstract class TerminalManageService {
         this.conferenceManager = conferenceManage;
     }
 
+    public ConfInterfaceService getConfInterfaceService() {
+        return confInterfaceService;
+    }
+
+    public void setConfInterfaceService(ConfInterfaceService confInterfaceService) {
+        this.confInterfaceService = confInterfaceService;
+    }
+
     public IConferenceManager getConferenceManager() {
         return conferenceManager;
     }
@@ -143,4 +151,5 @@ public abstract class TerminalManageService {
     protected IConferenceManager conferenceManager;
     protected Map<String, TerminalService> freeVmtServiceMap;
     protected Map<String, TerminalService> usedVmtServiceMap;
+    protected ConfInterfaceService confInterfaceService;
 }

@@ -1,6 +1,8 @@
 package com.kedacom.confinterface.service;
-
-import com.kedacom.confadapter.*;
+import com.kedacom.confadapter.ConferenceManagerFactory;
+import com.kedacom.confadapter.ConferenceProtoEnum;
+import com.kedacom.confadapter.IConferenceAdapterController;
+import com.kedacom.confadapter.IConferenceManager;
 import com.kedacom.confinterface.LogService.LogOutputTypeEnum;
 import com.kedacom.confinterface.LogService.LogTools;
 import com.kedacom.confinterface.dao.BroadcastSrcMediaInfo;
@@ -12,12 +14,14 @@ import com.kedacom.confinterface.inner.*;
 import com.kedacom.confinterface.restclient.McuRestClientService;
 import com.kedacom.confinterface.restclient.McuSdkClientService;
 import com.kedacom.confinterface.restclient.mcu.*;
+import com.kedacom.confinterface.syssetting.AppDefaultConfig;
 import com.kedacom.confinterface.syssetting.BaseSysConfig;
 import com.kedacom.confinterface.util.ProtocalTypeEnum;
+
 import com.kedacom.mcuadapter.IMcuClientManager;
 import com.kedacom.mcuadapter.McuClientManagerFactory;
 import com.kedacom.mcuadapter.McuClientManagerTypeEnum;
-import org.slf4j.LoggerFactory;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.boot.CommandLineRunner;
@@ -28,6 +32,7 @@ import java.net.NetworkInterface;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 
@@ -90,6 +95,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
             }
         }*/
 
+        terminalManageService.setConfInterfaceService(confInterfaceService);
         Map<String, String> groups = confInterfaceService.getGroups();
         if (null == groups || groups.isEmpty()) {
 
@@ -161,6 +167,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "now in createConferenceManage.............");
         System.out.println("now in createConferenceManage.............");
         IConferenceManager conferenceManager;
+
         if (baseSysConfig.getProtocalType().equals(ProtocalTypeEnum.H323.getName())) {
             conferenceManager = ConferenceManagerFactory.CreateConferenceManager(ConferenceProtoEnum.CONF_H323);
         } else {
@@ -195,13 +202,20 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
             if (null == vmtList || vmtList.isEmpty()) {
                 //会议接入服务第一次启动，根据配置文件中的起始E164号及虚拟终端数量
                 //生成E164号
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "first start conf interface service.................");
-                System.out.println("first start conf interface service.................");
-                GenerateE164Service.InitE164(baseSysConfig.getE164Start());
-                int maxVmts = baseSysConfig.getMaxVmts();
-                for (int vmtIndex = 0; vmtIndex < maxVmts; vmtIndex++) {
-                    String vmtE164 = GenerateE164Service.generateE164();
-                    confInterfaceService.addVmt(vmtE164);
+                if (null != baseSysConfig.getE164Start()) {
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "first start conf interface service.................");
+                    System.out.println("first start conf interface service.................");
+                    GenerateE164Service.InitE164(baseSysConfig.getE164Start());
+                    int maxVmts = baseSysConfig.getMaxVmts();
+                    for (int vmtIndex = 0; vmtIndex < maxVmts; vmtIndex++) {
+                        String vmtE164 = GenerateE164Service.generateE164();
+                        confInterfaceService.addVmt(vmtE164);
+                    }
+                } else if (null != baseSysConfig.getProxyMTs()){
+                    ConcurrentHashMap<String, String> proxyMts = baseSysConfig.getMapProxyMTs();
+                    for (Map.Entry<String, String> proxyMt : proxyMts.entrySet()){
+                        confInterfaceService.addVmt(proxyMt.getKey());
+                    }
                 }
 
                 vmtList = confInterfaceService.getVmts();
@@ -209,13 +223,21 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
             }
 
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "vmtList size : " + vmtList.size());
-            System.out.println("vmtList size : " + vmtList.size());
+            System.out.println("vmtList size : " + vmtList.size() + ", localIp :" + baseSysConfig.getLocalIp());
 
+            ConcurrentHashMap<String, String> proxyMts = baseSysConfig.getMapProxyMTs();
             for (String vmtE164 : vmtList) {
 
                 TerminalService vmtService = terminalManageService.createTerminal(vmtE164, true);
                 vmtService.setMediaSrvIp(baseSysConfig.getMediaSrvIp());
                 vmtService.setMediaSrvPort(baseSysConfig.getMediaSrvPort());
+                vmtService.setScheduleSrvHttpAddress(baseSysConfig.getScheduleSrvHttpAddr());
+                vmtService.setLocalIp(baseSysConfig.getLocalIp());
+                vmtService.setLocalPort(appDefaultConfig.getServerPort());
+
+                if(null != proxyMts && proxyMts.containsKey(vmtE164)){
+                    vmtService.setProxyMTE164(proxyMts.get(vmtE164));
+                }
 
                 defaultListableBeanFactory.registerSingleton(vmtE164, vmtService);
                 defaultListableBeanFactory.autowireBean(vmtService);
@@ -448,6 +470,9 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
 
     @Autowired
     private BaseSysConfig baseSysConfig;
+
+    @Autowired
+    private AppDefaultConfig appDefaultConfig;
 
     @Autowired
     private TerminalManageService terminalManageService;

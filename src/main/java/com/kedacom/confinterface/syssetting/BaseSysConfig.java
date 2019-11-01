@@ -5,8 +5,8 @@ import com.kedacom.confinterface.util.VideoCap;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Configuration
 @ConfigurationProperties(prefix = "confinterface.sys")
@@ -16,6 +16,8 @@ public class BaseSysConfig {
         super();
         this.videoCapList = null;
         this.audioCapList = null;
+        this.proxyMTs = null;
+        this.mapProxyMTs = null;
     }
 
     public String getLocalIp() {
@@ -32,6 +34,14 @@ public class BaseSysConfig {
 
     public void setMediaSrvPort(int mediaSrvPort) {
         this.mediaSrvPort = mediaSrvPort;
+    }
+
+    public String getScheduleSrvHttpAddr() {
+        return scheduleSrvHttpAddr;
+    }
+
+    public void setScheduleSrvHttpAddr(String scheduleSrvHttpAddr) {
+        this.scheduleSrvHttpAddr = scheduleSrvHttpAddr;
     }
 
     public String getMediaSrvIp() {
@@ -88,6 +98,27 @@ public class BaseSysConfig {
 
     public void setE164Start(String e164Start) {
         this.e164Start = e164Start;
+    }
+
+    public String getProxyMTs(){ return proxyMTs; }
+
+    public void setProxyMTs(String proxyMTs) { this.proxyMTs = proxyMTs; }
+
+    public ConcurrentHashMap<String, String> getMapProxyMTs(){
+        if (null == proxyMTs)
+            return null;
+
+        synchronized (this){
+            mapProxyMTs = new ConcurrentHashMap<>();
+
+            String[] mtE164s = proxyMTs.split(",");
+            for(String mtE164 : mtE164s){
+                String[] bindingRelation = mtE164.split(":");
+                mapProxyMTs.put(bindingRelation[0], bindingRelation[1]);
+            }
+
+            return mapProxyMTs;
+        }
     }
 
     public String getCdeviceManageSrvAddr() {
@@ -239,12 +270,15 @@ public class BaseSysConfig {
     private String localIp = "172.16.64.25";
     private String mediaSrvIp = "172.16.64.25";
     private int mediaSrvPort = 8080;
+    private String scheduleSrvHttpAddr = "172.16.64.25:8085";
     private String protocalType = "h323";
     private String memDBType = "redis";
     private boolean useMcu = true;
     private int maxVmts = 3;
     private String vmtNamePrefix = "confInterface_";
-    private String e164Start = "1234560100000";
+    private String e164Start; //"1234560100000";   虚拟终端的E164号起始编号
+    private String proxyMTs;   //存储虚拟终端与实体终端的E164号的对应关系,形式为key:value，key:value...
+    private ConcurrentHashMap<String, String> mapProxyMTs;
     private String cdeviceManageSrvAddr = "dev.ctsp.kedacom.com";
     private String pushServiceType = "mediaSchedule"; // ctsp向统一设备推送状态 ; mediaSchedule 向媒体调度推送状态
     /*编码格式/分辨率/帧率/码率类型/码率

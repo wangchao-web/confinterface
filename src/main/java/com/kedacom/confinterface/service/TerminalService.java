@@ -33,6 +33,7 @@ public abstract class TerminalService {
     public TerminalService(String e164, String name, boolean bVmt) {
         super();
         this.e164 = e164;
+        this.proxyMTE164 = null;
         this.mtId = null;
         this.groupId = null;
         this.remoteMtAccount = null;
@@ -77,6 +78,14 @@ public abstract class TerminalService {
 
     public void setE164(String e164) {
         this.e164 = e164;
+    }
+
+    public String getProxyMTE164() {
+        return proxyMTE164;
+    }
+
+    public void setProxyMTE164(String proxyMTE164) {
+        this.proxyMTE164 = proxyMTE164;
     }
 
     public String getName() {
@@ -331,6 +340,31 @@ public abstract class TerminalService {
 
     public void setMediaSrvPort(int mediaSrvPort) {
         this.mediaSrvPort = mediaSrvPort;
+    }
+
+    public String getScheduleSrvHttpAddress() {
+        return scheduleSrvHttpAddress;
+    }
+
+    public void setScheduleSrvHttpAddress(String scheduleSrvHttpAddress) {
+        this.scheduleSrvHttpAddress = scheduleSrvHttpAddress;
+    }
+
+    public String getLocalIp() {
+        return localIp;
+    }
+
+    public void setLocalIp(String localIp) {
+        System.out.println("setLocalIp : " + localIp);
+        this.localIp = localIp;
+    }
+
+    public int getLocalPort() {
+        return localPort;
+    }
+
+    public void setLocalPort(int localPort) {
+        this.localPort = localPort;
     }
 
     public void addWaitMsg(String msgName, BaseRequestMsg msg) {
@@ -639,6 +673,40 @@ public abstract class TerminalService {
             terminalMediaSourceService.delTerminalMediaResource(terminalService.getE164());
         }
         return bOk;
+    }
+
+    public String translateCall(String srcE164){
+
+        StringBuilder url = new StringBuilder();
+        constructUrl(url, scheduleSrvHttpAddress, "/services/mediaschedule/v1/groups/ptwopcall\n");
+
+        TranslateCallParam translateCallParam = new TranslateCallParam();
+        translateCallParam.setSrcDeviceID(srcE164);
+        translateCallParam.setDstDeviceID(proxyMTE164);
+
+        StringBuilder notifyUrl = new StringBuilder();
+        constructUrl(notifyUrl, localIp, localPort, "/services/confinterface/v1/participants/statusnotify");
+        System.out.println("translateCall, localIp: " + localIp + ", localPort: " + localPort + ", notifyUrl:" + notifyUrl.toString());
+        translateCallParam.setNotifyURL(notifyUrl.toString());
+
+        ResponseEntity<JSONObject> translateCallResponse = restClientService.exchangeJson(url.toString(), HttpMethod.POST, translateCallParam, null, JSONObject.class);
+        JSONObject jsonObject = translateCallResponse.getBody();
+        int code = jsonObject.getInt("Code");
+        String message = jsonObject.getString("Messages");
+
+        if (!translateCallResponse.getStatusCode().is2xxSuccessful()) {
+            System.out.println("translateCall failed! , status : " + translateCallResponse.getStatusCodeValue() + ", dstDeviceID: " + proxyMTE164 + ", url:" + url.toString());
+            return null;
+        }
+
+        if (code != 0) {
+            System.out.println("translateCall failed, message:" + message + ", dstDeviceID: " + proxyMTE164);
+            return null;
+        }
+
+        String groupId = jsonObject.getString("GroupID");
+        System.out.println("translateCall OK! destDeviceId: " + proxyMTE164 + ", GroupId :" + groupId);
+        return groupId;
     }
 
     protected boolean requestUpdateResource(List<UpdateResourceParam> updateResourceParams) {
@@ -1160,7 +1228,6 @@ public abstract class TerminalService {
         System.out.println("exchangeSdp:");
         System.out.println(resourceResponse.getSdp());
 
-
         DetailMediaResouce detailMediaResouce = new DetailMediaResouce();
         detailMediaResouce.setStreamIndex(streamIndex);
         detailMediaResouce.setId(resourceResponse.getResourceID());
@@ -1189,15 +1256,14 @@ public abstract class TerminalService {
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "dual : " + dual);
                 System.out.println("dual : " + dual);
                 if (!dual) {
-                    if (null != remoteMtAccount) {
+                    if (null != remoteMtAccount || null != proxyMTE164) {
                         //点对点呼叫,在此处处理反向资源
-                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "remoteMtAccount : " + remoteMtAccount);
-                        System.out.println("remoteMtAccount : " + remoteMtAccount);
+                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "remoteMtAccount : " + remoteMtAccount + ", proxyMTE164: " + proxyMTE164);
+                        System.out.println("remoteMtAccount : " + remoteMtAccount + ", proxyMTE164: " + proxyMTE164);
                         MediaResource mediaResource = new MediaResource();
                         mediaResource.setDual(detailMediaResouce.getDual() == 1);
                         mediaResource.setId(detailMediaResouce.getId());
                         mediaResource.setType(detailMediaResouce.getType());
-
 
                         P2PCallRequest p2PCallRequest = (P2PCallRequest) waitMsg.get(P2PCallRequest.class.getName());
                         p2PCallRequest.addReverseResource(mediaResource);
@@ -1208,14 +1274,19 @@ public abstract class TerminalService {
                         p2PCallRequest.removeMsg(P2PCallRequest.class.getName());
                     }
                 } else {
-                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"remoteMtAccount : " + remoteMtAccount);
-                    System.out.println("remoteMtAccount : " + remoteMtAccount);
+                    String dualAccount = remoteMtAccount;
+
+                    if (null != proxyMTE164)
+                        dualAccount = e164;
+
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"remoteMtAccount : " + remoteMtAccount  + ", proxyMTE164: " + proxyMTE164);
+                    System.out.println("remoteMtAccount : " + remoteMtAccount + ", proxyMTE164: " + proxyMTE164);
                     MediaResource mediaResource = new MediaResource();
                     mediaResource.setDual(detailMediaResouce.getDual() == 1);
                     mediaResource.setId(detailMediaResouce.getId());
                     mediaResource.setType(detailMediaResouce.getType());
                     System.out.println(mediaResource.toString());
-                    dualSource.put(remoteMtAccount, mediaResource);
+                    dualSource.put(dualAccount, mediaResource);
                     for (Map.Entry<String, MediaResource> entry : dualSource.entrySet()) {
 
                         System.out.println("dualSource.size() :" + dualSource.size());
@@ -1226,10 +1297,10 @@ public abstract class TerminalService {
                     reverseResources.add(mediaResource);
                     TerminalStatusNotify terminalStatusNotify = new TerminalStatusNotify();
                     //状态2是双流
-                    TerminalStatus terminalStatus = new TerminalStatus(remoteMtAccount, "Dual", 2, null, reverseResources);
+                    TerminalStatus terminalStatus = new TerminalStatus(dualAccount, "Dual", 2, null, reverseResources);
                     terminalStatusNotify.addMtStatus(terminalStatus);
-                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "remoteMtAccount " + remoteMtAccount + ",terminalService.getGroupId() : " + groupId + ", reverseResources" + reverseResources.toString());
-                    System.out.println("remoteMtAccount " + remoteMtAccount + ",terminalService.getGroupId() : " + groupId + ", reverseResources" + reverseResources.toString());
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "dualAccount:  " + dualAccount + ",terminalService.getGroupId() : " + groupId + ", reverseResources" + reverseResources.toString());
+                    System.out.println("dualAccount: " + dualAccount + ",terminalService.getGroupId() : " + groupId + ", reverseResources" + reverseResources.toString());
                     confInterfacePublishService.publishMessage(SubscribeMsgTypeEnum.TERMINAL_STATUS, groupId, terminalStatusNotify);
                 }
             }
@@ -1237,36 +1308,46 @@ public abstract class TerminalService {
     }
 
     protected void dualAddMediaResource() {
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"remoteMtAccount : " + remoteMtAccount);
-        System.out.println("remoteMtAccount : " + remoteMtAccount);
-        MediaResource mediaResource = dualSource.get(remoteMtAccount);
+        String dualAccount = remoteMtAccount;
+
+        if (null != proxyMTE164)
+            dualAccount = e164;
+
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"dualAccount : " + dualAccount);
+        System.out.println("dualAccount : " + dualAccount);
+        MediaResource mediaResource = dualSource.get(dualAccount);
         System.out.println(mediaResource.toString());
 
         ArrayList<MediaResource> reverseResources = new ArrayList<>();
         reverseResources.add(mediaResource);
         TerminalStatusNotify terminalStatusNotify = new TerminalStatusNotify();
         //状态2是双流发的开启
-        TerminalStatus terminalStatus = new TerminalStatus(remoteMtAccount, "Dual", 2, null, reverseResources);
+        TerminalStatus terminalStatus = new TerminalStatus(dualAccount, "Dual", 2, null, reverseResources);
         terminalStatusNotify.addMtStatus(terminalStatus);
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, " dualAddMediaResource : remoteMtAccount " + remoteMtAccount + ",terminalService.getGroupId() : " + groupId + ", reverseResources" + reverseResources.toString());
-        System.out.println(" dualAddMediaResource : remoteMtAccount " + remoteMtAccount + ",terminalService.getGroupId() : " + groupId + ", reverseResources" + reverseResources.toString());
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, " dualAddMediaResource : dualAccount: " + dualAccount + ",terminalService.getGroupId() : " + groupId + ", reverseResources" + reverseResources.toString());
+        System.out.println(" dualAddMediaResource : dualAccount: " + dualAccount + ",terminalService.getGroupId() : " + groupId + ", reverseResources" + reverseResources.toString());
         confInterfacePublishService.publishMessage(SubscribeMsgTypeEnum.TERMINAL_STATUS, groupId, terminalStatusNotify);
     }
 
     public void dualPublish() {
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"remoteMtAccount : " + remoteMtAccount);
-        System.out.println("remoteMtAccount : " + remoteMtAccount);
-        MediaResource mediaResource = dualSource.get(remoteMtAccount);
+        String dualAccount = remoteMtAccount;
+
+        if (null != proxyMTE164)
+            dualAccount = e164;
+
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"dualAccount : " + dualAccount);
+        System.out.println("dualAccount : " + dualAccount);
+        MediaResource mediaResource = dualSource.get(dualAccount);
         System.out.println(mediaResource.toString());
 
         ArrayList<MediaResource> reverseResources = new ArrayList<>();
         reverseResources.add(mediaResource);
         TerminalStatusNotify terminalStatusNotify = new TerminalStatusNotify();
         //状态3是双流发的关闭
-        TerminalStatus terminalStatus = new TerminalStatus(remoteMtAccount, "Dual", 3, null, reverseResources);
+        TerminalStatus terminalStatus = new TerminalStatus(dualAccount, "Dual", 3, null, reverseResources);
         terminalStatusNotify.addMtStatus(terminalStatus);
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "dualPublish : remoteMtAccount " + remoteMtAccount + ",terminalService.getGroupId() : " + groupId + ", reverseResources" + reverseResources.toString());
-        System.out.println("dualPublish : remoteMtAccount " + remoteMtAccount + ",terminalService.getGroupId() : " + groupId + ", reverseResources" + reverseResources.toString());
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "dualPublish : dualAccount " + dualAccount + ",terminalService.getGroupId() : " + groupId + ", reverseResources" + reverseResources.toString());
+        System.out.println("dualPublish : dualAccount " + dualAccount + ",terminalService.getGroupId() : " + groupId + ", reverseResources" + reverseResources.toString());
         confInterfacePublishService.publishMessage(SubscribeMsgTypeEnum.TERMINAL_STATUS, groupId, terminalStatusNotify);
     }
 
@@ -1464,14 +1545,28 @@ public abstract class TerminalService {
     }
 
     protected void constructUrl(StringBuilder url, String restApi) {
+        constructUrl(url, mediaSrvIp, mediaSrvPort, restApi);
+    }
+
+    protected void constructUrl(StringBuilder url, String srvAddress, String restApi){
         if (url.length() > 0) {
             url.delete(0, url.length());
         }
 
         url.append("http://");
-        url.append(mediaSrvIp);
+        url.append(srvAddress);
+        url.append(restApi);
+    }
+
+    protected void constructUrl(StringBuilder url, String srvIp, int srvPort , String restApi){
+        if (url.length() > 0) {
+            url.delete(0, url.length());
+        }
+
+        url.append("http://");
+        url.append(srvIp);
         url.append(":");
-        url.append(mediaSrvPort);
+        url.append(srvPort);
         url.append(restApi);
     }
 
@@ -1515,6 +1610,7 @@ public abstract class TerminalService {
 
     protected String groupId;
     protected String e164;
+    protected String proxyMTE164;
     protected String name;
     protected String confId;
     protected String mtId;
@@ -1535,6 +1631,9 @@ public abstract class TerminalService {
     protected ILocalConferenceParticipant conferenceParticipant;
     protected String mediaSrvIp;
     protected int mediaSrvPort;
+    protected String scheduleSrvHttpAddress;
+    protected String localIp;
+    protected int localPort;
     protected Boolean isExternalDocking = false;
     public Map<String, MediaResource> dualSource = new HashMap<>();
 

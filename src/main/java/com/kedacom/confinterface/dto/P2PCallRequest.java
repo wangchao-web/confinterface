@@ -14,8 +14,6 @@ import java.util.List;
 
 public class P2PCallRequest extends BaseRequestMsg<BaseResponseMsg> {
 
-    //private ConfInterfacePublishService confInterfacePublishService = new ConfInterfacePublishService();
-
     public P2PCallRequest(String groupId, String account) {
         super(groupId);
         this.account = account;
@@ -74,7 +72,6 @@ public class P2PCallRequest extends BaseRequestMsg<BaseResponseMsg> {
         }
         synchronized (this) {
             waitMsg.remove(msg);
-            //super.removeMsg(msg);
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "移除removeMsg : " + msg);
             System.out.println("移除removeMsg : " + msg);
 

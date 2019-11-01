@@ -256,6 +256,14 @@ public class ConfInterfaceController {
         return ctrlSilenceOrMuteRequest.getResponseMsg();
     }
 
+    @PostMapping(value = "/participants/statusnotify")
+    public ResponseEntity<BaseResponseMsg> statusNotify(@RequestBody ParticipantStatusNotify statusNotify){
+        confInterfaceService.statusNotify(statusNotify);
+
+        BaseResponseMsg baseResponseMsg = new BaseResponseMsg(ConfInterfaceResult.OK.getCode(), HttpStatus.OK.value(), ConfInterfaceResult.OK.getMessage());
+        return new ResponseEntity<>(baseResponseMsg, HttpStatus.OK);
+    }
+
     @ExceptionHandler
     @ResponseBody
     public ResponseEntity<BaseResponseMsg> handleArgumentNotValidException(MethodArgumentNotValidException exception) {

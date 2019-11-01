@@ -1197,6 +1197,38 @@ public class ConfInterfaceService {
 
     }
 
+    @Async("confTaskExecutor")
+    public void statusNotify(ParticipantStatusNotify participantStatusNotify){
+        String groupId = participantStatusNotify.getGroupID();
+        String deviceId = participantStatusNotify.getDeviceID();
+        int status = participantStatusNotify.getStatus();
+
+        P2PCallGroup p2PCallGroup = p2pCallGroupMap.get(groupId);
+        if (null == p2PCallGroup)
+            return;
+
+        TerminalService vmtService = p2PCallGroup.getVmt(deviceId);
+        if (null == vmtService)
+            return;
+
+        if (status != 0)
+            return;
+
+        //挂断该呼叫
+        //停止呼叫
+        Boolean bOk = vmtService.cancelCallMt(vmtService);
+        System.out.println("bOk : " + bOk);
+        if (bOk) {
+            vmtService.setGroupId(null);
+            vmtService.setConfId(null);
+            System.out.println("statusNotify, cancelCallMt");
+            p2PCallGroup.removeCallMember(deviceId);
+            p2pCallGroupMap.remove(groupId);
+        } else {
+            System.out.println("statusNotify, deviceId: " + deviceId + "in groupId( "+ groupId + ") has offline, cancelCall failed!!");
+        }
+    }
+
     public void p2pctrlDualStream(StartDualStreamRequest startDualStreamRequest, String mtE164, boolean b) {
         final String groupId = startDualStreamRequest.getGroupId();
         P2PCallGroup p2PCallGroup = p2pCallGroupMap.get(groupId);
@@ -1214,7 +1246,6 @@ public class ConfInterfaceService {
             startDualStreamRequest.makeErrorResponseMsg(ConfInterfaceResult.MAINSTREAM_NOT_EXIST.getCode(), HttpStatus.OK, ConfInterfaceResult.MAINSTREAM_NOT_EXIST.getMessage());
         }
     }
-
 
     public boolean inspectionMt(GroupConfInfo groupConfInfo, String mode, String srcMtId, String dstMtId, InspectionRequest inspectionRequest) {
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "inspectionMt, mode:" + mode + ", srcMtId:" + srcMtId + ", dstMtId:" + dstMtId);
