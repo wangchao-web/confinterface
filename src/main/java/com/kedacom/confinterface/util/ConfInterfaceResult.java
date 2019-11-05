@@ -2,6 +2,7 @@ package com.kedacom.confinterface.util;
 
 public enum ConfInterfaceResult {
     OK(0, "Ok"),
+    NOT_SUPPORT_METHOD(1, "not support this method!"),
     CREATE_CONFERENCE(50000, "create conference failed!"),
     ADD_TERMINAL_INTO_CONFERENCE(50001, "add terminal into conference failed!"),
     GROUP_NOT_EXIST(50002, "group not exist!"),

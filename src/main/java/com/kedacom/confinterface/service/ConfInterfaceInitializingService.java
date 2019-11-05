@@ -48,26 +48,29 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
         //初始化协议栈
         initConfAdapter();
         registerVmts();
-        if ("sdk".equals(baseSysConfig.getMcuMode())) {
-            createAndInitMcuSdkClientManage();
-            while (true) {
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "sdk登陆");
-                System.out.println("sdk登陆");
-                boolean bOk = mcuSdkClientService.login();
-                if (bOk)
-                    break;
 
-                try {
-                    TimeUnit.SECONDS.sleep(1);
-                } catch (InterruptedException e) {
-                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "ConfInterfaceInitializingService ..... currentTime : " + System.currentTimeMillis());
-                    System.out.println("ConfInterfaceInitializingService ..... currentTime : " + System.currentTimeMillis());
+        if (baseSysConfig.isUseMcu()) {
+            if ("sdk".equals(baseSysConfig.getMcuMode())) {
+                createAndInitMcuSdkClientManage();
+                while (true) {
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "sdk登陆");
+                    System.out.println("sdk登陆");
+                    boolean bOk = mcuSdkClientService.login();
+                    if (bOk)
+                        break;
+
+                    try {
+                        TimeUnit.SECONDS.sleep(1);
+                    } catch (InterruptedException e) {
+                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "ConfInterfaceInitializingService ..... currentTime : " + System.currentTimeMillis());
+                        System.out.println("ConfInterfaceInitializingService ..... currentTime : " + System.currentTimeMillis());
+                    }
                 }
+            } else if ("mcu".equals(baseSysConfig.getMcuMode())) {
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "5.2mcu登陆");
+                System.out.println("5.2mcu登陆");
+                loginMcuRestSrv();
             }
-        } else if ("mcu".equals(baseSysConfig.getMcuMode())) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "5.2mcu登陆");
-            System.out.println("5.2mcu登陆");
-            loginMcuRestSrv();
         }/* else {
             InetAddress ia = InetAddress.getLocalHost();
             System.out.println("getMACAddress(ia)" + getMACAddress(ia));
@@ -123,10 +126,12 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
                 continue;
             }
 
-            mcuRestClientService.subscribeConfInfo(confId);
-            mcuRestClientService.subscribeInspection(confId);
-            mcuRestClientService.subscribeSpeaker(confId);
-            mcuRestClientService.subscribeDual(confId);
+            if ("mcu".equals(baseSysConfig.getMcuMode())) {
+                mcuRestClientService.subscribeConfInfo(confId);
+                mcuRestClientService.subscribeInspection(confId);
+                mcuRestClientService.subscribeSpeaker(confId);
+                mcuRestClientService.subscribeDual(confId);
+            }
 
             GroupConfInfo groupConfInfo = new GroupConfInfo(groupId, confId);
             loadMtInfo(groupConfInfo, confMtMembers);
@@ -139,7 +144,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "groupId(" + groupId + ") has no virtual terminal!!");
                 System.out.println("groupId(" + groupId + ") has no virtual terminal!!");
                 joinConfVmtNum = confMtMembers.size();
-            } else {
+            } else if ("mcu".equals(baseSysConfig.getMcuMode())){
                 //订阅设备上线信息
                 mcuRestClientService.subscribeConfMts(confId);
                 loadVmtInfo(groupConfInfo, confVmtMembers);
@@ -477,7 +482,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
     @Autowired
     private TerminalManageService terminalManageService;
 
-    @Autowired
+    @Autowired(required=false)
     private McuRestClientService mcuRestClientService;
 
     @Autowired
@@ -486,7 +491,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
     @Autowired
     private DefaultListableBeanFactory defaultListableBeanFactory;
 
-    @Autowired
+    @Autowired(required=false)
     private McuSdkClientService mcuSdkClientService;
 
     //protected final org.slf4j.Logger logger = LoggerFactory.getLogger(this.getClass());

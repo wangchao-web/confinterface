@@ -5,6 +5,7 @@ import com.kedacom.confinterface.LogService.LogTools;
 import com.kedacom.confinterface.dao.*;
 import com.kedacom.confinterface.dto.*;
 
+import com.kedacom.confinterface.h323.H323TerminalManageService;
 import com.kedacom.confinterface.inner.*;
 import com.kedacom.confinterface.restclient.McuRestClientService;
 import com.kedacom.confinterface.restclient.mcu.*;
@@ -28,6 +29,14 @@ public class ConfInterfaceService {
     private final int maxVmtNum = 17;
 
     public List<String> getVmts() {
+        String srvToken = terminalMediaSourceService.getSrvToken();
+        if (null == srvToken || srvToken.isEmpty()){
+            if (terminalManageService instanceof H323TerminalManageService) {
+                int localCallPort = ((H323TerminalManageService) terminalManageService).getProtocalConfig().getLocalCallPort();
+                terminalMediaSourceService.setSrvToken(String.valueOf(localCallPort));
+            }
+        }
+
         return terminalMediaSourceService.getVmtList();
     }
 
@@ -107,6 +116,11 @@ public class ConfInterfaceService {
 
     @Async("confTaskExecutor")
     public void joinConference(JoinConferenceRequest joinConferenceRequest) {
+        if (!baseSysConfig.isUseMcu()) {
+            joinConferenceRequest.makeErrorResponseMsg(ConfInterfaceResult.NOT_SUPPORT_METHOD.getCode(), HttpStatus.OK, ConfInterfaceResult.NOT_SUPPORT_METHOD.getMessage());
+            return;
+        }
+
         GroupConfInfo groupConfInfo = groupConfInfoMap.get(joinConferenceRequest.getGroupId());
         List<Terminal> joinConfMts = joinConferenceRequest.getMts();
         int mtNum = joinConfMts.size();
@@ -266,6 +280,11 @@ public class ConfInterfaceService {
 
     @Async("confTaskExecutor")
     public void leftConference(LeftConferenceRequest leftConferenceRequest) {
+        if (!baseSysConfig.isUseMcu()) {
+            leftConferenceRequest.makeErrorResponseMsg(ConfInterfaceResult.NOT_SUPPORT_METHOD.getCode(), HttpStatus.OK, ConfInterfaceResult.NOT_SUPPORT_METHOD.getMessage());
+            return;
+        }
+
         String groupId = leftConferenceRequest.getGroupId();
         GroupConfInfo groupConfInfo = groupConfInfoMap.get(groupId);
         if (null == groupConfInfo) {
@@ -322,6 +341,11 @@ public class ConfInterfaceService {
 
     @Async("confTaskExecutor")
     public void setBroadcastSrc(BroadCastRequest broadCastRequest) {
+        if (!baseSysConfig.isUseMcu()) {
+            broadCastRequest.makeErrorResponseMsg(ConfInterfaceResult.NOT_SUPPORT_METHOD.getCode(), HttpStatus.OK, ConfInterfaceResult.NOT_SUPPORT_METHOD.getMessage());
+            return;
+        }
+
         String groupId = broadCastRequest.getGroupId();
         GroupConfInfo groupConfInfo = groupConfInfoMap.get(groupId);
         if (null == groupConfInfo) {
@@ -390,6 +414,11 @@ public class ConfInterfaceService {
 
     @Async("confTaskExecutor")
     public void cancelBroadcast(CancelBroadCastRequest cancelBroadCastRequest) {
+        if (!baseSysConfig.isUseMcu()) {
+            cancelBroadCastRequest.makeErrorResponseMsg(ConfInterfaceResult.NOT_SUPPORT_METHOD.getCode(), HttpStatus.OK, ConfInterfaceResult.NOT_SUPPORT_METHOD.getMessage());
+            return;
+        }
+
         String groupId = cancelBroadCastRequest.getGroupId();
         GroupConfInfo groupConfInfo = groupConfInfoMap.get(groupId);
         if (null == groupConfInfo) {
@@ -417,6 +446,11 @@ public class ConfInterfaceService {
 
     @Async("confTaskExecutor")
     public void joinDiscussionGroup(JoinDiscussionGroupRequest joinDiscussionGroupRequest) {
+        if (!baseSysConfig.isUseMcu()) {
+            joinDiscussionGroupRequest.makeErrorResponseMsg(ConfInterfaceResult.NOT_SUPPORT_METHOD.getCode(), HttpStatus.OK, ConfInterfaceResult.NOT_SUPPORT_METHOD.getMessage());
+            return;
+        }
+
         String groupId = joinDiscussionGroupRequest.getGroupId();
         GroupConfInfo groupConfInfo = groupConfInfoMap.get(groupId);
         if (null == groupConfInfo) {
@@ -442,6 +476,11 @@ public class ConfInterfaceService {
 
     @Async("confTaskExecutor")
     public void leftDiscussionGroup(LeftDiscussionGroupRequest leftDiscussionGroupRequest) {
+        if (!baseSysConfig.isUseMcu()) {
+            leftDiscussionGroupRequest.makeErrorResponseMsg(ConfInterfaceResult.NOT_SUPPORT_METHOD.getCode(), HttpStatus.OK, ConfInterfaceResult.NOT_SUPPORT_METHOD.getMessage());
+            return;
+        }
+
         String groupId = leftDiscussionGroupRequest.getGroupId();
         GroupConfInfo groupConfInfo = groupConfInfoMap.get(groupId);
         if (null == groupConfInfo) {
@@ -516,6 +555,11 @@ public class ConfInterfaceService {
 
     @Async("confTaskExecutor")
     public void startInspection(InspectionRequest inspectionRequest) {
+        if (!baseSysConfig.isUseMcu()) {
+            inspectionRequest.makeErrorResponseMsg(ConfInterfaceResult.NOT_SUPPORT_METHOD.getCode(), HttpStatus.OK, ConfInterfaceResult.NOT_SUPPORT_METHOD.getMessage());
+            return;
+        }
+
         String groupId = inspectionRequest.getGroupId();
         GroupConfInfo groupConfInfo = groupConfInfoMap.get(groupId);
         if (null == groupConfInfo) {
@@ -716,6 +760,11 @@ public class ConfInterfaceService {
 
     @Async("confTaskExecutor")
     public void cancelInspection(CancelInspectionRequest cancelInspectionRequest) {
+        if (!baseSysConfig.isUseMcu()) {
+            cancelInspectionRequest.makeErrorResponseMsg(ConfInterfaceResult.NOT_SUPPORT_METHOD.getCode(), HttpStatus.OK, ConfInterfaceResult.NOT_SUPPORT_METHOD.getMessage());
+            return;
+        }
+
         String groupId = cancelInspectionRequest.getGroupId();
         GroupConfInfo groupConfInfo = groupConfInfoMap.get(groupId);
         if (null == groupConfInfo) {
@@ -816,6 +865,11 @@ public class ConfInterfaceService {
 
     @Async("confTaskExecutor")
     public void ctrlCamera(CameraCtrlRequest cameraCtrlRequest) {
+        if (!baseSysConfig.isUseMcu()) {
+            cameraCtrlRequest.makeErrorResponseMsg(ConfInterfaceResult.NOT_SUPPORT_METHOD.getCode(), HttpStatus.OK, ConfInterfaceResult.NOT_SUPPORT_METHOD.getMessage());
+            return;
+        }
+
         String groupId = cameraCtrlRequest.getGroupId();
         GroupConfInfo groupConfInfo = groupConfInfoMap.get(groupId);
         if (null == groupConfInfo) {
@@ -926,6 +980,11 @@ public class ConfInterfaceService {
 
     @Async("confTaskExecutor")
     public void ctrlVolume(CtrlVolumeRequest ctrlVolumeRequest) {
+        if (!baseSysConfig.isUseMcu()) {
+            ctrlVolumeRequest.makeErrorResponseMsg(ConfInterfaceResult.NOT_SUPPORT_METHOD.getCode(), HttpStatus.OK, ConfInterfaceResult.NOT_SUPPORT_METHOD.getMessage());
+            return;
+        }
+
         String groupId = ctrlVolumeRequest.getGroupId();
         GroupConfInfo groupConfInfo = groupConfInfoMap.get(groupId);
         if (null == groupConfInfo) {
@@ -971,6 +1030,11 @@ public class ConfInterfaceService {
 
     @Async("confTaskExecutor")
     public void silenceOrMute(CtrlSilenceOrMuteRequest ctrlSilenceOrMuteRequest) {
+        if (!baseSysConfig.isUseMcu()) {
+            ctrlSilenceOrMuteRequest.makeErrorResponseMsg(ConfInterfaceResult.NOT_SUPPORT_METHOD.getCode(), HttpStatus.OK, ConfInterfaceResult.NOT_SUPPORT_METHOD.getMessage());
+            return;
+        }
+
         String groupId = ctrlSilenceOrMuteRequest.getGroupId();
         GroupConfInfo groupConfInfo = groupConfInfoMap.get(groupId);
         if (null == groupConfInfo) {
@@ -1652,6 +1716,11 @@ public class ConfInterfaceService {
     }
 
     private void ctrlMtDualStream(TerminalService mtService, boolean dual, GroupConfInfo groupConfInfo, BaseRequestMsg ctrlDualStreamRequest) {
+        if (!baseSysConfig.isUseMcu()) {
+            ctrlDualStreamRequest.makeErrorResponseMsg(ConfInterfaceResult.NOT_SUPPORT_METHOD.getCode(), HttpStatus.OK, ConfInterfaceResult.NOT_SUPPORT_METHOD.getMessage());
+            return;
+        }
+
         String confId = groupConfInfo.getConfId();
         String dualStreamChannel = getDualStreamChannel(confId);
         ctrlDualStreamRequest.addWaitMsg(dualStreamChannel);
@@ -1713,7 +1782,7 @@ public class ConfInterfaceService {
     @Autowired
     private TerminalManageService terminalManageService;
 
-    @Autowired
+    @Autowired(required = false)
     private McuRestClientService mcuRestClientService;
 
     @Autowired

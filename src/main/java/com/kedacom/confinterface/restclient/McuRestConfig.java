@@ -1,9 +1,11 @@
 package com.kedacom.confinterface.restclient;
 
 import com.kedacom.confinterface.util.ProtocalTypeEnum;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
+@ConditionalOnProperty(name = "confinterface.sys.useMcu", havingValue = "true", matchIfMissing = true)
 @Configuration
 @ConfigurationProperties(prefix = "confinterface.mcu.rest")
 public class McuRestConfig {

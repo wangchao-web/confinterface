@@ -425,7 +425,7 @@ public class ConfinterfaceApplicationTests implements ApplicationContextAware {
     @Autowired
     private TerminalMediaSourceService terminalMediaSourceService;
 
-    @Autowired
+    @Autowired(required = false)
     private McuRestClientService mcuRestClientService;
 
     @Autowired

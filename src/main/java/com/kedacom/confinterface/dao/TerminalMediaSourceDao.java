@@ -7,6 +7,9 @@ import java.util.Map;
 
 public interface TerminalMediaSourceDao {
 
+    String getSrvToken();
+    void setSrvToken(String srvToken);
+
     List<String> getVmtList();
 
     List<String> addVmt(String e164);

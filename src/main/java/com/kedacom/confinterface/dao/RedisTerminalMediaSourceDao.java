@@ -11,6 +11,8 @@ import java.util.Map;
 
 public class RedisTerminalMediaSourceDao implements TerminalMediaSourceDao {
 
+    private final String confVmtListPrefix = "confVmtList_";
+    private final String confGroupHashPrefix = "confGroupHash_";
     private final String mediaResourcePrefix = "mediaResource_";
     private final String broadcastSrcPrefix = "broadcastSrc_";
     private final String groupMtMembersPrefix = "groupMtMembers_";
@@ -18,6 +20,7 @@ public class RedisTerminalMediaSourceDao implements TerminalMediaSourceDao {
     private final String groupInspectionPrefix = "groupInspections_";
 
     private RedisClient redisClient;
+    private String  srvToken;
 
     public RedisTerminalMediaSourceDao(RedisClient redisClient) {
         super();
@@ -25,37 +28,53 @@ public class RedisTerminalMediaSourceDao implements TerminalMediaSourceDao {
     }
 
     @Override
+    public String getSrvToken() {
+        return srvToken;
+    }
+
+    @Override
+    public void setSrvToken(String srvToken) {
+        this.srvToken = srvToken;
+    }
+
+    @Override
     public List<String> getVmtList() {
-        return (List<String>) redisClient.listGet("confVmtList", 0, -1);
+        String key = keyGenernate(confVmtListPrefix, srvToken);
+        return (List<String>) redisClient.listGet(key, 0, -1);
     }
 
     @Override
     public List<String> addVmt(String e164) {
-        redisClient.listPush("confVmtList", e164);
-        return (List<String>) redisClient.listGet("confVmtList", 0, -1);
+        String key = keyGenernate(confVmtListPrefix, srvToken);
+        redisClient.listPush(key, e164);
+        return (List<String>) redisClient.listGet(key, 0, -1);
     }
 
     @Override
     public List<String> delVmt(String e164) {
-        redisClient.listRemove("confVmtList", 0, e164);
-        return (List<String>) redisClient.listGet("confVmtList", 0, -1);
+        String key = keyGenernate(confVmtListPrefix, srvToken);
+        redisClient.listRemove(key, 0, e164);
+        return (List<String>) redisClient.listGet(key, 0, -1);
     }
 
     @Override
     public Map<String, String> getGroupsHash() {
-        return (Map<String, String>) redisClient.hashGet("confGroupHash");
+        String key = keyGenernate(confGroupHashPrefix, srvToken);
+        return (Map<String, String>) redisClient.hashGet(key);
     }
 
     @Override
     public Map<String, String> setGroup(String groupId, String confId) {
-        redisClient.hashPut("confGroupHash", groupId, confId);
-        return (Map<String, String>)redisClient.hashGet("confGroupHash");
+        String key = keyGenernate(confGroupHashPrefix, srvToken);
+        redisClient.hashPut(key, groupId, confId);
+        return (Map<String, String>)redisClient.hashGet(key);
     }
 
     @Override
     public Map<String, String>  delGroup(String groupId) {
-        redisClient.hashRemove("confGroupHash", groupId);
-        return (Map<String, String>)redisClient.hashGet("confGroupHash");
+        String key = keyGenernate(confGroupHashPrefix, srvToken);
+        redisClient.hashRemove(key, groupId);
+        return (Map<String, String>)redisClient.hashGet(key);
     }
 
     @Override

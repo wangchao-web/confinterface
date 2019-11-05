@@ -13,6 +13,7 @@ import com.kedacom.confinterface.service.UnifiedDevicePushService;
 import com.kedacom.confinterface.syssetting.BaseSysConfig;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.core.env.Environment;
@@ -29,7 +30,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
-@ConditionalOnProperty(name = "confinterface.sys.useMcu", havingValue = "true", matchIfMissing = true)
+@ConditionalOnExpression("${confinterface.sys.useMcu:true} && '${confinterface.sys.mcuMode}'.equals('mcu')")
 @Service
 @EnableScheduling
 @EnableConfigurationProperties(McuRestConfig.class)
@@ -1059,7 +1060,7 @@ public class McuRestClientService {
     //private final long heartbeatInterval = 25 * 60 * 1000L;
     private final long heartbeatInterval = 1 * 60 * 1000L;
     //private volatile boolean loginSuccess;
-    public volatile boolean loginSuccess;
+    public volatile boolean loginSuccess = false;
     private Map<String, List<String>> confSubcribeChannelMap;
     private static String activeProf = "dev";
 

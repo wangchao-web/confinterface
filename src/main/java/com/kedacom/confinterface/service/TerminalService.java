@@ -690,6 +690,9 @@ public abstract class TerminalService {
         translateCallParam.setNotifyURL(notifyUrl.toString());
 
         ResponseEntity<JSONObject> translateCallResponse = restClientService.exchangeJson(url.toString(), HttpMethod.POST, translateCallParam, null, JSONObject.class);
+        if (null == translateCallResponse)
+            return null;
+
         JSONObject jsonObject = translateCallResponse.getBody();
         int code = jsonObject.getInt("Code");
         String message = jsonObject.getString("Messages");

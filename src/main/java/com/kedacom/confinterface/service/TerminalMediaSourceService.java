@@ -23,6 +23,13 @@ public class TerminalMediaSourceService {
     @Autowired
     private TerminalMediaSourceDao terminalMediaSourceDao;
 
+    public String getSrvToken(){
+        return terminalMediaSourceDao.getSrvToken();
+    }
+    public void setSrvToken(String srvToken){
+        terminalMediaSourceDao.setSrvToken(srvToken);
+    }
+
     @Cacheable(value = "vmtList", key = "caches[0].name")
     public List<String> getVmtList() {
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"getVmtList in TerminalMediaSourceService");
