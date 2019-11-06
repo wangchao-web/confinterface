@@ -6,15 +6,11 @@ import com.kedacom.confinterface.dto.*;
 import com.kedacom.confinterface.inner.*;
 import com.kedacom.confinterface.dao.Terminal;
 import com.kedacom.confinterface.restclient.mcu.*;
-import com.kedacom.confinterface.service.ConfInterfacePublishService;
 import com.kedacom.confinterface.service.ConfInterfaceService;
 import com.kedacom.confinterface.service.TerminalService;
-import com.kedacom.confinterface.service.UnifiedDevicePushService;
-import com.kedacom.confinterface.syssetting.BaseSysConfig;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpHeaders;
@@ -813,82 +809,40 @@ public class McuRestClientService {
 
     @Scheduled(initialDelay = heartbeatInterval, fixedRate = heartbeatInterval)
     public void doHearbeat() {
-        if ("mcu".equals(baseSysConfig.getMcuMode())) {
-            //每25分钟执行一次心跳检测 /api/v1/system/heartbeat
-            StringBuilder url = new StringBuilder();
-            constructUrl(url, "/api/v1/system/heartbeat");
+        //每25分钟执行一次心跳检测 /api/v1/system/heartbeat
+        StringBuilder url = new StringBuilder();
+        constructUrl(url, "/api/v1/system/heartbeat");
 
-            McuPostMsg mcuPostMsg = new McuPostMsg(accountToken);
-            ResponseEntity<McuBaseResponse> response = restClientService.postForEntity(url.toString(), mcuPostMsg.getMsg(), urlencodeMediaType, McuBaseResponse.class);
-            if (null == response || response.getStatusCode().is4xxClientError() || response.getStatusCode().is5xxServerError()) {
-                //尝试重新登陆
-                loginSuccess = false;
-                while (true) {
-                    boolean bOK = login();
-                    if (bOK) {
-                        break;
-                    }
+        McuPostMsg mcuPostMsg = new McuPostMsg(accountToken);
+        ResponseEntity<McuBaseResponse> response = restClientService.postForEntity(url.toString(), mcuPostMsg.getMsg(), urlencodeMediaType, McuBaseResponse.class);
+        if (null == response || response.getStatusCode().is4xxClientError() || response.getStatusCode().is5xxServerError()) {
+            //尝试重新登陆
+            loginSuccess = false;
 
-                    try {
-                        TimeUnit.SECONDS.sleep(1);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
+            /*处理点对点呼叫的终端状态发布及呼叫挂断*/
+            Map<String, P2PCallGroup> p2pCallGroupMap = ConfInterfaceService.p2pCallGroupMap;
+            if (null != p2pCallGroupMap) {
+                for (Map.Entry<String, P2PCallGroup> groupEntry : p2pCallGroupMap.entrySet()) {
+                    P2PCallGroup p2PCallGroup = groupEntry.getValue();
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "groupId= " + groupEntry.getKey() + " and callGroup= " + groupEntry.getValue());
+                    System.out.println("groupId = " + groupEntry.getKey() + " and callGroup = " + groupEntry.getValue());
+                    for (Map.Entry<String, TerminalService> terminalEntry : p2PCallGroup.getCallMap().entrySet()) {
+                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, " remoteCallMt: " + terminalEntry.getKey());
+                        System.out.println("remoteCallMt: " + terminalEntry.getKey());
+
+                        TerminalService terminalService = terminalEntry.getValue();
+                        terminalService.cancelCallMt(terminalService);
+                        terminalService.publishStatus(terminalEntry.getKey(), TerminalOnlineStatusEnum.OFFLINE.getCode());
+
+                        p2PCallGroup.removeCallMember(terminalEntry.getKey());
                     }
                 }
-            } else if (response.getStatusCode().is2xxSuccessful()) {
-                if (!mcuSubscribeClientService.isHandShakeOk()) {
-                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"尝试重新登录");
-                    System.out.println("尝试重新登录");
-                    loginSuccess = false;
-                    while (true) {
-                        boolean bOK = login();
-                        if (bOK) {
-                           /* number = 0;
-                            Map<String, String> groups = terminalMediaSourceService.getGroups();
-                            //System.out.println("通过Map.entrySet遍历key和value");
-                            for (Map.Entry<String, String> group : groups.entrySet()) {
-                                //System.out.println("key= " + group.getKey() + " and value= " + group.getValue());
-                                McuStatus mcuStatus = endConference(group.getValue(), true);
-                                if (mcuStatus.getValue() == 0) {
-                                    GroupConfInfo groupConfInfo = confInterfaceService.getGroupConfInfo(group.getKey());
-                                    endConference(group.getValue(), false);
-                                    confInterfaceService.delGroupConfInfo(groupConfInfo);
-                                    groupConfInfo.cancelGroup();
-                                    terminalMediaSourceService.delGroup(group.getKey());
-                                    terminalMediaSourceService.delGroupMtMembers(group.getKey(), null);
-                                    terminalMediaSourceService.delGroupVmtMembers(group.getKey(), null);
-                                    terminalMediaSourceService.delBroadcastSrcInfo(group.getKey());*/
-                            Map<String, P2PCallGroup> p2pCallGroupMap = ConfInterfaceService.p2pCallGroupMap;
-                            if (null != p2pCallGroupMap) {
-                                for (Map.Entry<String, P2PCallGroup> entry : p2pCallGroupMap.entrySet()) {
-                                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"key= " + entry.getKey() + " and value= " + entry.getValue());
-                                    System.out.println("key= " + entry.getKey() + " and value= " + entry.getValue());
-                                    for (Map.Entry<String, TerminalService> entrys : entry.getValue().getCallMap().entrySet()) {
-                                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"entrys.getKey() " + entrys.getKey());
-                                        System.out.println("entrys.getKey() " + entrys.getKey());
-                                        entry.getValue().removeCallMember(entrys.getKey());
-                                        if ("mediaSchedule".equals(baseSysConfig.getPushServiceType())) {
-                                            TerminalStatusNotify terminalStatusNotify = new TerminalStatusNotify();
-                                            TerminalStatus terminalStatus = new TerminalStatus(entrys.getKey(), "MT", 0);
-                                            terminalStatusNotify.addMtStatus(terminalStatus);
-                                            confInterfacePublishService.publishMessage(SubscribeMsgTypeEnum.TERMINAL_STATUS, entry.getKey(), terminalStatusNotify);
-                                        } else {
-                                            UnifiedDevicePushTerminalStatus unifiedDevicePushTerminalStatus = new UnifiedDevicePushTerminalStatus(entrys.getKey(), entry.getKey(), TerminalOnlineStatusEnum.OFFLINE.getCode());
-                                            unifiedDevicePushService.publishMtStatus(unifiedDevicePushTerminalStatus);
-                                        }
+            }
 
-                                    }
-                                }
-                            }
-                            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"结会成功 confId : ");
-                            System.out.println("结会成功 confId : ");
-                        } else {
-                            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"结会失败 confId : ");
-                            System.out.println("结会失败 confId : ");
-                        }
-                        break;
-                    }
-
+            while (true) {
+                boolean bOK = login();
+                if (bOK) {
+                    break;
                 }
 
                 try {
@@ -1063,13 +1017,4 @@ public class McuRestClientService {
     public volatile boolean loginSuccess = false;
     private Map<String, List<String>> confSubcribeChannelMap;
     private static String activeProf = "dev";
-
-    @Autowired
-    private BaseSysConfig baseSysConfig;
-
-    @Autowired
-    private ConfInterfacePublishService confInterfacePublishService;
-
-    @Autowired
-    private UnifiedDevicePushService unifiedDevicePushService;
 }

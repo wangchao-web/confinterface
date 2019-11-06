@@ -262,17 +262,10 @@ public class H323TerminalManageService extends TerminalManageService implements 
             if (null != terminalService.getProxyMTE164())
                 mtAccount = terminalService.getE164();
 
-            if ("mediaSchedule".equals(protocalConfig.getBaseSysConfig().getPushServiceType())) {
-                TerminalStatusNotify terminalStatusNotify = new TerminalStatusNotify();
-                TerminalStatus terminalStatus = new TerminalStatus(mtAccount, "MT", 0);
-                terminalStatusNotify.addMtStatus(terminalStatus);
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "terminalService.getE164() " + terminalService.getE164() + ",terminalService.getGroupId() : " + terminalService.getGroupId());
-                System.out.println("terminalService.getE164() " + terminalService.getE164() + ",terminalService.getGroupId() : " + terminalService.getGroupId());
-                confInterfacePublishService.publishMessage(SubscribeMsgTypeEnum.TERMINAL_STATUS, terminalService.getGroupId(), terminalStatusNotify);
-            } else {
-                UnifiedDevicePushTerminalStatus unifiedDevicePushTerminalStatus = new UnifiedDevicePushTerminalStatus(mtAccount, terminalService.getGroupId(), TerminalOnlineStatusEnum.OFFLINE.getCode());
-                unifiedDevicePushService.publishMtStatus(unifiedDevicePushTerminalStatus);
-            }
+            terminalService.publishStatus(mtAccount, TerminalOnlineStatusEnum.OFFLINE.getCode());
+
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "terminalService.getE164() " + terminalService.getE164() + ",terminalService.getGroupId() : " + terminalService.getGroupId());
+            System.out.println("terminalService.getE164() " + terminalService.getE164() + ",terminalService.getGroupId() : " + terminalService.getGroupId());
         }
 
         //释放该虚拟终端的所有交换资源
@@ -594,14 +587,11 @@ public class H323TerminalManageService extends TerminalManageService implements 
             if(p2PCallRequest.isSuccessResponseMsg()){
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"上线状态推送 : " + p2PCallRequest.getAccount());
                 System.out.println("上线状态推送 : " + p2PCallRequest.getAccount());
-                TerminalStatusNotify terminalStatusNotify = new TerminalStatusNotify();
-                TerminalStatus terminalStatus = new TerminalStatus(p2PCallRequest.getAccount(), "MT", 1, p2PCallRequest.getForwardResources(), p2PCallRequest.getReverseResources());
-                terminalStatusNotify.addMtStatus(terminalStatus);
+
+                terminalService.publishStatus(p2PCallRequest.getAccount(), TerminalOnlineStatusEnum.ONLINE.getCode(), p2PCallRequest.getForwardResources(), p2PCallRequest.getReverseResources());
+
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "terminalService.getE164() " + p2PCallRequest.getAccount() + ",terminalService.getGroupId() : " + p2PCallRequest.getGroupId() + ", forwardResources" + p2PCallRequest.getForwardResources().toString() + ", reverseResources" + p2PCallRequest.getReverseResources().toString());
                 System.out.println("terminalService.getE164() " + p2PCallRequest.getAccount() + ",terminalService.getGroupId() : " + p2PCallRequest.getGroupId() + ", forwardResources" + p2PCallRequest.getForwardResources().toString() + ", reverseResources" + p2PCallRequest.getReverseResources().toString());
-
-                System.out.println("confInterfacePublishService : " + confInterfacePublishService);
-                confInterfacePublishService.publishMessage(SubscribeMsgTypeEnum.TERMINAL_STATUS, p2PCallRequest.getGroupId(), terminalStatusNotify);
             }
             break;
         }
@@ -641,11 +631,4 @@ public class H323TerminalManageService extends TerminalManageService implements 
 
     @Autowired
     private TerminalMediaSourceService terminalMediaSourceService;
-
-    @Autowired
-    private ConfInterfacePublishService confInterfacePublishService;
-
-    @Autowired
-    private UnifiedDevicePushService unifiedDevicePushService;
-
 }

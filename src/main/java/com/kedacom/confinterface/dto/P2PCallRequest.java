@@ -2,8 +2,6 @@ package com.kedacom.confinterface.dto;
 
 import com.kedacom.confinterface.LogService.LogOutputTypeEnum;
 import com.kedacom.confinterface.LogService.LogTools;
-import com.kedacom.confinterface.inner.SubscribeMsgTypeEnum;
-import com.kedacom.confinterface.service.ConfInterfacePublishService;
 import com.kedacom.confinterface.util.ConfInterfaceResult;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

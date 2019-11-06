@@ -2,7 +2,7 @@ package com.kedacom.confinterface.inner;
 
 public enum TerminalOnlineStatusEnum {
     UNKNOWN(0, "unknown"), ONLINE(1, "online"), OFFLINE(2, "offline"), OCCUPIED(3, "occupied"),
-    UNREGISTERED(4, "unregistered");
+    UNREGISTERED(4, "unregistered"), DUALSTREAM(5, "dualstream");
 
     public int getCode(){
         return this.code;

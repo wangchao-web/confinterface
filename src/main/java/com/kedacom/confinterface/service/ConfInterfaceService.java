@@ -1196,17 +1196,13 @@ public class ConfInterfaceService {
                 p2PCallGroup.addCallMember(mtAccount, vmtService);
             } else {
                 vmtService.delWaitMsg(waitMsg);
+                vmtService.publishStatus(mtAccount, TerminalOnlineStatusEnum.OFFLINE.getCode());
                 terminalManageService.freeVmt(vmtService.getE164());
                 vmtService.setGroupId(null);
-                TerminalStatusNotify terminalStatusNotify = new TerminalStatusNotify();
-                TerminalStatus terminalStatus = new TerminalStatus(mtAccount, "MT", 0);
-                terminalStatusNotify.addMtStatus(terminalStatus);
+
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "terminalService.getE164() " + mtAccount + ",terminalService.getGroupId() : " + groupId);
                 System.out.println("terminalService.getE164() " + mtAccount + ",terminalService.getGroupId() : " + groupId);
-                confInterfacePublishService.publishMessage(SubscribeMsgTypeEnum.TERMINAL_STATUS, groupId, terminalStatusNotify);
-                //p2PCallRequest.makeErrorResponseMsg(ConfInterfaceResult.P2PCALL.getCode(), HttpStatus.OK, ConfInterfaceResult.P2PCALL.getMessage());
             }
-            //return;
         }
     }
 
@@ -1787,9 +1783,6 @@ public class ConfInterfaceService {
 
     @Autowired
     private TerminalMediaSourceService terminalMediaSourceService;
-
-    @Autowired
-    private ConfInterfacePublishService confInterfacePublishService;
 
     @Autowired
     private BaseSysConfig baseSysConfig;

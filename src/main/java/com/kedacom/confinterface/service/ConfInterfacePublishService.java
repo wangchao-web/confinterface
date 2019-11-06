@@ -7,6 +7,7 @@ import com.kedacom.confinterface.dto.TerminalStatusNotify;
 import com.kedacom.confinterface.inner.SubscribeMsgTypeEnum;
 import com.kedacom.confinterface.restclient.RestClientService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
@@ -18,6 +19,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+@ConditionalOnProperty(name = "confinterface.sys.pushServiceType", havingValue = "mediaSchedule", matchIfMissing = true)
 @Service("ConfInterfacePublishService")
 @EnableScheduling
 public class  ConfInterfacePublishService {

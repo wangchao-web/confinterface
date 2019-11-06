@@ -628,8 +628,13 @@ public abstract class TerminalService {
         RemoteParticipantInfo remoteParticipantInfo = new RemoteParticipantInfo();
 
         if (p2PCallParam.getAccountType() == 1) {
-            //ip地址呼叫
-            String[] mtAddress = account.split(":", 2);
+            //ip地址呼叫,先解析是否携带别名，结构为ip:port/alias
+            String[] ipAndAlias = account.split("/", 2);
+            if (ipAndAlias.length == 2){
+                remoteParticipantInfo.setParticipantId(ipAndAlias[1]);
+            }
+
+            String[] mtAddress = ipAndAlias[0].split(":", 2);
             NetAddress netAddress = new NetAddress();
             netAddress.setIP(mtAddress[0]);
 
@@ -710,6 +715,22 @@ public abstract class TerminalService {
         String groupId = jsonObject.getString("GroupID");
         System.out.println("translateCall OK! destDeviceId: " + proxyMTE164 + ", GroupId :" + groupId);
         return groupId;
+    }
+
+    public void publishStatus(String account, int status, List<MediaResource> forwardResources, List<MediaResource> reverseResources){
+        if (null != confInterfacePublishService) {
+            TerminalStatusNotify terminalStatusNotify = new TerminalStatusNotify();
+            TerminalStatus terminalStatus = new TerminalStatus(account,"MT", status, forwardResources, reverseResources);
+            terminalStatusNotify.addMtStatus(terminalStatus);
+            confInterfacePublishService.publishMessage(SubscribeMsgTypeEnum.TERMINAL_STATUS, groupId, terminalStatusNotify);
+        } else if (null != unifiedDevicePushService){
+            UnifiedDevicePushTerminalStatus unifiedDevicePushTerminalStatus = new UnifiedDevicePushTerminalStatus(e164, groupId, status);
+            unifiedDevicePushService.publishMtStatus(unifiedDevicePushTerminalStatus);
+        }
+    }
+
+    public void publishStatus(String account, int status){
+        publishStatus(account, status, null, null);
     }
 
     protected boolean requestUpdateResource(List<UpdateResourceParam> updateResourceParams) {
@@ -1324,8 +1345,8 @@ public abstract class TerminalService {
         ArrayList<MediaResource> reverseResources = new ArrayList<>();
         reverseResources.add(mediaResource);
         TerminalStatusNotify terminalStatusNotify = new TerminalStatusNotify();
-        //状态2是双流发的开启
-        TerminalStatus terminalStatus = new TerminalStatus(dualAccount, "Dual", 2, null, reverseResources);
+        //双流开启
+        TerminalStatus terminalStatus = new TerminalStatus(dualAccount, "Dual", TerminalOnlineStatusEnum.DUALSTREAM.getCode(), null, reverseResources);
         terminalStatusNotify.addMtStatus(terminalStatus);
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, " dualAddMediaResource : dualAccount: " + dualAccount + ",terminalService.getGroupId() : " + groupId + ", reverseResources" + reverseResources.toString());
         System.out.println(" dualAddMediaResource : dualAccount: " + dualAccount + ",terminalService.getGroupId() : " + groupId + ", reverseResources" + reverseResources.toString());
@@ -1345,9 +1366,9 @@ public abstract class TerminalService {
 
         ArrayList<MediaResource> reverseResources = new ArrayList<>();
         reverseResources.add(mediaResource);
+
         TerminalStatusNotify terminalStatusNotify = new TerminalStatusNotify();
-        //状态3是双流发的关闭
-        TerminalStatus terminalStatus = new TerminalStatus(dualAccount, "Dual", 3, null, reverseResources);
+        TerminalStatus terminalStatus = new TerminalStatus(dualAccount, "Dual", TerminalOnlineStatusEnum.DUALSTREAM.getCode());
         terminalStatusNotify.addMtStatus(terminalStatus);
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "dualPublish : dualAccount " + dualAccount + ",terminalService.getGroupId() : " + groupId + ", reverseResources" + reverseResources.toString());
         System.out.println("dualPublish : dualAccount " + dualAccount + ",terminalService.getGroupId() : " + groupId + ", reverseResources" + reverseResources.toString());
@@ -1595,7 +1616,7 @@ public abstract class TerminalService {
         audioMediaDescription.setChannelIndex(0);
         audioMediaDescription.setDirection("sendAndrecv");
         ((AudioMediaDescription) audioMediaDescription).setChannelNum(0);
-        ((AudioMediaDescription) audioMediaDescription).setSampleRate(9600);
+        audioMediaDescription.setSampleRate(9600);
         mediaDescriptions.add(audioMediaDescription);
 
         ArrayList<CreateResourceResponse> resourceResponses = new ArrayList<>();
@@ -1644,8 +1665,11 @@ public abstract class TerminalService {
 
     protected final org.slf4j.Logger logger = LoggerFactory.getLogger(this.getClass());
 
-    @Autowired
+    @Autowired(required = false)
     private ConfInterfacePublishService confInterfacePublishService;
+
+    @Autowired(required = false)
+    private UnifiedDevicePushService unifiedDevicePushService;
 
     @Autowired
     protected RestClientService restClientService;

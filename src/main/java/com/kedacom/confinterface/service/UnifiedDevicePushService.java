@@ -7,6 +7,7 @@ import com.kedacom.confinterface.dto.UnifiedDevicePushTerminalStatus;
 import com.kedacom.confinterface.restclient.RestClientService;
 import com.kedacom.confinterface.syssetting.BaseSysConfig;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Service;
 import java.util.Iterator;
 import java.util.concurrent.LinkedBlockingDeque;
 
+@ConditionalOnProperty(name = "confinterface.sys.pushServiceType", havingValue = "ctsp")
 @Service
 @EnableScheduling
 public class UnifiedDevicePushService {

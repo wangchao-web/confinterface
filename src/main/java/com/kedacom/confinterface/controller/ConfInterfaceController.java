@@ -24,7 +24,7 @@ public class ConfInterfaceController {
     @Autowired
     private ConfInterfaceService confInterfaceService;
 
-    @Autowired
+    @Autowired(required = false)
     private ConfInterfacePublishService confInterfacePublishService;
 
     private final org.slf4j.Logger logger = LoggerFactory.getLogger(this.getClass());
@@ -137,9 +137,14 @@ public class ConfInterfaceController {
     public ResponseEntity<BaseResponseMsg> subscribeTerminalStatus(@RequestParam("GroupId") String groupId, @Valid @RequestBody SubscribeTerminalStatusParam subscribeTerminalStatusParam){
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now in subscribeTerminalStatus, groupId:"+groupId+", subscribeParam:"+subscribeTerminalStatusParam);
         System.out.println("now in subscribeTerminalStatus, groupId:"+groupId+", subscribeParam:"+subscribeTerminalStatusParam);
-        confInterfacePublishService.addSubscribeMessage(SubscribeMsgTypeEnum.TERMINAL_STATUS.getType(), groupId, subscribeTerminalStatusParam.getUrl());
-        BaseResponseMsg baseResponseMsg = new BaseResponseMsg(ConfInterfaceResult.OK.getCode(), HttpStatus.OK.value(), ConfInterfaceResult.OK.getMessage());
-        return new ResponseEntity<>(baseResponseMsg, HttpStatus.OK);
+        if (null != confInterfacePublishService) {
+            confInterfacePublishService.addSubscribeMessage(SubscribeMsgTypeEnum.TERMINAL_STATUS.getType(), groupId, subscribeTerminalStatusParam.getUrl());
+            BaseResponseMsg baseResponseMsg = new BaseResponseMsg(ConfInterfaceResult.OK.getCode(), HttpStatus.OK.value(), ConfInterfaceResult.OK.getMessage());
+            return new ResponseEntity<>(baseResponseMsg, HttpStatus.OK);
+        } else {
+            BaseResponseMsg baseResponseMsg = new BaseResponseMsg(ConfInterfaceResult.NOT_SUPPORT_METHOD.getCode(), HttpStatus.OK.value(), ConfInterfaceResult.NOT_SUPPORT_METHOD.getMessage());
+            return new ResponseEntity<>(baseResponseMsg, HttpStatus.OK);
+        }
     }
 
     @PostMapping(value = "/iframe")

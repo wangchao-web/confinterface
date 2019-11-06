@@ -50,53 +50,10 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
         registerVmts();
 
         if (baseSysConfig.isUseMcu()) {
-            if ("sdk".equals(baseSysConfig.getMcuMode())) {
-                createAndInitMcuSdkClientManage();
-                while (true) {
-                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "sdk登陆");
-                    System.out.println("sdk登陆");
-                    boolean bOk = mcuSdkClientService.login();
-                    if (bOk)
-                        break;
-
-                    try {
-                        TimeUnit.SECONDS.sleep(1);
-                    } catch (InterruptedException e) {
-                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "ConfInterfaceInitializingService ..... currentTime : " + System.currentTimeMillis());
-                        System.out.println("ConfInterfaceInitializingService ..... currentTime : " + System.currentTimeMillis());
-                    }
-                }
-            } else if ("mcu".equals(baseSysConfig.getMcuMode())) {
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "5.2mcu登陆");
-                System.out.println("5.2mcu登陆");
-                loginMcuRestSrv();
-            }
-        }/* else {
-            InetAddress ia = InetAddress.getLocalHost();
-            System.out.println("getMACAddress(ia)" + getMACAddress(ia));
-            if (!"a4:bf:01:1c:68:c3".equalsIgnoreCase(getMACAddress(ia))) {
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "登陆失败");
-                System.out.println("登陆失败");
-                return;
-            }
-            System.out.println("登陆成功");
-        }*/
-
-        /*if("p2p".equals(baseSysConfig.getMcuMode())){
-            while (true){
-                if ("172.16.0.40".equals(baseSysConfig.getLocalIp())){
-                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"登陆");
-                    System.out.println("登陆");
-                    break;
-                }
-                try{
-                    TimeUnit.SECONDS.sleep(1);
-                } catch (InterruptedException e){
-                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"ConfInterfaceInitializingService ..... currentTime : " + System.currentTimeMillis());
-                    System.out.println("ConfInterfaceInitializingService ..... currentTime : " + System.currentTimeMillis());
-                }
-            }
-        }*/
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "开始登陆mcu");
+            System.out.println("开始登陆mcu");
+            loginMcuSrv();
+        }
 
         terminalManageService.setConfInterfaceService(confInterfaceService);
         Map<String, String> groups = confInterfaceService.getGroups();
@@ -272,9 +229,21 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
         }
     }
 
-    private void loginMcuRestSrv() {
+    private void loginMcuSrv() {
+        String mcuMode = baseSysConfig.getMcuMode();
+
+        if ("sdk".equals(mcuMode)) {
+            createAndInitMcuSdkClientManage();
+        }
+
+        boolean bOk = false;
         while (true) {
-            boolean bOk = mcuRestClientService.login();
+            if ("mcu".equals(mcuMode)) {
+                bOk = mcuRestClientService.login();
+            } else if ("sdk".equals(mcuMode)) {
+                bOk = mcuSdkClientService.login();
+            }
+
             if (bOk)
                 break;
 
