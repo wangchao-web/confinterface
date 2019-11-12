@@ -671,13 +671,15 @@ public abstract class TerminalService {
 
     public Boolean cancelCallMt(TerminalService terminalService) {
         //conferenceParticipant.Uncall();
-        boolean bOk = conferenceParticipant.LeaveConference();
-        if (bOk) {
-            terminalManageService.freeVmt(terminalService.getE164());
-            clearExchange();
-            terminalMediaSourceService.delTerminalMediaResource(terminalService.getE164());
+        synchronized (this) {
+            boolean bOk = conferenceParticipant.LeaveConference();
+            if (bOk) {
+                terminalManageService.freeVmt(terminalService.getE164());
+                clearExchange();
+                terminalMediaSourceService.delTerminalMediaResource(terminalService.getE164());
+            }
+            return bOk;
         }
-        return bOk;
     }
 
     public String translateCall(String srcE164){
@@ -691,6 +693,7 @@ public abstract class TerminalService {
 
         StringBuilder notifyUrl = new StringBuilder();
         constructUrl(notifyUrl, localIp, localPort, "/services/confinterface/v1/participants/statusnotify");
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"translateCall, localIp: " + localIp + ", localPort: " + localPort + ", notifyUrl:" + notifyUrl.toString());
         System.out.println("translateCall, localIp: " + localIp + ", localPort: " + localPort + ", notifyUrl:" + notifyUrl.toString());
         translateCallParam.setNotifyURL(notifyUrl.toString());
 
@@ -703,16 +706,19 @@ public abstract class TerminalService {
         String message = jsonObject.getString("Messages");
 
         if (!translateCallResponse.getStatusCode().is2xxSuccessful()) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"translateCall failed! , status : " + translateCallResponse.getStatusCodeValue() + ", dstDeviceID: " + proxyMTE164 + ", url:" + url.toString());
             System.out.println("translateCall failed! , status : " + translateCallResponse.getStatusCodeValue() + ", dstDeviceID: " + proxyMTE164 + ", url:" + url.toString());
             return null;
         }
 
         if (code != 0) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"translateCall failed, message:" + message + ", dstDeviceID: " + proxyMTE164);
             System.out.println("translateCall failed, message:" + message + ", dstDeviceID: " + proxyMTE164);
             return null;
         }
 
         String groupId = jsonObject.getString("GroupID");
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"translateCall OK! destDeviceId: " + proxyMTE164 + ", GroupId :" + groupId);
         System.out.println("translateCall OK! destDeviceId: " + proxyMTE164 + ", GroupId :" + groupId);
         return groupId;
     }

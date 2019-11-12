@@ -252,7 +252,7 @@ public class ConfInterfaceController {
 
     @GetMapping(value = "/version")
     public String queryVersion(){
-        return "confinterface-V.1.0.4";
+        return "confinterface-V.1.0.5";
     }
 
     private DeferredResult<ResponseEntity<BaseResponseMsg>> silenceOrMute(String groupId, String mtE164, boolean silence, SilenceOrMuteParam silenceOrMuteParam){

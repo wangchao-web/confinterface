@@ -115,9 +115,19 @@ public class RedisConfig {
         return maxRedirects;
     }
 
+    public int getSelectDatabase() {
+        return selectDatabase;
+    }
+
+    public void setSelectDatabase(int selectDatabase) {
+        this.selectDatabase = selectDatabase;
+    }
+
     public void setMaxRedirects(int maxRedirects) {
         this.maxRedirects = maxRedirects;
     }
+
+
 
     @Override
     public String toString() {
@@ -160,4 +170,5 @@ public class RedisConfig {
     private int port=6379;
     //在执行失败后，进行的重试次数
     private int maxRedirects = 3;
+    private int selectDatabase = 0;
 }

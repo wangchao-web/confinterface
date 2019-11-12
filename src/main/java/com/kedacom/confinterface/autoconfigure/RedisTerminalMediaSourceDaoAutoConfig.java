@@ -45,6 +45,7 @@ public class RedisTerminalMediaSourceDaoAutoConfig {
         jedisPoolConfig.setTestOnBorrow(redisConfig.isTestOnBorrow());
         jedisPoolConfig.setTestWhileIdle(redisConfig.isTestWhileIdle());
 
+
         return jedisPoolConfig;
     }
 
@@ -78,6 +79,7 @@ public class RedisTerminalMediaSourceDaoAutoConfig {
 
         RedisStandaloneConfiguration redisStandaloneConfiguration = new RedisStandaloneConfiguration(redisConfig.getHostName(), redisConfig.getPort());
 
+        redisStandaloneConfiguration.setDatabase(redisConfig.getSelectDatabase());
         String password = redisConfig.getPassword();
         if (null != password && !password.isEmpty()) {
             redisStandaloneConfiguration.setPassword(RedisPassword.of(password));

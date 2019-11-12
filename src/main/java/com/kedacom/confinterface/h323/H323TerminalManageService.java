@@ -135,13 +135,16 @@ public class H323TerminalManageService extends TerminalManageService implements 
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "OnInvited, not found participant!!");
             System.out.println("OnInvited, not found participant!! in used vmt map");
 
+
             terminalService = freeVmtServiceMap.get(participantid);
             if (null == terminalService) {
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"OnInvited, not found participant!! in free vmt map!");
                 System.out.println("OnInvited, not found participant!! in free vmt map!");
                 return;
             }
 
             if (null == terminalService.getProxyMTE164()){
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"OnInvited, found participant in free vmt map, proxyMt is null, ignore message!!");
                 System.out.println("OnInvited, found participant in free vmt map, proxyMt is null, ignore message!!");
                 return;
             }
@@ -154,7 +157,10 @@ public class H323TerminalManageService extends TerminalManageService implements 
 
                 P2PCallGroup p2PCallGroup = new P2PCallGroup(groupId);
                 p2PCallGroup.addCallMember(terminalService.getProxyMTE164(), terminalService);
-                confInterfaceService.getP2pCallGroupMap().put(groupId, p2PCallGroup);
+                confInterfaceService.getP2pCallGroupMap().put(terminalService.getProxyMTE164(), p2PCallGroup);
+                //confInterfaceService.getP2pCallGroupMap().put(groupId, p2PCallGroup);
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"terminalService.getProxyMTE164() : " + terminalService.getProxyMTE164());
+                System.out.println("terminalService.getProxyMTE164() : " + terminalService.getProxyMTE164());
 
                 String waitMsg = P2PCallRequest.class.getName();
                 P2PCallRequest p2PCallRequest = new P2PCallRequest(groupId, participantid);
@@ -162,8 +168,14 @@ public class H323TerminalManageService extends TerminalManageService implements 
                 p2PCallRequest.setWaitMsg(new ArrayList<>(Arrays.asList(waitMsg, waitMsg, waitMsg, waitMsg)));
 
                 conferenceInfo.setId(groupId);
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"getConferenceParticipant().AcceptInvitation : true");
+                System.out.println("getConferenceParticipant().AcceptInvitation : true" );
+                terminalService.getConferenceParticipant().AcceptInvitation(true);
             }
             else {
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"getConferenceParticipant().AcceptInvitation : false");
+                System.out.println("getConferenceParticipant().AcceptInvitation : false");
+                terminalService.getConferenceParticipant().AcceptInvitation(false);
                 return;
             }
         }
@@ -245,8 +257,9 @@ public class H323TerminalManageService extends TerminalManageService implements 
         freeVmtServiceMap.put(participantid, terminalService);
 
         Map<String, P2PCallGroup> p2pCallGroupMap = ConfInterfaceService.p2pCallGroupMap;
-        if (null != p2pCallGroupMap && p2pCallGroupMap.containsKey(terminalService.getGroupId())) {
-            P2PCallGroup p2PCallGroup = p2pCallGroupMap.get(terminalService.getGroupId());
+        if (null != p2pCallGroupMap && p2pCallGroupMap.containsKey(terminalService.getProxyMTE164())) {
+            //P2PCallGroup p2PCallGroup = p2pCallGroupMap.get(terminalService.getGroupId());
+            P2PCallGroup p2PCallGroup = p2pCallGroupMap.get(terminalService.getProxyMTE164());
             String mtAccount = terminalService.getRemoteMtAccount();
             if (null != terminalService.getProxyMTE164()) {
                 //如果是被叫，key为代理会议终端的E164号

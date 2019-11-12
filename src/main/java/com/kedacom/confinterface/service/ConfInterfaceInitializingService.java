@@ -44,6 +44,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "now in ConfInterfaceInitializingService, protocalType:" + baseSysConfig.getProtocalType());
         System.out.println("now in ConfInterfaceInitializingService, protocalType:" + baseSysConfig.getProtocalType());
 
+        System.out.println("kikikhkdhhfjdghgag");
         createConferenceManage();
         //初始化协议栈
         initConfAdapter();

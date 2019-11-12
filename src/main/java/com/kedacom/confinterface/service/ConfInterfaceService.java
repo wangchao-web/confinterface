@@ -30,7 +30,7 @@ public class ConfInterfaceService {
 
     public List<String> getVmts() {
         String srvToken = terminalMediaSourceService.getSrvToken();
-        if (null == srvToken || srvToken.isEmpty()){
+        if (null == srvToken || srvToken.isEmpty()) {
             if (terminalManageService instanceof H323TerminalManageService) {
                 int localCallPort = ((H323TerminalManageService) terminalManageService).getProtocalConfig().getLocalCallPort();
                 terminalMediaSourceService.setSrvToken(String.valueOf(localCallPort));
@@ -147,8 +147,8 @@ public class ConfInterfaceService {
             addGroupConfInfo(groupConfInfo);
 
             endConf = true;
-            if(!groupConfInfo.isConfinterface()) {
-                System.out.println("groupConfInfo.isConfinterface() : " +groupConfInfo.isConfinterface());
+            if (!groupConfInfo.isConfinterface()) {
+                System.out.println("groupConfInfo.isConfinterface() : " + groupConfInfo.isConfinterface());
                 bSetBroadcast = true;
                 //endConf = true;
 
@@ -160,7 +160,7 @@ public class ConfInterfaceService {
         } else {
             confId = groupConfInfo.getConfId();
             int mtNumTotal = groupConfInfo.getMtMemberNum() + mtNum;
-            if(!groupConfInfo.isConfinterface()) {
+            if (!groupConfInfo.isConfinterface()) {
                 int vmtNum = groupConfInfo.getVmtMemberNum();
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "joinConference, vmtNum:" + vmtNum + ", mtNumTotal:" + mtNumTotal);
                 System.out.println("joinConference, vmtNum:" + vmtNum + ", mtNumTotal:" + mtNumTotal);
@@ -173,7 +173,7 @@ public class ConfInterfaceService {
         }
 
         List<Terminal> joinConfVmts = new ArrayList<>();
-        if(!groupConfInfo.isConfinterface()) {
+        if (!groupConfInfo.isConfinterface()) {
             if (joinConfVmtNum > 0) {
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "joinConfVmtNum : " + joinConfVmtNum + ", bSetBroadcast :" + bSetBroadcast);
                 System.out.println("joinConfVmtNum : " + joinConfVmtNum + ", bSetBroadcast :" + bSetBroadcast);
@@ -357,10 +357,10 @@ public class ConfInterfaceService {
         boolean isTerminal = broadCastRequest.getBroadCastParam().isTerminalType();
         String broadcastE164 = broadCastRequest.getBroadCastParam().getMtE164();
 
-        if(groupConfInfo.isConfinterface()){
-            if(!isTerminal || broadcastE164.equals("")){
+        if (groupConfInfo.isConfinterface()) {
+            if (!isTerminal || broadcastE164.equals("")) {
                 LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "500012 : confinterface setBroadcastSrc invalid param!");
-                broadCastRequest.makeErrorResponseMsg(ConfInterfaceResult.INVALID_PARAM.getCode(), HttpStatus.OK,ConfInterfaceResult.INVALID_PARAM.getMessage());
+                broadCastRequest.makeErrorResponseMsg(ConfInterfaceResult.INVALID_PARAM.getCode(), HttpStatus.OK, ConfInterfaceResult.INVALID_PARAM.getMessage());
                 return;
             }
         }
@@ -576,8 +576,8 @@ public class ConfInterfaceService {
         String dstInspectionE164 = inspectionParam.getDstMtE164();
         String srcInspectionE164 = inspectionParam.getSrcMtE164();
 
-        if(groupConfInfo.isConfinterface()){
-            if("".equals(srcInspectionE164) || "".equals(dstInspectionE164)){
+        if (groupConfInfo.isConfinterface()) {
+            if ("".equals(srcInspectionE164) || "".equals(dstInspectionE164)) {
                 System.out.println(" confinterface startInspection, dstInspectionE164 || srcInspectionE164 are empty! not permitted!");
                 LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, " 50012 : confinterface cancelInspectionRequest invalid param!");
                 inspectionRequest.makeErrorResponseMsg(ConfInterfaceResult.INVALID_PARAM.getCode(), HttpStatus.OK, ConfInterfaceResult.INVALID_PARAM.getMessage());
@@ -778,8 +778,8 @@ public class ConfInterfaceService {
         String srcE164 = cancleInspectionParam.getSrcMtE164();
         String dstE164 = cancleInspectionParam.getDstMtE164();
 
-        if(groupConfInfo.isConfinterface()){
-            if("".equals(srcE164) || "".equals(dstE164)){
+        if (groupConfInfo.isConfinterface()) {
+            if ("".equals(srcE164) || "".equals(dstE164)) {
                 System.out.println(" confinterface cancelInspection, dstInspectionE164 || srcInspectionE164 are empty! not permitted!");
                 LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, " 50012 : cancelInspectionRequest invalid param!");
                 cancelInspectionRequest.makeErrorResponseMsg(ConfInterfaceResult.INVALID_PARAM.getCode(), HttpStatus.OK, ConfInterfaceResult.INVALID_PARAM.getMessage());
@@ -1178,11 +1178,15 @@ public class ConfInterfaceService {
         TerminalService vmtService = terminalManageService.getFreeVmt();
         if (null == vmtService) {
             LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50008 : reach max join terminal numbers!");
-            LogTools.debug(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"startCallDevice(GroupID:" + groupId + " ,account: " + mtAccount +") - [YYYY-MM-DDThh:mm:ss.SSSZ] failed Errcode:" + 50008 +"Error: reach max join terminal numbers!");
+            LogTools.debug(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "startCallDevice(GroupID:" + groupId + " ,account: " + mtAccount + ") - [YYYY-MM-DDThh:mm:ss.SSSZ] failed Errcode:" + 50008 + "Error: reach max join terminal numbers!");
             p2PCallRequest.makeErrorResponseMsg(ConfInterfaceResult.REACH_MAX_JOIN_MTS.getCode(), HttpStatus.OK, ConfInterfaceResult.REACH_MAX_JOIN_MTS.getMessage());
             return;
         }
         vmtService.setGroupId(groupId);
+
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "添加vmtService : " + vmtService.getE164());
+        System.out.println("添加vmtService : " + vmtService.getE164());
+        p2PCallGroup.addCallMember(mtAccount, vmtService);
 
         String waitMsg = P2PCallRequest.class.getName();
         vmtService.addWaitMsg(waitMsg, p2PCallRequest);
@@ -1191,15 +1195,16 @@ public class ConfInterfaceService {
             p2PCallRequest.setWaitMsg(new ArrayList<>(Arrays.asList(waitMsg, waitMsg, waitMsg, waitMsg)));
             if (vmtService.callMt(p2PCallParam)) {
                 vmtService.setDualStream(true);
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "添加vmtService : " + vmtService.getE164());
+                /*LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "添加vmtService : " + vmtService.getE164());
                 System.out.println("添加vmtService : " + vmtService.getE164());
-                p2PCallGroup.addCallMember(mtAccount, vmtService);
+                p2PCallGroup.addCallMember(mtAccount, vmtService);*/
             } else {
                 vmtService.delWaitMsg(waitMsg);
                 vmtService.publishStatus(mtAccount, TerminalOnlineStatusEnum.OFFLINE.getCode());
                 terminalManageService.freeVmt(vmtService.getE164());
                 vmtService.setGroupId(null);
 
+                p2PCallGroup.removeCallMember(mtAccount);
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "terminalService.getE164() " + mtAccount + ",terminalService.getGroupId() : " + groupId);
                 System.out.println("terminalService.getE164() " + mtAccount + ",terminalService.getGroupId() : " + groupId);
             }
@@ -1213,7 +1218,7 @@ public class ConfInterfaceService {
         if (null == p2PCallGroup) {
             LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50002 : group not exist!");
             System.out.println("50002 : group not exist!");
-            LogTools.debug(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"stopCallDevice(GroupID:" + groupId + " ,account: " + cancelP2PCallParam.getAccount() +") - [YYYY-MM-DDThh:mm:ss.SSSZ] failed Errcode:" + 50002 +"Error: group not exist!");
+            LogTools.debug(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "stopCallDevice(GroupID:" + groupId + " ,account: " + cancelP2PCallParam.getAccount() + ") - [YYYY-MM-DDThh:mm:ss.SSSZ] failed Errcode:" + 50002 + "Error: group not exist!");
             cancelP2PCallRequest.makeErrorResponseMsg(ConfInterfaceResult.GROUP_NOT_EXIST.getCode(), HttpStatus.OK, ConfInterfaceResult.GROUP_NOT_EXIST.getMessage());
             return;
         }
@@ -1223,7 +1228,7 @@ public class ConfInterfaceService {
         if (null == vmtService) {
             LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50015 : terminal not exist in this conference!");
             System.out.println("50015 : terminal not exist in this conference!");
-            LogTools.debug(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"stopCallDevice(GroupID:" + groupId + " ,account: " + cancelP2PCallParam.getAccount() +") - [YYYY-MM-DDThh:mm:ss.SSSZ] failed Errcode:" + 50015 +"Error: terminal not exist in this conference!");
+            LogTools.debug(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "stopCallDevice(GroupID:" + groupId + " ,account: " + cancelP2PCallParam.getAccount() + ") - [YYYY-MM-DDThh:mm:ss.SSSZ] failed Errcode:" + 50015 + "Error: terminal not exist in this conference!");
             cancelP2PCallRequest.makeErrorResponseMsg(ConfInterfaceResult.TERMINAL_NOT_EXIST.getCode(), HttpStatus.OK, ConfInterfaceResult.TERMINAL_NOT_EXIST.getMessage());
             return;
         }
@@ -1234,58 +1239,86 @@ public class ConfInterfaceService {
             return;
         }
 
+        cancelP2PCallRequest.makeSuccessResponseMsg();
+
         //停止呼叫
         Boolean bOk = vmtService.cancelCallMt(vmtService);
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "bOk : " + bOk);
         System.out.println("bOk : " + bOk);
         if (bOk) {
             vmtService.setGroupId(null);
-            if(vmtService.dualSource.size() > 0){
-                System.out.println("vmtService.dualSource.size() : " +vmtService.dualSource.size());
+            if (vmtService.dualSource.size() > 0) {
+                System.out.println("vmtService.dualSource.size() : " + vmtService.dualSource.size());
                 vmtService.dualSource.remove(account);
             }
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "p2PCallGroup.removeCallMember : " + account);
             System.out.println("p2PCallGroup.removeCallMember : " + account);
-            LogTools.debug(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"stopCallDevice(GroupID:"+ groupId +",account:"+ account+") - [YYYY-MM-DDThh:mm:ss.SSSZ] success");
+            LogTools.debug(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "stopCallDevice(GroupID:" + groupId + ",account:" + account + ") - [YYYY-MM-DDThh:mm:ss.SSSZ] success");
             p2PCallGroup.removeCallMember(account);
-            cancelP2PCallRequest.makeSuccessResponseMsg();
+            //cancelP2PCallRequest.makeSuccessResponseMsg();
         } else {
             LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50025 : p2p cancelCallMt failed!");
-            LogTools.debug(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"stopCallDevice(GroupID:" + groupId + " ,account: " + cancelP2PCallParam.getAccount() +") - [YYYY-MM-DDThh:mm:ss.SSSZ] failed Errcode:" + 50025 +"Error: p2p cancelCallMt failed!");
+            LogTools.debug(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "stopCallDevice(GroupID:" + groupId + " ,account: " + cancelP2PCallParam.getAccount() + ") - [YYYY-MM-DDThh:mm:ss.SSSZ] failed Errcode:" + 50025 + "Error: p2p cancelCallMt failed!");
             cancelP2PCallRequest.makeErrorResponseMsg(ConfInterfaceResult.P2PCANCELCALL.getCode(), HttpStatus.OK, ConfInterfaceResult.P2PCANCELCALL.getMessage());
         }
 
     }
 
     @Async("confTaskExecutor")
-    public void statusNotify(ParticipantStatusNotify participantStatusNotify){
+    public void statusNotify(ParticipantStatusNotify participantStatusNotify) {
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"statusNotify");
+        System.out.println("statusNotify");
         String groupId = participantStatusNotify.getGroupID();
         String deviceId = participantStatusNotify.getDeviceID();
         int status = participantStatusNotify.getStatus();
 
-        P2PCallGroup p2PCallGroup = p2pCallGroupMap.get(groupId);
-        if (null == p2PCallGroup)
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"groupId :" + groupId + "status : "+status + "deviceId : " + deviceId);
+        System.out.println("groupId :" + groupId + "status : "+status + "deviceId : " + deviceId);
+
+
+        if (status != 0) {
             return;
+        }
+
+        //P2PCallGroup p2PCallGroup = p2pCallGroupMap.get(groupId);
+        P2PCallGroup p2PCallGroup = p2pCallGroupMap.get(deviceId);
+        if (null == p2PCallGroup) {
+            return;
+        }
+
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"p2PCallGroup : " + p2PCallGroup);
+        System.out.println("p2PCallGroup : " + p2PCallGroup);
 
         TerminalService vmtService = p2PCallGroup.getVmt(deviceId);
-        if (null == vmtService)
+        if (null == vmtService) {
             return;
+        }
 
-        if (status != 0)
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"vmtService : " +vmtService);
+        System.out.println("vmtService : " +vmtService);
+        /*if (status != 0) {
             return;
+        }*/
 
         //挂断该呼叫
         //停止呼叫
-        Boolean bOk = vmtService.cancelCallMt(vmtService);
+        Boolean bOk = false;
+        synchronized (this) {
+            bOk = vmtService.cancelCallMt(vmtService);
+        }
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"bOk : " + bOk);
         System.out.println("bOk : " + bOk);
         if (bOk) {
             vmtService.setGroupId(null);
             vmtService.setConfId(null);
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"statusNotify, cancelCallMt");
             System.out.println("statusNotify, cancelCallMt");
             p2PCallGroup.removeCallMember(deviceId);
-            p2pCallGroupMap.remove(groupId);
+            //p2pCallGroupMap.remove(groupId);
+            p2pCallGroupMap.remove(deviceId);
         } else {
-            System.out.println("statusNotify, deviceId: " + deviceId + "in groupId( "+ groupId + ") has offline, cancelCall failed!!");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"statusNotify, deviceId: " + deviceId + "in groupId( " + groupId + ") has offline, cancelCall failed!!");
+            System.out.println("statusNotify, deviceId: " + deviceId + "in groupId( " + groupId + ") has offline, cancelCall failed!!");
         }
     }
 
