@@ -70,14 +70,14 @@ public class P2PCallRequest extends BaseRequestMsg<BaseResponseMsg> {
         }
         synchronized (this) {
             waitMsg.remove(msg);
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "移除removeMsg : " + msg);
-            System.out.println("移除removeMsg : " + msg);
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "P2PCallRequest, remove msg : " + msg);
+            System.out.println("P2PCallRequest, remove msg: " + msg);
 
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "waitMsg.isEmpty() : " + waitMsg.isEmpty());
-            System.out.println("waitMsg.isEmpty() : " + waitMsg.isEmpty());
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "P2PCallRequest, waitMsg.isEmpty() : " + waitMsg.isEmpty());
+            System.out.println("P2PCallRequest, waitMsg.isEmpty() : " + waitMsg.isEmpty());
             if (waitMsg.isEmpty()) {
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "移除成功");
-                System.out.println("移除成功");
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "P2PCallRequest, has no msg wait for dealing!");
+                System.out.println("P2PCallRequest, has no msg wait for dealing!");
                 //makeSuccessResponseMsg();
                 SuccessResponseMsg = true;
                 /*TerminalStatusNotify terminalStatusNotify = new TerminalStatusNotify();

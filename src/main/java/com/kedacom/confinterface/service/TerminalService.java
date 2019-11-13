@@ -652,25 +652,20 @@ public abstract class TerminalService {
 
         synchronized (this) {
             boolean bOK = conferenceParticipant.CallRemote(remoteParticipantInfo);
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, e164 + " : vmtE164 conferenceParticipant.CallRemote : " + account);
-            System.out.println(e164 + " : vmtE164 conferenceParticipant.CallRemote : " + account);
             if (bOK) {
                 remoteMtAccount = account;
-                LogTools.debug(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "startCallDevice(GroupID:" + groupId + ",account:" + account + ") - [YYYY-MM-DDThh:mm:ss.SSSZ] success");
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "account conferenceParticipant.CallRemote success " + account);
-                System.out.println("account conferenceParticipant.CallRemote success " + account);
+                LogTools.debug(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "callMt, vmt: " + e164 + ", CallRemote(groupId:" + groupId + ",account:" + account + ") - [YYYY-MM-DDThh:mm:ss.SSSZ] success");
+                System.out.println("callMt, CallRemote(groupId:" + groupId + ",account:" + account + "), vmt: " + e164);
             } else {
                 remoteMtAccount = null;
-                LogTools.debug(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "startCallDevice(GroupID:" + groupId + " ,account: " + account + ") - [YYYY-MM-DDThh:mm:ss.SSSZ] failed Errcode:" + 50024 + "p2p call failed!");
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "account conferenceParticipant.CallRemote failed " + account);
-                System.out.println("account conferenceParticipant.CallRemote failed " + account);
+                LogTools.debug(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "callMt, vmt: " + e164 + ",CallRemote(groupId:" + groupId + " ,account: " + account + ") - [YYYY-MM-DDThh:mm:ss.SSSZ] failed Errcode:50024, p2p call failed!");
+                System.out.println("callMt, vmt: " + e164 + ",CallRemote(groupId:" + groupId + " ,account: " + account + ") failed, 50024, p2p call failed!");
             }
             return bOK;
         }
     }
 
     public Boolean cancelCallMt(TerminalService terminalService) {
-        //conferenceParticipant.Uncall();
         synchronized (this) {
             boolean bOk = conferenceParticipant.LeaveConference();
             if (bOk) {
@@ -698,28 +693,30 @@ public abstract class TerminalService {
         translateCallParam.setNotifyURL(notifyUrl.toString());
 
         ResponseEntity<JSONObject> translateCallResponse = restClientService.exchangeJson(url.toString(), HttpMethod.POST, translateCallParam, null, JSONObject.class);
-        if (null == translateCallResponse)
+        if (null == translateCallResponse) {
+            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"translateCall failed! translateCallResponse is null! vmtE164: " + srcE164 + ", proxyMT: " + proxyMTE164);
             return null;
+        }
 
         JSONObject jsonObject = translateCallResponse.getBody();
         int code = jsonObject.getInt("Code");
         String message = jsonObject.getString("Messages");
 
         if (!translateCallResponse.getStatusCode().is2xxSuccessful()) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"translateCall failed! , status : " + translateCallResponse.getStatusCodeValue() + ", dstDeviceID: " + proxyMTE164 + ", url:" + url.toString());
-            System.out.println("translateCall failed! , status : " + translateCallResponse.getStatusCodeValue() + ", dstDeviceID: " + proxyMTE164 + ", url:" + url.toString());
+            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"translateCall failed! , status : " + translateCallResponse.getStatusCodeValue() + ", proxyMT: " + proxyMTE164 + ", url:" + url.toString());
+            System.out.println("translateCall failed! , status : " + translateCallResponse.getStatusCodeValue() + ", proxyMT: " + proxyMTE164 + ", url:" + url.toString());
             return null;
         }
 
         if (code != 0) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"translateCall failed, message:" + message + ", dstDeviceID: " + proxyMTE164);
-            System.out.println("translateCall failed, message:" + message + ", dstDeviceID: " + proxyMTE164);
+            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"translateCall failed, message:" + message + ", proxyMT: " + proxyMTE164);
+            System.out.println("translateCall failed, message:" + message + ", proxyMT: " + proxyMTE164);
             return null;
         }
 
         String groupId = jsonObject.getString("GroupID");
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"translateCall OK! destDeviceId: " + proxyMTE164 + ", GroupId :" + groupId);
-        System.out.println("translateCall OK! destDeviceId: " + proxyMTE164 + ", GroupId :" + groupId);
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"translateCall OK! proxyMT: " + proxyMTE164 + ", GroupId :" + groupId);
+        System.out.println("translateCall OK! proxyMT: " + proxyMTE164 + ", GroupId :" + groupId);
         return groupId;
     }
 
@@ -916,37 +913,24 @@ public abstract class TerminalService {
         sdp.append(mediaDescription.getRtpAddress().getIP());
         sdp.append("\r\n");
 
+        int payLoad = mediaDescription.getPayload();
+        if (isExternalDocking && (mediaDescription.getPayload() >= 96 && mediaDescription.getPayload() <= 127)) {
+            payLoad = 127;
+            System.out.println("payload set to 127");
+        }
+
         if (mediaDescription.getMediaType().equals(MediaTypeEnum.VIDEO.getName())) {
             VideoMediaDescription videoMediaDescription = (VideoMediaDescription) mediaDescription;
             sdp.append("m=video ");
             sdp.append(mediaDescription.getRtpAddress().getPort());
             sdp.append(" RTP/AVP ");
-            if (isExternalDocking) {
-                if (mediaDescription.getPayload() >= 96 && mediaDescription.getPayload() <= 127) {
-                    System.out.println("RTP/AVP * 127");
-                    sdp.append(127);
-                } else {
-                    sdp.append(mediaDescription.getPayload());
-                }
-            } else {
-                sdp.append(mediaDescription.getPayload());
-            }
-
+            sdp.append(payLoad);
             sdp.append("\r\n");
             sdp.append("a=framerate:");
             sdp.append(videoMediaDescription.getFramerate());
             sdp.append("\r\n");
             sdp.append("a=rtpmap:");
-            if (isExternalDocking) {
-                if (mediaDescription.getPayload() >= 96 && mediaDescription.getPayload() <= 127) {
-                    System.out.println("a=rtpmap:* 127");
-                    sdp.append(127);
-                } else {
-                    sdp.append(mediaDescription.getPayload());
-                }
-            } else {
-                sdp.append(mediaDescription.getPayload());
-            }
+            sdp.append(payLoad);
             sdp.append(" ");
             sdp.append(mediaDescription.getEncodingFormat().name());
             sdp.append("/90000\r\n");
@@ -959,28 +943,10 @@ public abstract class TerminalService {
             sdp.append("m=audio ");
             sdp.append(mediaDescription.getRtpAddress().getPort());
             sdp.append(" RTP/AVP ");
-            if (isExternalDocking) {
-                if (mediaDescription.getPayload() >= 96 && mediaDescription.getPayload() <= 127) {
-                    System.out.println("RTP/AVP * 127");
-                    sdp.append(127);
-                } else {
-                    sdp.append(mediaDescription.getPayload());
-                }
-            } else {
-                sdp.append(mediaDescription.getPayload());
-            }
+            sdp.append(payLoad);
             sdp.append("\r\n");
             sdp.append("a=rtpmap:");
-            if (isExternalDocking) {
-                if (mediaDescription.getPayload() >= 96 && mediaDescription.getPayload() <= 127) {
-                    System.out.println("a=rtpmap:* 127");
-                    sdp.append(127);
-                } else {
-                    sdp.append(mediaDescription.getPayload());
-                }
-            } else {
-                sdp.append(mediaDescription.getPayload());
-            }
+            sdp.append(payLoad);
             sdp.append(" ");
             sdp.append(mediaDescription.getEncodingFormat().name());
             sdp.append("/");
@@ -1101,29 +1067,23 @@ public abstract class TerminalService {
         if (null == h264Description)
             return;
 
-
         ProfileEnum profile = h264Description.getProfile();
         int level = h264Description.getLevel();
         String nalMode = h264Description.getNalMode();
 
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"nalMode : " + nalMode);
-        System.out.println("nalMode : " + nalMode);
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"constructH264Fmtp, nalMode : " + nalMode);
+        System.out.println("constructH264Fmtp, nalMode : " + nalMode);
 
         Integer intLevel = getH264LevelNum(level);
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"profile : " + profile);
-        System.out.println("profile : " + profile);
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"constructH264Fmtp, profile : " + profile);
+        System.out.println("constructH264Fmtp, profile : " + profile);
 
         sdp.append("a=fmtp:");
-        if (isExternalDocking) {
-            if (payload >= 96 && payload <= 127) {
-                System.out.println("a=fmtp:127");
-                sdp.append(127);
-            } else {
-                sdp.append(payload);
-            }
-        } else {
-            sdp.append(payload);
+        if (isExternalDocking && (payload >= 96 && payload <= 127)) {
+            System.out.println("a=fmtp:127");
+            payload = 127;
         }
+        sdp.append(payload);
 
         sdp.append(" ");
         /*profile-level-id由三部分构成，profile_idc，profile_iop, level_idc*/
@@ -1280,61 +1240,62 @@ public abstract class TerminalService {
 
         if (resourceResponse.getSdp().contains("a=sendonly")) {
             addForwardChannel(detailMediaResouce);
-        } else {
-            synchronized (this) {
-                addReverseChannel(detailMediaResouce);
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "dual : " + dual);
-                System.out.println("dual : " + dual);
-                if (!dual) {
-                    if (null != remoteMtAccount || null != proxyMTE164) {
-                        //点对点呼叫,在此处处理反向资源
-                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "remoteMtAccount : " + remoteMtAccount + ", proxyMTE164: " + proxyMTE164);
-                        System.out.println("remoteMtAccount : " + remoteMtAccount + ", proxyMTE164: " + proxyMTE164);
-                        MediaResource mediaResource = new MediaResource();
-                        mediaResource.setDual(detailMediaResouce.getDual() == 1);
-                        mediaResource.setId(detailMediaResouce.getId());
-                        mediaResource.setType(detailMediaResouce.getType());
+            return;
+        }
 
-                        P2PCallRequest p2PCallRequest = (P2PCallRequest) waitMsg.get(P2PCallRequest.class.getName());
-                        p2PCallRequest.addReverseResource(mediaResource);
-                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "在此处处理反向资源");
-                        System.out.println("在此处处理反向资源");
-                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "P2PCallRequest.class.getName() : " + P2PCallRequest.class.getName());
-                        System.out.println("P2PCallRequest.class.getName() : " + P2PCallRequest.class.getName());
-                        p2PCallRequest.removeMsg(P2PCallRequest.class.getName());
-                    }
-                } else {
-                    String dualAccount = remoteMtAccount;
+        synchronized (this) {
+            addReverseChannel(detailMediaResouce);
 
-                    if (null != proxyMTE164)
-                        dualAccount = e164;
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "addMediaResource, remoteMtAccount : " + remoteMtAccount + ", proxyMTE164: " + proxyMTE164 + ", dual: " + dual);
+            System.out.println("addMediaResource, remoteMtAccount : " + remoteMtAccount + ", proxyMTE164: " + proxyMTE164 + ", dual: " + dual);
 
-                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"remoteMtAccount : " + remoteMtAccount  + ", proxyMTE164: " + proxyMTE164);
-                    System.out.println("remoteMtAccount : " + remoteMtAccount + ", proxyMTE164: " + proxyMTE164);
+            if (!dual) {
+                if (null != remoteMtAccount || null != proxyMTE164) {
+                    //点对点呼叫,在此处处理反向资源
                     MediaResource mediaResource = new MediaResource();
                     mediaResource.setDual(detailMediaResouce.getDual() == 1);
                     mediaResource.setId(detailMediaResouce.getId());
                     mediaResource.setType(detailMediaResouce.getType());
-                    System.out.println(mediaResource.toString());
-                    dualSource.put(dualAccount, mediaResource);
-                    for (Map.Entry<String, MediaResource> entry : dualSource.entrySet()) {
 
-                        System.out.println("dualSource.size() :" + dualSource.size());
-                        System.out.println("key= " + entry.getKey() + " and value= " + entry.getValue().toString());
-                    }
+                    String msgName = P2PCallRequest.class.getName();
+                    P2PCallRequest p2PCallRequest = (P2PCallRequest) waitMsg.get(msgName);
+                    p2PCallRequest.addReverseResource(mediaResource);
 
-                    ArrayList<MediaResource> reverseResources = new ArrayList<>();
-                    reverseResources.add(mediaResource);
-                    TerminalStatusNotify terminalStatusNotify = new TerminalStatusNotify();
-                    //状态2是双流
-                    TerminalStatus terminalStatus = new TerminalStatus(dualAccount, "Dual", 2, null, reverseResources);
-                    terminalStatusNotify.addMtStatus(terminalStatus);
-                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "dualAccount:  " + dualAccount + ",terminalService.getGroupId() : " + groupId + ", reverseResources" + reverseResources.toString());
-                    System.out.println("dualAccount: " + dualAccount + ",terminalService.getGroupId() : " + groupId + ", reverseResources" + reverseResources.toString());
-                    confInterfacePublishService.publishMessage(SubscribeMsgTypeEnum.TERMINAL_STATUS, groupId, terminalStatusNotify);
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "addMediaResource, add reverse resource to p2PCallRequest, id: " + detailMediaResouce.getId() + ", remove msg: " + msgName);
+                    System.out.println("addMediaResource, add reverse resource to p2PCallRequest, id: " + detailMediaResouce.getId() + ", remove msg: " + msgName);
+
+                    p2PCallRequest.removeMsg(msgName);
                 }
+            } else {
+                String dualAccount = remoteMtAccount;
+
+                if (null != proxyMTE164)
+                    dualAccount = e164;
+
+                MediaResource mediaResource = new MediaResource();
+                mediaResource.setDual(detailMediaResouce.getDual() == 1);
+                mediaResource.setId(detailMediaResouce.getId());
+                mediaResource.setType(detailMediaResouce.getType());
+                System.out.println(mediaResource.toString());
+                dualSource.put(dualAccount, mediaResource);
+                for (Map.Entry<String, MediaResource> entry : dualSource.entrySet()) {
+                    System.out.println("addMediaResource, dualSource.size() :" + dualSource.size());
+                    System.out.println("addMediaResource, key= " + entry.getKey() + " and value= " + entry.getValue().toString());
+                }
+
+                ArrayList<MediaResource> reverseResources = new ArrayList<>();
+                reverseResources.add(mediaResource);
+
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "addMediaResource, publish dual status , dualAccount:  " + dualAccount + ", groupId : " + groupId + ", reverseResources" + reverseResources.toString());
+                System.out.println("addMediaResource, publish dual status, dualAccount: " + dualAccount + ", groupId : " + groupId + ", reverseResources" + reverseResources.toString());
+
+                TerminalStatusNotify terminalStatusNotify = new TerminalStatusNotify();
+                TerminalStatus terminalStatus = new TerminalStatus(dualAccount, "Dual", TerminalOnlineStatusEnum.DUALSTREAM.getCode(), null, reverseResources);
+                terminalStatusNotify.addMtStatus(terminalStatus);
+                confInterfacePublishService.publishMessage(SubscribeMsgTypeEnum.TERMINAL_STATUS, groupId, terminalStatusNotify);
             }
         }
+
     }
 
     protected void dualAddMediaResource() {
@@ -1343,19 +1304,20 @@ public abstract class TerminalService {
         if (null != proxyMTE164)
             dualAccount = e164;
 
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"dualAccount : " + dualAccount);
-        System.out.println("dualAccount : " + dualAccount);
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"dualAddMediaResource, dualAccount : " + dualAccount);
+        System.out.println("dualAddMediaResource, dualAccount : " + dualAccount);
         MediaResource mediaResource = dualSource.get(dualAccount);
         System.out.println(mediaResource.toString());
 
         ArrayList<MediaResource> reverseResources = new ArrayList<>();
         reverseResources.add(mediaResource);
+
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, " dualAddMediaResource, publish dual status, dualAccount: " + dualAccount + ",terminalService.getGroupId() : " + groupId + ", reverseResources" + reverseResources.toString());
+        System.out.println(" dualAddMediaResource, publish dual status, dualAccount: " + dualAccount + ",terminalService.getGroupId() : " + groupId + ", reverseResources" + reverseResources.toString());
+
         TerminalStatusNotify terminalStatusNotify = new TerminalStatusNotify();
-        //双流开启
         TerminalStatus terminalStatus = new TerminalStatus(dualAccount, "Dual", TerminalOnlineStatusEnum.DUALSTREAM.getCode(), null, reverseResources);
         terminalStatusNotify.addMtStatus(terminalStatus);
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, " dualAddMediaResource : dualAccount: " + dualAccount + ",terminalService.getGroupId() : " + groupId + ", reverseResources" + reverseResources.toString());
-        System.out.println(" dualAddMediaResource : dualAccount: " + dualAccount + ",terminalService.getGroupId() : " + groupId + ", reverseResources" + reverseResources.toString());
         confInterfacePublishService.publishMessage(SubscribeMsgTypeEnum.TERMINAL_STATUS, groupId, terminalStatusNotify);
     }
 
@@ -1373,11 +1335,12 @@ public abstract class TerminalService {
         ArrayList<MediaResource> reverseResources = new ArrayList<>();
         reverseResources.add(mediaResource);
 
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "dualPublish : dualAccount " + dualAccount + ",groupId : " + groupId + ", reverseResources" + reverseResources.toString());
+        System.out.println("dualPublish : dualAccount " + dualAccount + ", groupId : " + groupId + ", reverseResources" + reverseResources.toString());
+        
         TerminalStatusNotify terminalStatusNotify = new TerminalStatusNotify();
         TerminalStatus terminalStatus = new TerminalStatus(dualAccount, "Dual", TerminalOnlineStatusEnum.DUALSTREAM.getCode());
         terminalStatusNotify.addMtStatus(terminalStatus);
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "dualPublish : dualAccount " + dualAccount + ",terminalService.getGroupId() : " + groupId + ", reverseResources" + reverseResources.toString());
-        System.out.println("dualPublish : dualAccount " + dualAccount + ",terminalService.getGroupId() : " + groupId + ", reverseResources" + reverseResources.toString());
         confInterfacePublishService.publishMessage(SubscribeMsgTypeEnum.TERMINAL_STATUS, groupId, terminalStatusNotify);
     }
 
@@ -1431,10 +1394,9 @@ public abstract class TerminalService {
             mediaDescription.setEncodingFormat( EncodingFormatEnum.FromName(encName));
             getRtpMap = true;
 
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"!encName.equals(EncodingFormatEnum.H264.name()) : " +!encName.equals(EncodingFormatEnum.H264.name()));
-            System.out.println("!encName.equals(EncodingFormatEnum.H264.name()) : " +!encName.equals(EncodingFormatEnum.H264.name()));
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"EncodingFormatEnum.H264.name()) : " + encName);
-            System.out.println("EncodingFormatEnum.H264.name()) : " + encName);
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"parseRtpMapAndFmtp, encName: " + encName + ", EncodingFormatEnum.H264.name(): " + EncodingFormatEnum.H264.name());
+            System.out.println("parseRtpMapAndFmtp, encName: " + encName + ", EncodingFormatEnum.H264.name(): " + EncodingFormatEnum.H264.name());
+
             if (!encName.equals(EncodingFormatEnum.H264.name()))
                 break;
         }
@@ -1449,8 +1411,8 @@ public abstract class TerminalService {
         startIndex += profileLevelIdToken.length();
         String profileLevelId = fmtp.substring(startIndex, endIndex);
 
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"parseRtpMapAndFmtp : profileLevelId : " + profileLevelId);
-        System.out.println("parseRtpMapAndFmtp : profileLevelId : " + profileLevelId);
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"parseRtpMapAndFmtp, profileLevelId : " + profileLevelId);
+        System.out.println("parseRtpMapAndFmtp, profileLevelId : " + profileLevelId);
 
         startIndex = fmtp.indexOf(packetizationModeToken);
         startIndex += packetizationModeToken.length();
@@ -1486,8 +1448,8 @@ public abstract class TerminalService {
                     continue;
 
                 MediaDescription localMediaDescription;
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "detailMediaResouce.toString()" + detailMediaResouce.toString());
-                System.out.println("detailMediaResouce.toString()" + detailMediaResouce.toString());
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "constructAckMediaDescription, detailMediaResouce: " + detailMediaResouce.toString());
+                System.out.println("constructAckMediaDescription, detailMediaResouce: " + detailMediaResouce.toString());
                 if (detailMediaResouce.getType().equals(MediaTypeEnum.VIDEO.getName())) {
                     VideoMediaDescription videoMediaDescription = new VideoMediaDescription();
                     try {
@@ -1542,15 +1504,12 @@ public abstract class TerminalService {
                 rtcpAddress.setPort(rtcpTransAddress.getPort());
                 localMediaDescription.setRtcpAddress(rtcpAddress);
 
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "mediaDescription.getPayload()" + mediaDescription.getPayload());
-                System.out.println("mediaDescription.getPayload()" + mediaDescription.getPayload());
                 if (isExternalDocking) {
-                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "localMediaDescription.setPayload");
-                    System.out.println("localMediaDescription.setPayload");
                     localMediaDescription.setPayload(mediaDescription.getPayload());
                 }
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "localMediaDescription : " + localMediaDescription.getPayload());
-                System.out.println("localMediaDescription : " + localMediaDescription.getPayload());
+
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "constructAckMediaDescription, isExternalDocking: " + isExternalDocking + ", payload in localMediaDescription : " + localMediaDescription.getPayload()+ ", payload in mediaDescription : " + mediaDescription.getPayload());
+                System.out.println("constructAckMediaDescription, isExternalDocking: " + isExternalDocking + ", payload in localMediaDescription : " + localMediaDescription.getPayload() + ", payload in mediaDescription : " + mediaDescription.getPayload());
                 localMediaDescriptions.add(localMediaDescription);
                 break;
             }
@@ -1561,16 +1520,17 @@ public abstract class TerminalService {
 
     protected boolean ackOpenLogicalChannel(Vector<MediaDescription> mcuDescriptions) {
         Vector<MediaDescription> localMediaDescriptions = constructAckMediaDescription(mcuDescriptions);
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "localMediaDescriptions.get(0).toString()" + localMediaDescriptions.get(0).toString());
-        System.out.println("localMediaDescriptions.get(0).toString()" + localMediaDescriptions.get(0).toString());
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "ackOpenLogicalChannel, localMediaDescriptions.get(0): " + localMediaDescriptions.get(0).toString());
+        System.out.println("ackOpenLogicalChannel, localMediaDescriptions.get(0): " + localMediaDescriptions.get(0).toString());
         boolean bOk = conferenceParticipant.ResponseLocalMediaToRemotePeer(localMediaDescriptions);
         if (!bOk) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "ResponseLocalMediaToRemotePeer failed! participartId : " + e164);
-            System.out.println("ResponseLocalMediaToRemotePeer failed! participartId : " + e164);
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "ackOpenLogicalChannel, ResponseLocalMediaToRemotePeer failed! participartId : " + e164);
+            System.out.println("ackOpenLogicalChannel, ResponseLocalMediaToRemotePeer failed! participartId : " + e164);
             return false;
         }
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "ResponseLocalMediaToRemotePeer OK! participartId : " + e164);
-        System.out.println("ResponseLocalMediaToRemotePeer OK! participartId : " + e164);
+
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "ackOpenLogicalChannel, ResponseLocalMediaToRemotePeer OK! participartId : " + e164);
+        System.out.println("ackOpenLogicalChannel, ResponseLocalMediaToRemotePeer OK! participartId : " + e164);
         return true;
     }
 
