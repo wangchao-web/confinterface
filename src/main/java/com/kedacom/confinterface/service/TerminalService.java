@@ -1337,7 +1337,7 @@ public abstract class TerminalService {
 
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "dualPublish : dualAccount " + dualAccount + ",groupId : " + groupId + ", reverseResources" + reverseResources.toString());
         System.out.println("dualPublish : dualAccount " + dualAccount + ", groupId : " + groupId + ", reverseResources" + reverseResources.toString());
-        
+
         TerminalStatusNotify terminalStatusNotify = new TerminalStatusNotify();
         TerminalStatus terminalStatus = new TerminalStatus(dualAccount, "Dual", TerminalOnlineStatusEnum.DUALSTREAM.getCode());
         terminalStatusNotify.addMtStatus(terminalStatus);
