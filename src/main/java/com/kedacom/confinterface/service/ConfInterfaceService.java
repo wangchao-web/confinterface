@@ -1226,9 +1226,8 @@ public class ConfInterfaceService {
         String account = cancelP2PCallParam.getAccount();
         TerminalService vmtService = p2PCallGroup.getVmt(account);
         if (null == vmtService) {
-            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50015 : terminal not exist in this conference!");
-            System.out.println("50015 : terminal not exist in this conference!");
-            LogTools.debug(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "stopCallDevice(GroupID:" + groupId + " ,account: " + cancelP2PCallParam.getAccount() + ") - [YYYY-MM-DDThh:mm:ss.SSSZ] failed Errcode:" + 50015 + "Error: terminal not exist in this conference!");
+            System.out.println("cancelP2PCall, 50015 : terminal not exist in this conference!");
+            LogTools.debug(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "cancelP2PCall, account(" + account + ") not in groupId(" + groupId + ") - [YYYY-MM-DDThh:mm:ss.SSSZ] failed Errcode: 50015, Error: terminal not exist in this conference!");
             cancelP2PCallRequest.makeErrorResponseMsg(ConfInterfaceResult.TERMINAL_NOT_EXIST.getCode(), HttpStatus.OK, ConfInterfaceResult.TERMINAL_NOT_EXIST.getMessage());
             return;
         }

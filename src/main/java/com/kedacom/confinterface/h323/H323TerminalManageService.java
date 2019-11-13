@@ -278,10 +278,12 @@ public class H323TerminalManageService extends TerminalManageService implements 
             if (null != terminalService.getProxyMTE164())
                 mtAccount = terminalService.getE164();
 
-            terminalService.publishStatus(mtAccount, TerminalOnlineStatusEnum.OFFLINE.getCode());
-
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "OnKickedOff, vmt(" + terminalService.getE164() + ") is offline, groupId: " + groupId + ", mtAccount : " + mtAccount);
             System.out.println("OnKickedOff, vmt(" + terminalService.getE164() + ") is offline, groupId : " + groupId + ", mtAccount : " + mtAccount);
+
+            if (null != mtAccount) {
+                terminalService.publishStatus(mtAccount, TerminalOnlineStatusEnum.OFFLINE.getCode());
+            }
         }
 
         //释放该虚拟终端的所有交换资源
