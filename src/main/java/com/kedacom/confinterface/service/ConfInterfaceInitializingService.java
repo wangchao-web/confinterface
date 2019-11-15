@@ -44,7 +44,6 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "now in ConfInterfaceInitializingService, protocalType:" + baseSysConfig.getProtocalType());
         System.out.println("now in ConfInterfaceInitializingService, protocalType:" + baseSysConfig.getProtocalType());
 
-        System.out.println("kikikhkdhhfjdghgag");
         createConferenceManage();
         //初始化协议栈
         initConfAdapter();
@@ -188,15 +187,16 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "vmtList size : " + vmtList.size());
             System.out.println("vmtList size : " + vmtList.size() + ", localIp :" + baseSysConfig.getLocalIp());
 
+            TerminalService.initScheduleP2PCallUrl(baseSysConfig.getScheduleSrvHttpAddr());
+            TerminalService.initNotifyUrl(baseSysConfig.getLocalIp(), appDefaultConfig.getServerPort());
+            TerminalService.setMediaSrvIp(baseSysConfig.getMediaSrvIp());
+            TerminalService.setMediaSrvPort(baseSysConfig.getMediaSrvPort());
+            TerminalService.setLocalIp(baseSysConfig.getLocalIp());
+            TerminalService.setLocalPort(appDefaultConfig.getServerPort());
+
             ConcurrentHashMap<String, String> proxyMts = baseSysConfig.getMapProxyMTs();
             for (String vmtE164 : vmtList) {
-
                 TerminalService vmtService = terminalManageService.createTerminal(vmtE164, true);
-                vmtService.setMediaSrvIp(baseSysConfig.getMediaSrvIp());
-                vmtService.setMediaSrvPort(baseSysConfig.getMediaSrvPort());
-                vmtService.setScheduleSrvHttpAddress(baseSysConfig.getScheduleSrvHttpAddr());
-                vmtService.setLocalIp(baseSysConfig.getLocalIp());
-                vmtService.setLocalPort(appDefaultConfig.getServerPort());
 
                 if(null != proxyMts && proxyMts.containsKey(vmtE164)){
                     vmtService.setProxyMTE164(proxyMts.get(vmtE164));

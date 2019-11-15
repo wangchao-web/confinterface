@@ -2,6 +2,7 @@ package com.kedacom.confinterface.h323;
 
 
 import com.kedacom.confadapter.IConferenceEventHandler;
+import com.kedacom.confadapter.common.ConfEntity;
 import com.kedacom.confadapter.common.ConferenceInfo;
 import com.kedacom.confadapter.common.ConferencePresentParticipant;
 import com.kedacom.confadapter.media.MediaDescription;
@@ -127,7 +128,7 @@ public class H323TerminalManageService extends TerminalManageService implements 
 
     @Override
     @Async("confTaskExecutor")
-    public void OnInvited(String participantid, ConferenceInfo conferenceInfo) {
+    public void OnInvited(String participantid, ConferenceInfo conferenceInfo, ConfEntity proxyMT) {
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "OnInvited, participantid : " + participantid + ", confId : " + conferenceInfo.getId() + ", threadName:" + Thread.currentThread().getName());
         System.out.println("OnInvited, participantid : " + participantid + ", confId : " + conferenceInfo.getId() + ", threadName:" + Thread.currentThread().getName());
         TerminalService terminalService = usedVmtServiceMap.get(participantid);
@@ -137,42 +138,47 @@ public class H323TerminalManageService extends TerminalManageService implements 
 
             terminalService = freeVmtServiceMap.get(participantid);
             if (null == terminalService) {
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"OnInvited, not found participant!! in free vmt map!");
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "OnInvited, not found participant!! in free vmt map!");
                 System.out.println("OnInvited, not found participant!! in free vmt map!");
                 return;
             }
 
-            if (null == terminalService.getProxyMTE164()){
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"OnInvited, found participant in free vmt map, proxyMt is null, ignore message!!");
-                System.out.println("OnInvited, found participant in free vmt map, proxyMt is null, ignore message!!");
-                return;
+            if (null == terminalService.getProxyMTE164()) {
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "OnInvited, found participant in free vmt map, proxyMt is null, check confEntity!!");
+                System.out.println("OnInvited, found participant in free vmt map, proxyMt is null, check confEntity!!");
+
+                if (null == proxyMT
+                        || ( (null == proxyMT.getId() || proxyMT.getId().isEmpty())
+                               && (null == proxyMT.getName() || proxyMT.getName().isEmpty()))) {
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "OnInvited, confEntity is null, ignore msg!!");
+                    System.out.println("OnInvited, confEntity is null, ignore msg!!");
+                    return;
+                }
+
+                terminalService.bindProxyMT(proxyMT);
             }
 
             //走入此处，表明有系统外的设备需要主动呼叫该虚拟终端代理的实体终端
             String groupId = terminalService.translateCall(participantid);
-            if (null != groupId) {
-                terminalService = getVmt(participantid);
-                terminalService.setGroupId(groupId);
-
-                P2PCallGroup p2PCallGroup = confInterfaceService.getP2pCallGroupMap().computeIfAbsent(groupId, k->new P2PCallGroup(groupId));
-                p2PCallGroup.addCallMember(terminalService.getProxyMTE164(), terminalService);
-
-                String waitMsg = P2PCallRequest.class.getName();
-                P2PCallRequest p2PCallRequest = new P2PCallRequest(groupId, participantid);
-                terminalService.addWaitMsg(waitMsg, p2PCallRequest);
-                p2PCallRequest.setWaitMsg(new ArrayList<>(Arrays.asList(waitMsg, waitMsg, waitMsg, waitMsg)));
-
-                conferenceInfo.setId(groupId);
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"OnInvited, translateCall Ok, accept invitation!");
-                System.out.println("OnInvited, translateCall Ok, accept invitation!" );
-                terminalService.getConferenceParticipant().AcceptInvitation(true);
-            }
-            else {
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"OnInvited, translateCall, reject invitation!");
+            if (null == groupId) {
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "OnInvited, translateCall, reject invitation!");
                 System.out.println("OnInvited, translateCall fail, reject invitation!");
                 terminalService.getConferenceParticipant().AcceptInvitation(false);
                 return;
             }
+
+            //将该虚拟终端由空闲队列移入工作队列
+            terminalService = getVmt(participantid);
+
+            //创建p2p呼叫组，并将该虚拟终端加入呼叫组
+            P2PCallGroup p2PCallGroup = confInterfaceService.getP2pCallGroupMap().computeIfAbsent(groupId, k -> new P2PCallGroup(groupId));
+            p2PCallGroup.addCallMember(terminalService.getProxyMTE164(), terminalService);
+
+            conferenceInfo.setId(groupId);
+            terminalService.getConferenceParticipant().AcceptInvitation(true);
+
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "OnInvited, translateCall Ok, accept invitation!");
+            System.out.println("OnInvited, translateCall Ok, accept invitation!");
         }
 
         terminalService.setConfId(conferenceInfo.getId());
@@ -275,8 +281,12 @@ public class H323TerminalManageService extends TerminalManageService implements 
             }
 
             //被叫时，因为拿不到主叫的E164，因此使用虚拟终端的E164做为标识
-            if (null != terminalService.getProxyMTE164())
+            if (null != terminalService.getProxyMTE164()) {
+                if (terminalService.isDynamicBind()) {
+                    terminalService.unBindProxyMT();
+                }
                 mtAccount = terminalService.getE164();
+            }
 
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "OnKickedOff, vmt(" + terminalService.getE164() + ") is offline, groupId: " + groupId + ", mtAccount : " + mtAccount);
             System.out.println("OnKickedOff, vmt(" + terminalService.getE164() + ") is offline, groupId : " + groupId + ", mtAccount : " + mtAccount);

@@ -2,6 +2,7 @@ package com.kedacom.confinterface.service;
 
 
 import com.kedacom.confadapter.ILocalConferenceParticipant;
+import com.kedacom.confadapter.common.ConfEntity;
 import com.kedacom.confadapter.common.NetAddress;
 import com.kedacom.confadapter.common.RemoteParticipantInfo;
 import com.kedacom.confadapter.media.*;
@@ -34,6 +35,7 @@ public abstract class TerminalService {
         super();
         this.e164 = e164;
         this.proxyMTE164 = null;
+        this.dynamicBind = -1;
         this.mtId = null;
         this.groupId = null;
         this.remoteMtAccount = null;
@@ -86,6 +88,38 @@ public abstract class TerminalService {
 
     public void setProxyMTE164(String proxyMTE164) {
         this.proxyMTE164 = proxyMTE164;
+        this.dynamicBind = 0;   //配置方式，即预绑定
+    }
+
+    public void bindProxyMT(ConfEntity proxyMT){
+        StringBuilder proxyAccount = new StringBuilder();
+        if (null != proxyMT.getId()){
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "bindProxyMT, proxyMt, id: " + proxyMT.getId());
+            proxyAccount.append(proxyMT.getId());
+        }
+
+        if (null != proxyMT.getName()){
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "bindProxyMT, proxyMt, Name: " + proxyMT.getName());
+            if (proxyAccount.length() > 0) {
+                proxyAccount.append("#");
+            }
+            proxyAccount.append(proxyMT.getName());
+        }
+
+        this.proxyMTE164 = proxyAccount.toString();
+        this.dynamicBind = 1;   //动态绑定
+    }
+
+    public void unBindProxyMT(){
+        this.proxyMTE164 = null;
+    }
+
+    public boolean isDynamicBind(){
+        return this.dynamicBind == 1;
+    }
+
+    public boolean isPreBind(){
+        return this.dynamicBind == 0;
     }
 
     public String getName() {
@@ -326,45 +360,39 @@ public abstract class TerminalService {
         }
     }
 
-    public String getMediaSrvIp() {
+    public static String getMediaSrvIp() {
         return mediaSrvIp;
     }
 
-    public int getMediaSrvPort() {
+    public static int getMediaSrvPort() {
         return mediaSrvPort;
     }
 
-    public void setMediaSrvIp(String mediaSrvIp) {
-        this.mediaSrvIp = mediaSrvIp;
+    public static void setMediaSrvIp(String mediaSrvIp) {
+        TerminalService.mediaSrvIp = mediaSrvIp;
     }
 
-    public void setMediaSrvPort(int mediaSrvPort) {
-        this.mediaSrvPort = mediaSrvPort;
+    public static void setMediaSrvPort(int mediaSrvPort) {
+        TerminalService.mediaSrvPort = mediaSrvPort;
     }
 
-    public String getScheduleSrvHttpAddress() {
-        return scheduleSrvHttpAddress;
+
+    public static void setLocalIp(String ip){
+        localIp = ip;
     }
 
-    public void setScheduleSrvHttpAddress(String scheduleSrvHttpAddress) {
-        this.scheduleSrvHttpAddress = scheduleSrvHttpAddress;
+    public static void setLocalPort(int port){
+        localPort = port;
     }
 
-    public String getLocalIp() {
-        return localIp;
+    public static void initScheduleP2PCallUrl(String scheduleSrvHttpAddress){
+        scheduleP2PCallURL = new StringBuilder();
+        constructUrl(scheduleP2PCallURL, scheduleSrvHttpAddress, "/services/mediaschedule/v1/groups/ptwopcall");
     }
 
-    public void setLocalIp(String localIp) {
-        System.out.println("setLocalIp : " + localIp);
-        this.localIp = localIp;
-    }
-
-    public int getLocalPort() {
-        return localPort;
-    }
-
-    public void setLocalPort(int localPort) {
-        this.localPort = localPort;
+    public static void initNotifyUrl(String localIp, int localPort){
+        notifyURL = new StringBuilder();
+        constructUrl(notifyURL, localIp, localPort, "/services/confinterface/v1/participants/statusnotify");
     }
 
     public void addWaitMsg(String msgName, BaseRequestMsg msg) {
@@ -678,21 +706,15 @@ public abstract class TerminalService {
     }
 
     public String translateCall(String srcE164){
-
-        StringBuilder url = new StringBuilder();
-        constructUrl(url, scheduleSrvHttpAddress, "/services/mediaschedule/v1/groups/ptwopcall\n");
-
         TranslateCallParam translateCallParam = new TranslateCallParam();
         translateCallParam.setSrcDeviceID(srcE164);
         translateCallParam.setDstDeviceID(proxyMTE164);
 
-        StringBuilder notifyUrl = new StringBuilder();
-        constructUrl(notifyUrl, localIp, localPort, "/services/confinterface/v1/participants/statusnotify");
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"translateCall, localIp: " + localIp + ", localPort: " + localPort + ", notifyUrl:" + notifyUrl.toString());
-        System.out.println("translateCall, localIp: " + localIp + ", localPort: " + localPort + ", notifyUrl:" + notifyUrl.toString());
-        translateCallParam.setNotifyURL(notifyUrl.toString());
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"translateCall, notifyUrl:" + notifyURL.toString()+", srcE164: "+srcE164+", proxyMt: " + proxyMTE164);
+        System.out.println("translateCall, notifyUrl:" + notifyURL.toString()+", srcE164: "+srcE164+", proxyMt: " + proxyMTE164);
+        translateCallParam.setNotifyURL(notifyURL.toString());
 
-        ResponseEntity<JSONObject> translateCallResponse = restClientService.exchangeJson(url.toString(), HttpMethod.POST, translateCallParam, null, JSONObject.class);
+        ResponseEntity<JSONObject> translateCallResponse = restClientService.exchangeJson(scheduleP2PCallURL.toString(), HttpMethod.POST, translateCallParam, null, JSONObject.class);
         if (null == translateCallResponse) {
             LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"translateCall failed! translateCallResponse is null! vmtE164: " + srcE164 + ", proxyMT: " + proxyMTE164);
             return null;
@@ -703,8 +725,8 @@ public abstract class TerminalService {
         String message = jsonObject.getString("Messages");
 
         if (!translateCallResponse.getStatusCode().is2xxSuccessful()) {
-            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"translateCall failed! , status : " + translateCallResponse.getStatusCodeValue() + ", proxyMT: " + proxyMTE164 + ", url:" + url.toString());
-            System.out.println("translateCall failed! , status : " + translateCallResponse.getStatusCodeValue() + ", proxyMT: " + proxyMTE164 + ", url:" + url.toString());
+            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"translateCall failed! , status : " + translateCallResponse.getStatusCodeValue() + ", proxyMT: " + proxyMTE164 + ", url:" + scheduleP2PCallURL.toString());
+            System.out.println("translateCall failed! , status : " + translateCallResponse.getStatusCodeValue() + ", proxyMT: " + proxyMTE164 + ", url:" + scheduleP2PCallURL.toString());
             return null;
         }
 
@@ -717,6 +739,14 @@ public abstract class TerminalService {
         String groupId = jsonObject.getString("GroupID");
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"translateCall OK! proxyMT: " + proxyMTE164 + ", GroupId :" + groupId);
         System.out.println("translateCall OK! proxyMT: " + proxyMTE164 + ", GroupId :" + groupId);
+
+        this.groupId = groupId;
+
+        String waitMsg = P2PCallRequest.class.getName();
+        P2PCallRequest p2PCallRequest = new P2PCallRequest(groupId, e164);
+        p2PCallRequest.setWaitMsg(new ArrayList<>(Arrays.asList(waitMsg, waitMsg, waitMsg, waitMsg)));
+        addWaitMsg(waitMsg, p2PCallRequest);
+
         return groupId;
     }
 
@@ -1534,11 +1564,11 @@ public abstract class TerminalService {
         return true;
     }
 
-    protected void constructUrl(StringBuilder url, String restApi) {
+    protected static void constructUrl(StringBuilder url, String restApi) {
         constructUrl(url, mediaSrvIp, mediaSrvPort, restApi);
     }
 
-    protected void constructUrl(StringBuilder url, String srvAddress, String restApi){
+    protected static void constructUrl(StringBuilder url, String srvAddress, String restApi){
         if (url.length() > 0) {
             url.delete(0, url.length());
         }
@@ -1548,7 +1578,7 @@ public abstract class TerminalService {
         url.append(restApi);
     }
 
-    protected void constructUrl(StringBuilder url, String srvIp, int srvPort , String restApi){
+    protected static void constructUrl(StringBuilder url, String srvIp, int srvPort , String restApi){
         if (url.length() > 0) {
             url.delete(0, url.length());
         }
@@ -1601,6 +1631,7 @@ public abstract class TerminalService {
     protected String groupId;
     protected String e164;
     protected String proxyMTE164;
+    protected int dynamicBind;
     protected String name;
     protected String confId;
     protected String mtId;
@@ -1619,12 +1650,14 @@ public abstract class TerminalService {
     protected CopyOnWriteArrayList<DetailMediaResouce> forwardChannel;
     protected CopyOnWriteArrayList<DetailMediaResouce> reverseChannel;
     protected ILocalConferenceParticipant conferenceParticipant;
-    protected String mediaSrvIp;
-    protected int mediaSrvPort;
-    protected String scheduleSrvHttpAddress;
-    protected String localIp;
-    protected int localPort;
+    protected static String mediaSrvIp;
+    protected static int mediaSrvPort;
+    protected static String scheduleSrvHttpAddress;
+    protected static String localIp;
+    protected static int localPort;
     protected Boolean isExternalDocking = false;
+    protected static StringBuilder scheduleP2PCallURL = null;
+    protected static StringBuilder notifyURL = null;
     public Map<String, MediaResource> dualSource = new HashMap<>();
 
     protected ConcurrentHashMap<String, BaseRequestMsg> waitMsg;

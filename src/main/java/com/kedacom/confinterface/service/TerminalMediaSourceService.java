@@ -30,34 +30,34 @@ public class TerminalMediaSourceService {
         terminalMediaSourceDao.setSrvToken(srvToken);
     }
 
-    @Cacheable(value = "vmtList", key = "caches[0].name")
+    @Cacheable(value = "vmtList", key = "caches[0].name + '_' + #root.target.getSrvToken()")
     public List<String> getVmtList() {
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"getVmtList in TerminalMediaSourceService");
         System.out.println("getVmtList in TerminalMediaSourceService");
         return terminalMediaSourceDao.getVmtList();
     }
 
-    @CachePut(value = "vmtList", key = "caches[0].name")
+    @CachePut(value = "vmtList", key = "caches[0].name + '_' + #root.target.getSrvToken()")
     public List<String> addVmt(String e164) {
         return terminalMediaSourceDao.addVmt(e164);
     }
 
-    @CacheEvict(value = "vmtList", key = "caches[0].name")
+    @CacheEvict(value = "vmtList", key = "caches[0].name + '_' + #root.target.getSrvToken()")
     public List<String> delVmt(String e164){
         return terminalMediaSourceDao.delVmt(e164);
     }
 
-    @Cacheable(value = "groupHash", key = "caches[0].name")
+    @Cacheable(value = "groupHash", key = "caches[0].name + '_' + #root.target.getSrvToken()")
     public Map<String, String> getGroups() {
         return terminalMediaSourceDao.getGroupsHash();
     }
 
-    @CachePut(value = "groupHash", key = "caches[0].name")
+    @CachePut(value = "groupHash", key = "caches[0].name + '_' + #root.target.getSrvToken()")
     public Map<String,String> setGroup(String groupId, String confId) {
         return terminalMediaSourceDao.setGroup(groupId, confId);
     }
 
-    @CacheEvict(value = "groupHash", key = "caches[0].name")
+    @CacheEvict(value = "groupHash", key = "caches[0].name + '_' + #root.target.getSrvToken()")
     public Map<String,String> delGroup(String groupId) {
         return terminalMediaSourceDao.delGroup(groupId);
     }

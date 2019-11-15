@@ -1300,6 +1300,10 @@ public class ConfInterfaceService {
         if (bOk) {
             vmtService.setGroupId(null);
             vmtService.setConfId(null);
+            if (vmtService.isDynamicBind()) {
+                vmtService.unBindProxyMT();
+            }
+
             p2PCallGroup.removeCallMember(deviceId);
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"statusNotify, cancelCallMt OK, deviceId: " + deviceId);
             if (p2PCallGroup.getCallMap().isEmpty()){

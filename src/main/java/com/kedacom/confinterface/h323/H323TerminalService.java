@@ -28,7 +28,6 @@ public class H323TerminalService extends TerminalService {
         this.regGK = false;
         this.gkIp = h323ProtocalConfig.getGkIp();
         this.gkRasPort = h323ProtocalConfig.getGkRasPort();
-        this.localIp = h323ProtocalConfig.getBaseSysConfig().getLocalIp();
         this.localCallPort = h323ProtocalConfig.getLocalCallPort();
         this.localRasPort = h323ProtocalConfig.getLocalRasPort();
         this.videoDualStreamMediaDesc = null;
