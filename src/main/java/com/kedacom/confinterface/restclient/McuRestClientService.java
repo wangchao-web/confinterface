@@ -831,7 +831,7 @@ public class McuRestClientService {
                         System.out.println("remoteCallMt: " + terminalEntry.getKey());
 
                         TerminalService terminalService = terminalEntry.getValue();
-                        terminalService.cancelCallMt(terminalService);
+                        terminalService.cancelCallMt();
                         terminalService.publishStatus(terminalEntry.getKey(), TerminalOnlineStatusEnum.OFFLINE.getCode());
 
                         p2PCallGroup.removeCallMember(terminalEntry.getKey());

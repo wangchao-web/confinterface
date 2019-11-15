@@ -1239,11 +1239,10 @@ public class ConfInterfaceService {
         }
 
         //停止呼叫
-        Boolean bOk = vmtService.cancelCallMt(vmtService);
+        Boolean bOk = vmtService.cancelCallMt();
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "bOk : " + bOk);
         System.out.println("bOk : " + bOk);
         if (bOk) {
-            vmtService.setGroupId(null);
             if (vmtService.dualSource.size() > 0) {
                 System.out.println("cancelP2PCall, vmtService.dualSource.size() : " + vmtService.dualSource.size());
                 vmtService.dualSource.remove(account);
@@ -1296,14 +1295,8 @@ public class ConfInterfaceService {
 
         //挂断该呼叫
         //停止呼叫
-        Boolean bOk = vmtService.cancelCallMt(vmtService);
+        Boolean bOk = vmtService.cancelCallMt();
         if (bOk) {
-            vmtService.setGroupId(null);
-            vmtService.setConfId(null);
-            if (vmtService.isDynamicBind()) {
-                vmtService.unBindProxyMT();
-            }
-
             p2PCallGroup.removeCallMember(deviceId);
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"statusNotify, cancelCallMt OK, deviceId: " + deviceId);
             if (p2PCallGroup.getCallMap().isEmpty()){

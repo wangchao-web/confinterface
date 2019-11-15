@@ -693,13 +693,20 @@ public abstract class TerminalService {
         }
     }
 
-    public Boolean cancelCallMt(TerminalService terminalService) {
+    public Boolean cancelCallMt() {
         synchronized (this) {
             boolean bOk = conferenceParticipant.LeaveConference();
             if (bOk) {
-                terminalManageService.freeVmt(terminalService.getE164());
+                terminalManageService.freeVmt(e164);
                 clearExchange();
-                terminalMediaSourceService.delTerminalMediaResource(terminalService.getE164());
+                terminalMediaSourceService.delTerminalMediaResource(e164);
+                groupId = null;
+                confId = null;
+                setDualStream(false);
+
+                if (dynamicBind == 1){
+                    proxyMTE164 = null;
+                }
             }
             return bOk;
         }

@@ -163,6 +163,9 @@ public class H323TerminalManageService extends TerminalManageService implements 
             if (null == groupId) {
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "OnInvited, translateCall, reject invitation!");
                 System.out.println("OnInvited, translateCall fail, reject invitation!");
+                if (terminalService.isDynamicBind()){
+                    terminalService.unBindProxyMT();
+                }
                 terminalService.getConferenceParticipant().AcceptInvitation(false);
                 return;
             }
@@ -634,21 +637,16 @@ public class H323TerminalManageService extends TerminalManageService implements 
         p2PCallRequest.getWaitMsg().clear();
         terminalService.delWaitMsg(P2PCallRequest.class.getName());
         LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "P2PCallRequestFail, 50024 : p2p call failed!");
-        if (0 != p2PCallRequest.getAccount().compareTo(terminalService.getE164())){
+        if (0 != p2PCallRequest.getAccount().compareTo(terminalService.getE164())) {
             //如果请求消息中的账号与虚拟终端的账号不一致，说明是实际的点对点请求，
             // 否则则说明是有MT从系统外部主动呼叫虚拟终端
             p2PCallRequest.makeErrorResponseMsg(ConfInterfaceResult.P2PCALL.getCode(), HttpStatus.OK, ConfInterfaceResult.P2PCALL.getMessage());
         }
 
-        terminalService.cancelCallMt(terminalService);
-
-        terminalService.setDualStream(false);
-        freeVmt(terminalService.getE164());
-
-        //清理数据库中的正向通道资源,反向资源在OnMediaCleaned函数中清除
-        TerminalMediaResource oldTerminalMediaResource = terminalMediaSourceService.getTerminalMediaResource(terminalService.getE164());
-        oldTerminalMediaResource.getForwardResources().clear();
-        terminalMediaSourceService.setTerminalMediaResource(oldTerminalMediaResource);
+        boolean bOk = terminalService.cancelCallMt();
+        if (!bOk){
+            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "P2PCallRequestFail, cancelCallMt fail, vmt: " + terminalService.getE164() + ", account: "+ p2PCallRequest.getAccount());
+        }
     }
 
     private final org.slf4j.Logger logger = LoggerFactory.getLogger(this.getClass());
