@@ -1395,7 +1395,7 @@ public abstract class TerminalService {
         MediaCodec mediaCodec = new MediaCodec();
         VideoCodecCapability videoCodecCapability = new VideoCodecCapability();
 
-        videoCodecCapability.setEncodingFormat(EncodingFormatEnum.FromName(p2PCallMediaCap.getCodecFormat()));
+        videoCodecCapability.setEncodingFormat(EncodingFormatEnum.FromName(p2PCallMediaCap.getCodeFormat()));
         videoCodecCapability.setResolution(ResolutionEnum.fromName(p2PCallMediaCap.getResolution()));
         videoCodecCapability.setBitrate(p2PCallMediaCap.getBitrate());
         videoCodecCapability.setFramerate(p2PCallMediaCap.getFramerate());

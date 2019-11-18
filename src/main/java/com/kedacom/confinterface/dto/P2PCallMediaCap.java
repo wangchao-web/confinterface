@@ -1,12 +1,12 @@
 package com.kedacom.confinterface.dto;
 
 public class P2PCallMediaCap {
-    public String getCodecFormat() {
-        return codecFormat;
+    public String getCodeFormat() {
+        return codeFormat;
     }
 
-    public void setCodecFormat(String codecFormat) {
-        this.codecFormat = codecFormat;
+    public void setCodeFormat(String codecFormat) {
+        this.codeFormat = codecFormat;
     }
 
     public String getResolution() {
@@ -35,14 +35,14 @@ public class P2PCallMediaCap {
 
     @Override
     public String toString() {
-        return new StringBuilder().append("codecFormat:").append(codecFormat)
+        return new StringBuilder().append("codeFormat:").append(codeFormat)
                 .append(", resolution:").append(resolution)
                 .append(", bitrate:").append(bitrate)
                 .append(", framerate:").append(framerate)
                 .toString();
     }
 
-    private String codecFormat;
+    private String codeFormat;
     private String resolution;
     private int    bitrate;
     private int    framerate;
