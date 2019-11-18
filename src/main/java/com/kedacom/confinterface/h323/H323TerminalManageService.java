@@ -159,8 +159,8 @@ public class H323TerminalManageService extends TerminalManageService implements 
             }
 
             //走入此处，表明有系统外的设备需要主动呼叫该虚拟终端代理的实体终端
-            String groupId = terminalService.translateCall(participantid);
-            if (null == groupId) {
+            P2PCallResult p2PCallResult = terminalService.translateCall(participantid);
+            if (null == p2PCallResult) {
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "OnInvited, translateCall, reject invitation!");
                 System.out.println("OnInvited, translateCall fail, reject invitation!");
                 if (terminalService.isDynamicBind()){
@@ -170,6 +170,9 @@ public class H323TerminalManageService extends TerminalManageService implements 
                 return;
             }
 
+            String groupId = p2PCallResult.getGroupId();
+            conferenceInfo.setId(groupId);
+
             //将该虚拟终端由空闲队列移入工作队列
             terminalService = getVmt(participantid);
 
@@ -177,8 +180,8 @@ public class H323TerminalManageService extends TerminalManageService implements 
             P2PCallGroup p2PCallGroup = confInterfaceService.getP2pCallGroupMap().computeIfAbsent(groupId, k -> new P2PCallGroup(groupId));
             p2PCallGroup.addCallMember(terminalService.getProxyMTE164(), terminalService);
 
-            conferenceInfo.setId(groupId);
-            terminalService.getConferenceParticipant().AcceptInvitation(true);
+            //接受本地呼叫请求
+            terminalService.acceptInvited(p2PCallResult.getVidoeCodec());
 
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "OnInvited, translateCall Ok, accept invitation!");
             System.out.println("OnInvited, translateCall Ok, accept invitation!");

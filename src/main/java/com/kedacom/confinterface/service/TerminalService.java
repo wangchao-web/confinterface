@@ -3,6 +3,7 @@ package com.kedacom.confinterface.service;
 
 import com.kedacom.confadapter.ILocalConferenceParticipant;
 import com.kedacom.confadapter.common.ConfEntity;
+import com.kedacom.confadapter.common.MediaCodec;
 import com.kedacom.confadapter.common.NetAddress;
 import com.kedacom.confadapter.common.RemoteParticipantInfo;
 import com.kedacom.confadapter.media.*;
@@ -93,12 +94,12 @@ public abstract class TerminalService {
 
     public void bindProxyMT(ConfEntity proxyMT){
         StringBuilder proxyAccount = new StringBuilder();
-        if (null != proxyMT.getId()){
+        if (null != proxyMT.getId() && !proxyMT.getId().isEmpty()){
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "bindProxyMT, proxyMt, id: " + proxyMT.getId());
             proxyAccount.append(proxyMT.getId());
         }
 
-        if (null != proxyMT.getName()){
+        if (null != proxyMT.getName() && !proxyMT.getName().isEmpty()){
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "bindProxyMT, proxyMt, Name: " + proxyMT.getName());
             if (proxyAccount.length() > 0) {
                 proxyAccount.append("#");
@@ -712,7 +713,7 @@ public abstract class TerminalService {
         }
     }
 
-    public String translateCall(String srcE164){
+    public P2PCallResult translateCall(String srcE164){
         TranslateCallParam translateCallParam = new TranslateCallParam();
         translateCallParam.setSrcDeviceID(srcE164);
         translateCallParam.setDstDeviceID(proxyMTE164);
@@ -743,9 +744,18 @@ public abstract class TerminalService {
             return null;
         }
 
+        P2PCallResult p2PCallResult = new P2PCallResult();
         String groupId = jsonObject.getString("GroupID");
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"translateCall OK! proxyMT: " + proxyMTE164 + ", GroupId :" + groupId);
-        System.out.println("translateCall OK! proxyMT: " + proxyMTE164 + ", GroupId :" + groupId);
+
+        p2PCallResult.setGroupId(groupId);
+        if (jsonObject.containsKey("videoCodec")) {
+            JSONObject videoCodecObject = jsonObject.getJSONObject("videoCodec");
+            P2PCallMediaCap p2PCallMediaCap = (P2PCallMediaCap) JSONObject.toBean(videoCodecObject, P2PCallMediaCap.class);
+            p2PCallResult.setVidoeCodec(p2PCallMediaCap);
+        }
+
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"translateCall OK! proxyMT: " + proxyMTE164 + ", GroupId :" + groupId + ", videoCodec: " + p2PCallResult.getVidoeCodec());
+        System.out.println("translateCall OK! proxyMT: " + proxyMTE164 + ", GroupId :" + groupId + ", videoCodec: " + p2PCallResult.getVidoeCodec());
 
         this.groupId = groupId;
 
@@ -754,7 +764,7 @@ public abstract class TerminalService {
         p2PCallRequest.setWaitMsg(new ArrayList<>(Arrays.asList(waitMsg, waitMsg, waitMsg, waitMsg)));
         addWaitMsg(waitMsg, p2PCallRequest);
 
-        return groupId;
+        return p2PCallResult;
     }
 
     public void publishStatus(String account, int status, List<MediaResource> forwardResources, List<MediaResource> reverseResources){
@@ -1379,6 +1389,19 @@ public abstract class TerminalService {
         TerminalStatus terminalStatus = new TerminalStatus(dualAccount, "Dual", TerminalOnlineStatusEnum.DUALSTREAM.getCode());
         terminalStatusNotify.addMtStatus(terminalStatus);
         confInterfacePublishService.publishMessage(SubscribeMsgTypeEnum.TERMINAL_STATUS, groupId, terminalStatusNotify);
+    }
+
+    public void acceptInvited(P2PCallMediaCap p2PCallMediaCap){
+        MediaCodec mediaCodec = new MediaCodec();
+        VideoCodecCapability videoCodecCapability = new VideoCodecCapability();
+
+        videoCodecCapability.setEncodingFormat(EncodingFormatEnum.FromName(p2PCallMediaCap.getCodecFormat()));
+        videoCodecCapability.setResolution(ResolutionEnum.fromName(p2PCallMediaCap.getResolution()));
+        videoCodecCapability.setBitrate(p2PCallMediaCap.getBitrate());
+        videoCodecCapability.setFramerate(p2PCallMediaCap.getFramerate());
+        mediaCodec.setVideoCapability(videoCodecCapability);
+
+        conferenceParticipant.AcceptInvitation(true, mediaCodec);
     }
 
     protected boolean removeMediaResource(boolean forwardResource, List<String> resourceIds) {
