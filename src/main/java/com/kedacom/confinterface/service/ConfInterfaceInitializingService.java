@@ -260,7 +260,13 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
     private void loadMtInfo(GroupConfInfo groupConfInfo, List<Terminal> confMtMembers) {
         String groupId = groupConfInfo.getGroupId();
         String confId = groupConfInfo.getConfId();
-        Map<String, CascadeTerminalInfo> terminalInfoMap = mcuRestClientService.getCascadesTerminal(confId, "0", true);
+        Map<String, CascadeTerminalInfo> terminalInfoMap = null;
+
+        if (null != mcuRestClientService){
+            terminalInfoMap =  mcuRestClientService.getCascadesTerminal(confId, "0", true);
+        } else if (null != mcuSdkClientService) {
+            //todo:增加 mcuSdkClientService的相关处理
+        }
 
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "groupId(" + groupId + ") has " + confMtMembers.size() + " terminals in db!");
         System.out.println("groupId(" + groupId + ") has " + confMtMembers.size() + " terminals in db!");
@@ -296,8 +302,18 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
             if (null != inspectionParam) {
                 String mode = inspectionParam.getMode();
                 mtService.setInspectionParam(inspectionParam);
-                GetConfMtInfoResponse mtInfoResponse = mcuRestClientService.getConfMtInfo(confId, mtService.getMtId());
-                if (null != mtInfoResponse && mtInfoResponse.getInspection() == 1) {
+
+                boolean bInspection = false;
+                if (null != mcuRestClientService) {
+                    GetConfMtInfoResponse mtInfoResponse = mcuRestClientService.getConfMtInfo(confId, mtService.getMtId());
+                    if (null != mtInfoResponse && mtInfoResponse.getInspection() == 1) {
+                        bInspection = true;
+                    }
+                } else if (null != mcuSdkClientService) {
+                    //todo:增加 mcuSdkClientService的相关处理
+                }
+
+                if (bInspection) {
                     mtService.setInspectionStatus(InspectionStatusEnum.OK);
 
                     if (mode.equals(InspectionModeEnum.ALL.getName()) || mode.equals(InspectionModeEnum.VIDEO.getName())) {
@@ -318,22 +334,29 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
                 mtService.setOnline(TerminalOnlineStatusEnum.OFFLINE.getCode());
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "mt(" + mtService.getE164() + ") hang off during conf interface microservice reboot");
                 System.out.println("mt(" + mtService.getE164() + ") hang off during conf interface microservice reboot");
-                if (null == onlineMtsInfo) {
-                    onlineMtsInfo = new OnlineMtsInfo();
-                }
 
-                OnlineMt onlineMt = new OnlineMt();
-                onlineMt.setMt_id(terminalInfo.getMt_id());
-                onlineMt.setForced_call(0);
-                onlineMtsInfo.addOnlineMt(onlineMt);
+                if (null != mcuRestClientService) {
+                    if (null == onlineMtsInfo) {
+                        onlineMtsInfo = new OnlineMtsInfo();
+                    }
+
+                    OnlineMt onlineMt = new OnlineMt();
+                    onlineMt.setMt_id(terminalInfo.getMt_id());
+                    onlineMt.setForced_call(0);
+                    onlineMtsInfo.addOnlineMt(onlineMt);
+                } else if (null != mcuSdkClientService) {
+                    //todo:增加 mcuSdkClientService的相关处理
+                }
             }
 
             groupConfInfo.addMtId(mtService.getMtId(), mtService.getE164());
             groupConfInfo.addMember(mtService);
         }
 
-        if (null != onlineMtsInfo) {
+        if (null != mcuRestClientService && null != onlineMtsInfo) {
             mcuRestClientService.onlineMts(confId, onlineMtsInfo);
+        } else if (null != mcuSdkClientService) {
+            //todo:增加 mcuSdkClientService的相关处理
         }
     }
 
