@@ -9,7 +9,6 @@ import com.kedacom.mcuadapter.McuManagerInitInfo;
 import com.kedacom.mcuadapter.common.McuClientLoginInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.stereotype.Service;
 

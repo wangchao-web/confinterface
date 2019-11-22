@@ -11,7 +11,6 @@ import com.kedacom.confinterface.inner.*;
 import com.kedacom.confinterface.restclient.McuRestClientService;
 import com.kedacom.confinterface.restclient.mcu.*;
 import com.kedacom.confinterface.service.*;
-import com.kedacom.confinterface.syssetting.BaseSysConfig;
 import com.kedacom.confinterface.util.ConfInterfaceResult;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
