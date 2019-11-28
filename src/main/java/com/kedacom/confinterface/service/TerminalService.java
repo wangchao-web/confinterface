@@ -1669,7 +1669,7 @@ public abstract class TerminalService {
         if (!strIp.contains(":"))
             return false;
 
-        if (strIp.endsWith(":") && !strIp.endsWith("::"))
+        if (strIp.endsWith(":") && !strIp.endsWith("::") || strIp.startsWith(":") && !strIp.startsWith("::"))
             return false;
 
         //ipv6只能包含一个::
