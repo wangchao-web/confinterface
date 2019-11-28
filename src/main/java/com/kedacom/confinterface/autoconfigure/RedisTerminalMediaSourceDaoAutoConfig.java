@@ -55,9 +55,18 @@ public class RedisTerminalMediaSourceDaoAutoConfig {
 
         Set<RedisNode> redisNodeSet = new HashSet<>();
 
+        //ipv4：ip:port
+        //ipv6: [ip]:port
         for (String ipPort : redisClusterAddrs) {
-            String[] ipAndPort = ipPort.split(":");
-            redisNodeSet.add(new RedisNode(ipAndPort[0].trim(), Integer.valueOf(ipAndPort[1])));
+            if (ipPort.indexOf("]") == -1) {
+                //ipv4地址
+                String[] ipAndPort = ipPort.split(":");
+                redisNodeSet.add(new RedisNode(ipAndPort[0].trim(), Integer.valueOf(ipAndPort[1])));
+            } else {
+                //ipv6地址
+                String[] ipAndPort = ipPort.split("]:");
+                redisNodeSet.add(new RedisNode(ipAndPort[0].substring(1), Integer.valueOf(ipAndPort[1])));
+            }
         }
 
         redisClusterConfiguration.setClusterNodes(redisNodeSet);

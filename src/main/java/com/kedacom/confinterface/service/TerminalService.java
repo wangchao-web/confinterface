@@ -23,12 +23,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
-
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Pattern;
 
 public abstract class TerminalService {
 
@@ -955,8 +955,16 @@ public abstract class TerminalService {
         if (null == mediaDescription)
             return "";
 
+        String rtpProtocolType = getIpProtocolType(mediaDescription.getRtpAddress().getIP());
+        String rtcpProtocolType = getIpProtocolType(mediaDescription.getRtcpAddress().getIP());
+        if (null == rtpProtocolType || null == rtcpProtocolType){
+            return "";
+        }
+
         StringBuilder sdp = new StringBuilder();
-        sdp.append("c=IN IP4 ");
+        sdp.append("c=IN ");
+        sdp.append(rtpProtocolType);
+        sdp.append(" ");
         sdp.append(mediaDescription.getRtpAddress().getIP());
         sdp.append("\r\n");
 
@@ -1006,7 +1014,9 @@ public abstract class TerminalService {
         if (!isExternalDocking) {
             sdp.append("a=rtcp:");
             sdp.append(mediaDescription.getRtcpAddress().getPort());
-            sdp.append(" IN IP4 ");
+            sdp.append(" IN ");
+            sdp.append(rtcpProtocolType);
+            sdp.append(" ");
             sdp.append(mediaDescription.getRtcpAddress().getIP());
             sdp.append("\r\n");
 
@@ -1618,6 +1628,78 @@ public abstract class TerminalService {
         url.append(":");
         url.append(srvPort);
         url.append(restApi);
+    }
+
+    protected static String getIpProtocolType(String strIp){
+        //判断是否是IPV4
+        if (isIPv4(strIp))
+            return "IP4";
+
+        //判断是否为IPV6
+        if (isIPv6(strIp))
+            return "IP6";
+
+        return null;
+    }
+
+    protected static boolean isIPv4(String strIp){
+        if (!strIp.contains("."))
+            return false;
+
+        if (strIp.startsWith(".") || strIp.endsWith("."))
+            return false;
+
+        String[] ipParts = strIp.split(".");
+        if (ipParts.length != 4)
+            return false;
+
+        Pattern pattern = Pattern.compile("[0-9]*");
+        for (String ipPart : ipParts){
+            if (!pattern.matcher(ipPart).matches())
+                return false;
+
+            if (Integer.valueOf(ipPart) > 255)
+                return false;
+        }
+
+        return true;
+    }
+
+    protected static boolean isIPv6(String strIp) {
+        if (!strIp.contains(":"))
+            return false;
+
+        if (strIp.endsWith(":") && !strIp.endsWith("::"))
+            return false;
+
+        //ipv6只能包含一个::
+        int pos = strIp.indexOf("::");
+        if (pos != -1 && strIp.indexOf("::", pos + 2) != -1)
+            return false;
+
+        Pattern pattern = Pattern.compile("[0-9a-fA-F]*");
+        String[] ipParts = strIp.split(":");
+
+        //如果包含::，则长度必定小于8，如果不包含::，则长度一定是8
+        if (-1 != pos && (ipParts.length > 7 || ipParts.length < 1) || -1 == pos && ipParts.length != 8)
+            return false;
+
+        for (String ipPart : ipParts) {
+            if (ipPart.isEmpty()) {
+                if (-1 != pos)
+                    continue;
+                else
+                    return false;
+            }
+
+            if (ipPart.length() > 4)
+                return false;
+
+            if (!pattern.matcher(ipPart).matches())
+                return false;
+        }
+
+        return true;
     }
 
     public Boolean addExchangeH323Plus() {
