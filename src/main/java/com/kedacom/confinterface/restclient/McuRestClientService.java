@@ -7,6 +7,7 @@ import com.kedacom.confinterface.inner.*;
 import com.kedacom.confinterface.dao.Terminal;
 import com.kedacom.confinterface.restclient.mcu.*;
 import com.kedacom.confinterface.service.ConfInterfaceService;
+import com.kedacom.confinterface.service.TerminalManageService;
 import com.kedacom.confinterface.service.TerminalService;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -832,7 +833,7 @@ public class McuRestClientService {
 
                         TerminalService terminalService = terminalEntry.getValue();
                         terminalService.cancelCallMt();
-                        terminalService.publishStatus(terminalEntry.getKey(), TerminalOnlineStatusEnum.OFFLINE.getCode());
+                        TerminalManageService.publishStatus(terminalEntry.getKey(), terminalService.getGroupId(),TerminalOnlineStatusEnum.OFFLINE.getCode());
 
                         p2PCallGroup.removeCallMember(terminalEntry.getKey());
                     }

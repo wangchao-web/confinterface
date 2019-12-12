@@ -2,7 +2,7 @@ package com.kedacom.confinterface.service;
 
 
 import com.kedacom.confadapter.ILocalConferenceParticipant;
-import com.kedacom.confadapter.common.ConfEntity;
+import com.kedacom.confadapter.common.ConfSessionPeer;
 import com.kedacom.confadapter.common.MediaCodec;
 import com.kedacom.confadapter.common.NetAddress;
 import com.kedacom.confadapter.common.RemoteParticipantInfo;
@@ -92,7 +92,7 @@ public abstract class TerminalService {
         this.dynamicBind = 0;   //配置方式，即预绑定
     }
 
-    public void bindProxyMT(ConfEntity proxyMT){
+    public void bindProxyMT(ConfSessionPeer proxyMT){
         StringBuilder proxyAccount = new StringBuilder();
         if (null != proxyMT.getId() && !proxyMT.getId().isEmpty()){
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "bindProxyMT, proxyMt, id: " + proxyMT.getId());
@@ -713,13 +713,15 @@ public abstract class TerminalService {
         }
     }
 
-    public P2PCallResult translateCall(String srcE164){
+    public P2PCallResult translateCall(String srcE164, ConfSessionPeer caller){
         TranslateCallParam translateCallParam = new TranslateCallParam();
         translateCallParam.setSrcDeviceID(srcE164);
+        translateCallParam.setSrcAddress(caller.getAddress().getIP());
+        translateCallParam.setSrcCallCode(caller.getId());
         translateCallParam.setDstDeviceID(proxyMTE164);
 
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"translateCall, notifyUrl:" + notifyURL.toString()+", srcE164: "+srcE164+", proxyMt: " + proxyMTE164);
-        System.out.println("translateCall, notifyUrl:" + notifyURL.toString()+", srcE164: "+srcE164+", proxyMt: " + proxyMTE164);
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"translateCall, notifyUrl:" + notifyURL.toString()+", srcE164: "+srcE164+", caller:" +caller.getId()+ ", proxyMt: " + proxyMTE164);
+        System.out.println("translateCall, notifyUrl:" + notifyURL.toString()+", srcE164: "+srcE164+", caller:" + caller.getId() + ", proxyMt: " + proxyMTE164);
         translateCallParam.setNotifyURL(notifyURL.toString());
 
         ResponseEntity<JSONObject> translateCallResponse = restClientService.exchangeJson(scheduleP2PCallURL.toString(), HttpMethod.POST, translateCallParam, null, JSONObject.class);
@@ -765,22 +767,6 @@ public abstract class TerminalService {
         addWaitMsg(waitMsg, p2PCallRequest);
 
         return p2PCallResult;
-    }
-
-    public void publishStatus(String account, int status, List<MediaResource> forwardResources, List<MediaResource> reverseResources){
-        if (null != confInterfacePublishService) {
-            TerminalStatusNotify terminalStatusNotify = new TerminalStatusNotify();
-            TerminalStatus terminalStatus = new TerminalStatus(account,"MT", status, forwardResources, reverseResources);
-            terminalStatusNotify.addMtStatus(terminalStatus);
-            confInterfacePublishService.publishMessage(SubscribeMsgTypeEnum.TERMINAL_STATUS, groupId, terminalStatusNotify);
-        } else if (null != unifiedDevicePushService){
-            UnifiedDevicePushTerminalStatus unifiedDevicePushTerminalStatus = new UnifiedDevicePushTerminalStatus(e164, groupId, status);
-            unifiedDevicePushService.publishMtStatus(unifiedDevicePushTerminalStatus);
-        }
-    }
-
-    public void publishStatus(String account, int status){
-        publishStatus(account, status, null, null);
     }
 
     protected boolean requestUpdateResource(List<UpdateResourceParam> updateResourceParams) {
@@ -876,7 +862,7 @@ public abstract class TerminalService {
             newMediaDescription.setMediaType(MediaTypeEnum.VIDEO.getName());
         } else {
             AudioMediaDescription audioMediaDescription = new AudioMediaDescription();
-            audioMediaDescription.setSampleRate(((AudioMediaDescription) mediaDescription).getSampleRate());
+            audioMediaDescription.setSampleRate(mediaDescription.getSampleRate());
             audioMediaDescription.setChannelNum(((AudioMediaDescription) mediaDescription).getChannelNum());
             newMediaDescription = audioMediaDescription;
             newMediaDescription.setMediaType(MediaTypeEnum.AUDIO.getName());
@@ -1131,7 +1117,7 @@ public abstract class TerminalService {
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"constructH264Fmtp, nalMode : " + nalMode);
         System.out.println("constructH264Fmtp, nalMode : " + nalMode);
 
-        Integer intLevel = getH264LevelNum(level);
+        int intLevel = getH264LevelNum(level);
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"constructH264Fmtp, profile : " + profile);
         System.out.println("constructH264Fmtp, profile : " + profile);
 
@@ -1221,14 +1207,20 @@ public abstract class TerminalService {
         int levelNum = Integer.valueOf(level, 16);
         h264Description.setLevel(getH264LevelParamValue(levelNum));
 
-        if (packetizationMode.equals("0"))
-            h264Description.setNalMode(H264Description.NAL_MODE_SINGLE);
-        else if (packetizationMode.equals("1"))
-            h264Description.setNalMode(H264Description.NAL_MODE_NOT_INTERLEAVED);
-        else if (packetizationMode.equals("2"))
-            h264Description.setNalMode(H264Description.NAL_MODE_INTERLEAVED);
-        else
-            h264Description.setNalMode(H264Description.NAL_MODE_SINGLE);
+        switch (Integer.valueOf(packetizationMode)) {
+            case 0:
+                h264Description.setNalMode(H264Description.NAL_MODE_SINGLE);
+                break;
+            case 1:
+                h264Description.setNalMode(H264Description.NAL_MODE_NOT_INTERLEAVED);
+                break;
+            case 2:
+                h264Description.setNalMode(H264Description.NAL_MODE_INTERLEAVED);
+                break;
+            default:
+                h264Description.setNalMode(H264Description.NAL_MODE_SINGLE);
+                break;
+        }
     }
 
     protected void updateMediaResource(boolean bReverseChannel, List<ExchangeInfo> exchangeInfos) {
@@ -1346,10 +1338,7 @@ public abstract class TerminalService {
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "addMediaResource, publish dual status , dualAccount:  " + dualAccount + ", groupId : " + groupId + ", reverseResources" + reverseResources.toString());
                 System.out.println("addMediaResource, publish dual status, dualAccount: " + dualAccount + ", groupId : " + groupId + ", reverseResources" + reverseResources.toString());
 
-                TerminalStatusNotify terminalStatusNotify = new TerminalStatusNotify();
-                TerminalStatus terminalStatus = new TerminalStatus(dualAccount, "Dual", TerminalOnlineStatusEnum.DUALSTREAM.getCode(), null, reverseResources);
-                terminalStatusNotify.addMtStatus(terminalStatus);
-                confInterfacePublishService.publishMessage(SubscribeMsgTypeEnum.TERMINAL_STATUS, groupId, terminalStatusNotify);
+                TerminalManageService.publishStatus(dualAccount, groupId, TerminalOnlineStatusEnum.DUALSTREAM.getCode(), null, reverseResources);
             }
         }
 
@@ -1372,10 +1361,7 @@ public abstract class TerminalService {
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, " dualAddMediaResource, publish dual status, dualAccount: " + dualAccount + ",terminalService.getGroupId() : " + groupId + ", reverseResources" + reverseResources.toString());
         System.out.println(" dualAddMediaResource, publish dual status, dualAccount: " + dualAccount + ",terminalService.getGroupId() : " + groupId + ", reverseResources" + reverseResources.toString());
 
-        TerminalStatusNotify terminalStatusNotify = new TerminalStatusNotify();
-        TerminalStatus terminalStatus = new TerminalStatus(dualAccount, "Dual", TerminalOnlineStatusEnum.DUALSTREAM.getCode(), null, reverseResources);
-        terminalStatusNotify.addMtStatus(terminalStatus);
-        confInterfacePublishService.publishMessage(SubscribeMsgTypeEnum.TERMINAL_STATUS, groupId, terminalStatusNotify);
+        TerminalManageService.publishStatus(dualAccount, groupId, TerminalOnlineStatusEnum.DUALSTREAM.getCode(), null, reverseResources);
     }
 
     public void dualPublish() {
@@ -1395,10 +1381,7 @@ public abstract class TerminalService {
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "dualPublish : dualAccount " + dualAccount + ",groupId : " + groupId + ", reverseResources" + reverseResources.toString());
         System.out.println("dualPublish : dualAccount " + dualAccount + ", groupId : " + groupId + ", reverseResources" + reverseResources.toString());
 
-        TerminalStatusNotify terminalStatusNotify = new TerminalStatusNotify();
-        TerminalStatus terminalStatus = new TerminalStatus(dualAccount, "Dual", TerminalOnlineStatusEnum.DUALSTREAM.getCode());
-        terminalStatusNotify.addMtStatus(terminalStatus);
-        confInterfacePublishService.publishMessage(SubscribeMsgTypeEnum.TERMINAL_STATUS, groupId, terminalStatusNotify);
+        TerminalManageService.publishStatus(dualAccount, groupId, TerminalOnlineStatusEnum.DUALSTREAM.getCode());
     }
 
     public void acceptInvited(P2PCallMediaCap p2PCallMediaCap){
@@ -1415,7 +1398,7 @@ public abstract class TerminalService {
     }
 
     protected boolean removeMediaResource(boolean forwardResource, List<String> resourceIds) {
-        List<DetailMediaResouce> channel = null;
+        List<DetailMediaResouce> channel;
 
         if (forwardResource)
             channel = forwardChannel;
@@ -1775,12 +1758,6 @@ public abstract class TerminalService {
     protected ConcurrentHashMap<String, BaseRequestMsg> waitMsg;
 
     protected final org.slf4j.Logger logger = LoggerFactory.getLogger(this.getClass());
-
-    @Autowired(required = false)
-    private ConfInterfacePublishService confInterfacePublishService;
-
-    @Autowired(required = false)
-    private UnifiedDevicePushService unifiedDevicePushService;
 
     @Autowired
     protected RestClientService restClientService;

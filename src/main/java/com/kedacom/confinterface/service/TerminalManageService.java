@@ -3,6 +3,8 @@ package com.kedacom.confinterface.service;
 import com.kedacom.confadapter.IConferenceManager;
 import com.kedacom.confadapter.ILocalConferenceParticipant;
 import com.kedacom.confinterface.dao.Terminal;
+import com.kedacom.confinterface.dto.MediaResource;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -148,8 +150,35 @@ public abstract class TerminalManageService {
         }
     }
 
+    public static void publishStatus(String account, String groupId, int status, List<MediaResource> forwardResources, List<MediaResource> reverseResources){
+        if (null == confInterfacePublishService){
+            System.out.println("TerminalManagerService, 1, publishStatus, confInterfacePublishService is null **************");
+            return;
+        } else {
+            System.out.println("TerminalManagerService, 1, publishStatus, confInterfacePublishService is not null **************");
+        }
+        confInterfacePublishService.publishStatus(account, groupId, status, forwardResources, reverseResources);
+    }
+
+    public static void publishStatus(String account, String groupId, int status){
+        if (null == confInterfacePublishService){
+            System.out.println("TerminalManagerService, 2, publishStatus, confInterfacePublishService is null **************");
+            return;
+        } else {
+            System.out.println("TerminalManagerService, 2, publishStatus, confInterfacePublishService is not null **************");
+        }
+
+        confInterfacePublishService.publishStatus(account, groupId, status);
+    }
+
+    public static void setPublishService(ConfInterfacePublishService inConfInterfacePublishService){
+        confInterfacePublishService = inConfInterfacePublishService;
+    }
+
     protected IConferenceManager conferenceManager;
     protected Map<String, TerminalService> freeVmtServiceMap;
     protected Map<String, TerminalService> usedVmtServiceMap;
     protected ConfInterfaceService confInterfaceService;
+
+    private static ConfInterfacePublishService confInterfacePublishService;
 }

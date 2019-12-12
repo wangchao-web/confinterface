@@ -58,7 +58,7 @@ public class RedisTerminalMediaSourceDaoAutoConfig {
         //ipv4：ip:port
         //ipv6: [ip]:port
         for (String ipPort : redisClusterAddrs) {
-            if (ipPort.indexOf("]") == -1) {
+            if (!ipPort.contains("]")) {
                 //ipv4地址
                 String[] ipAndPort = ipPort.split(":");
                 redisNodeSet.add(new RedisNode(ipAndPort[0].trim(), Integer.valueOf(ipAndPort[1])));

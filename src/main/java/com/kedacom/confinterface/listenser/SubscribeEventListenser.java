@@ -230,7 +230,7 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
             if (getConfMtInfoResponse.getOnline() == 0) {
                 if (!terminalService.isVmt()) {
                     //只上报会议终端的状态
-                    terminalService.publishStatus(e164, TerminalOnlineStatusEnum.OFFLINE.getCode());
+                    TerminalManageService.publishStatus(e164, terminalService.getGroupId(), TerminalOnlineStatusEnum.OFFLINE.getCode());
                 }
 
                 terminalService.setOnline(TerminalOnlineStatusEnum.OFFLINE.getCode());
@@ -280,7 +280,8 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
                 }
 
                 if (terminalService.isOnline() && !terminalService.isVmt()) {
-                    terminalService.publishStatus(e164, TerminalOnlineStatusEnum.ONLINE.getCode());
+                    System.out.println("terminal is online and not vmt, publishStatus!! e164:" + e164);
+                    TerminalManageService.publishStatus(e164, groupConfInfo.getGroupId(), TerminalOnlineStatusEnum.ONLINE.getCode());
                 }
             }
 
@@ -322,7 +323,7 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
         }
 
         if (!terminalService.isVmt()) {
-            terminalService.publishStatus(terminalService.getE164(), status);
+            TerminalManageService.publishStatus(terminalService.getE164(), terminalService.getGroupId(), status);
         }
     }
 
@@ -386,15 +387,7 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
         terminalMediaSourceService.delGroupVmtMembers(groupId, null);
         terminalMediaSourceService.delBroadcastSrcInfo(groupId);
 
-        if(null != confInterfacePublishService) {
-            TerminalStatusNotify terminalStatusNotify = new TerminalStatusNotify();
-            TerminalStatus terminalStatus = new TerminalStatus(groupId, "Conference", TerminalOnlineStatusEnum.OFFLINE.getCode());
-            terminalStatusNotify.addMtStatus(terminalStatus);
-            confInterfacePublishService.publishMessage(SubscribeMsgTypeEnum.TERMINAL_STATUS, groupConfInfo.getGroupId(), terminalStatusNotify);
-        } else if (null != unifiedDevicePushService){
-            UnifiedDevicePushTerminalStatus unifiedDevicePushTerminalStatus = new UnifiedDevicePushTerminalStatus(groupId, groupId, TerminalOnlineStatusEnum.OFFLINE.getCode());
-            unifiedDevicePushService.publishMtStatus(unifiedDevicePushTerminalStatus);
-        }
+        TerminalManageService.publishStatus(groupId, groupId, TerminalOnlineStatusEnum.OFFLINE.getCode());
     }
 
     private void processBroadcastRequest(SubscribeEvent subscribeEvent, GroupConfInfo groupConfInfo, BroadCastRequest broadCastRequest) {
@@ -1079,12 +1072,6 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
 
     @Autowired
     private TerminalMediaSourceService terminalMediaSourceService;
-
-    @Autowired(required = false)
-    private ConfInterfacePublishService confInterfacePublishService;
-
-    @Autowired(required = false)
-    private UnifiedDevicePushService unifiedDevicePushService;
 
     private final org.slf4j.Logger logger = LoggerFactory.getLogger(this.getClass());
 }

@@ -4,8 +4,8 @@ import com.kedacom.confinterface.LogService.LogOutputTypeEnum;
 import com.kedacom.confinterface.LogService.LogTools;
 import com.kedacom.confinterface.dto.*;
 import com.kedacom.confinterface.inner.SubscribeMsgTypeEnum;
-import com.kedacom.confinterface.service.ConfInterfacePublishService;
 import com.kedacom.confinterface.service.ConfInterfaceService;
+import com.kedacom.confinterface.service.ConfInterfacePublishService;
 import com.kedacom.confinterface.util.ConfInterfaceResult;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,7 +24,7 @@ public class ConfInterfaceController {
     @Autowired
     private ConfInterfaceService confInterfaceService;
 
-    @Autowired(required = false)
+    @Autowired
     private ConfInterfacePublishService confInterfacePublishService;
 
     private final org.slf4j.Logger logger = LoggerFactory.getLogger(this.getClass());

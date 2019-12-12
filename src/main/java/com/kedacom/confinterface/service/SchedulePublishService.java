@@ -3,8 +3,11 @@ package com.kedacom.confinterface.service;
 import com.kedacom.confinterface.LogService.LogOutputTypeEnum;
 import com.kedacom.confinterface.LogService.LogTools;
 import com.kedacom.confinterface.dto.BaseResponseMsg;
+import com.kedacom.confinterface.dto.MediaResource;
+import com.kedacom.confinterface.dto.TerminalStatus;
 import com.kedacom.confinterface.dto.TerminalStatusNotify;
 import com.kedacom.confinterface.inner.SubscribeMsgTypeEnum;
+import com.kedacom.confinterface.inner.TerminalOnlineStatusEnum;
 import com.kedacom.confinterface.restclient.RestClientService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -16,14 +19,40 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 @ConditionalOnProperty(name = "confinterface.sys.pushServiceType", havingValue = "mediaSchedule", matchIfMissing = true)
-@Service("ConfInterfacePublishService")
+@Service
 @EnableScheduling
-public class  ConfInterfacePublishService {
+public class  SchedulePublishService extends ConfInterfacePublishService{
 
+    @Override
+    public void publishStatus(String account, String groupId, int status) {
+        publishStatus(account, groupId, status, null, null);
+    }
+
+    @Override
+    public void publishStatus(String account, String groupId, int status, List<MediaResource> forwardResources, List<MediaResource> reverseResources) {
+        System.out.println("now in confInterfacePublishService publishStatus!!");
+        String accountType = "MT";
+
+        if (account.equals(groupId)) {
+            System.out.println("publishStatus, type: Conference!");
+            account = "Conference";
+        } else if (status == TerminalOnlineStatusEnum.DUALSTREAM.getCode()) {
+            System.out.println("publishStatus, type: Dual!");
+            accountType = "Dual";
+        }
+
+        TerminalStatusNotify terminalStatusNotify = new TerminalStatusNotify();
+        TerminalStatus terminalStatus = new TerminalStatus(account, accountType, status, forwardResources, reverseResources);
+        terminalStatusNotify.addMtStatus(terminalStatus);
+        publishMessage(SubscribeMsgTypeEnum.TERMINAL_STATUS, groupId, terminalStatusNotify);
+    }
+
+    @Override
     @Async("confTaskExecutor")
     public void addSubscribeMessage(int type, String groupId, String url){
         synchronized (this) {
@@ -37,7 +66,7 @@ public class  ConfInterfacePublishService {
         }
     }
 
-    public void publishMessage(SubscribeMsgTypeEnum type, String groupId, Object publishMsg){
+    private void publishMessage(SubscribeMsgTypeEnum type, String groupId, Object publishMsg){
         Map<String, String> groupUrls = subscribeMsgs.get(type.getType());
         System.out.println("restClientService : "+restClientService);
         if (null == groupUrls) {
@@ -115,5 +144,4 @@ public class  ConfInterfacePublishService {
 
     @Autowired
     private RestClientService restClientService;
-    //private RestClientService restClientService = new RestClientService();
 }

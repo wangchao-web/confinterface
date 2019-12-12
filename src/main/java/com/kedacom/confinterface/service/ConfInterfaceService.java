@@ -1196,7 +1196,7 @@ public class ConfInterfaceService {
                 vmtService.setDualStream(true);
             } else {
                 vmtService.delWaitMsg(waitMsg);
-                vmtService.publishStatus(mtAccount, TerminalOnlineStatusEnum.OFFLINE.getCode());
+                TerminalManageService.publishStatus(mtAccount, groupId, TerminalOnlineStatusEnum.OFFLINE.getCode());
                 terminalManageService.freeVmt(vmtService.getE164());
                 vmtService.setGroupId(null);
 

@@ -20,6 +20,22 @@ public class TranslateCallParam  {
         this.srcDeviceID = srcDeviceID;
     }
 
+    public String getSrcAddress() {
+        return srcAddress;
+    }
+
+    public void setSrcAddress(String srcAddress) {
+        this.srcAddress = srcAddress;
+    }
+
+    public String getSrcCallCode() {
+        return srcCallCode;
+    }
+
+    public void setSrcCallCode(String srcCallCode) {
+        this.srcCallCode = srcCallCode;
+    }
+
     public String getDstDeviceType() {
         return dstDeviceType;
     }
@@ -48,6 +64,8 @@ public class TranslateCallParam  {
     public String toString() {
         return new StringBuilder().append("srcDeviceType:").append(srcDeviceType)
                 .append("srcDeviceID:").append(srcDeviceID)
+                .append("srcAddress:").append(srcAddress)
+                .append("srcCallCode:").append(srcCallCode)
                 .append("dstDeviceType:").append(dstDeviceType)
                 .append("dstDeviceID:").append(dstDeviceID)
                 .append("notifyURL:").append(notifyURL)
@@ -59,6 +77,12 @@ public class TranslateCallParam  {
 
     @JsonProperty("SrcDeviceID")
     private String srcDeviceID;
+
+    @JsonProperty("SrcAddress")
+    private String srcAddress;
+
+    @JsonProperty("SrcCallCode")
+    private String srcCallCode;
 
     @JsonProperty("DstDeviceType")
     private String dstDeviceType;

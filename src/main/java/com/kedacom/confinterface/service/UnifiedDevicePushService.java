@@ -3,7 +3,9 @@ package com.kedacom.confinterface.service;
 import com.kedacom.confinterface.LogService.LogOutputTypeEnum;
 import com.kedacom.confinterface.LogService.LogTools;
 import com.kedacom.confinterface.dto.BaseResponseMsg;
+import com.kedacom.confinterface.dto.MediaResource;
 import com.kedacom.confinterface.dto.UnifiedDevicePushTerminalStatus;
+import com.kedacom.confinterface.inner.TerminalOnlineStatusEnum;
 import com.kedacom.confinterface.restclient.RestClientService;
 import com.kedacom.confinterface.syssetting.BaseSysConfig;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,14 +18,35 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.LinkedBlockingDeque;
 
 @ConditionalOnProperty(name = "confinterface.sys.pushServiceType", havingValue = "ctsp")
 @Service
 @EnableScheduling
-public class UnifiedDevicePushService {
+public class UnifiedDevicePushService extends ConfInterfacePublishService{
+
+    @Override
+    public void publishStatus(String account, String groupId, int status, List<MediaResource> forwardResources, List<MediaResource> reverseResources) {
+        publishStatus(account, groupId, status);
+    }
+
+    @Override
     @Async("confTaskExecutor")
-    public void publishMtStatus(UnifiedDevicePushTerminalStatus unifiedDevicePushTerminalStatus){
+    public void publishStatus(String account, String groupId, int status) {
+        if (status == TerminalOnlineStatusEnum.DUALSTREAM.getCode())
+            return;
+
+        UnifiedDevicePushTerminalStatus unifiedDevicePushTerminalStatus = new UnifiedDevicePushTerminalStatus(account, groupId, status);
+        publishMtStatus(unifiedDevicePushTerminalStatus);
+    }
+
+    @Override
+    public void addSubscribeMessage(int type, String groupId, String url) {
+
+    }
+
+    private void publishMtStatus(UnifiedDevicePushTerminalStatus unifiedDevicePushTerminalStatus){
         if (statusUrl.length() == 0) {
             statusUrl.append("http://");
             statusUrl.append(baseSysConfig.getCdeviceManageSrvAddr());

@@ -2,7 +2,7 @@ package com.kedacom.confinterface.h323;
 
 
 import com.kedacom.confadapter.IConferenceEventHandler;
-import com.kedacom.confadapter.common.ConfEntity;
+import com.kedacom.confadapter.common.ConfSessionPeer;
 import com.kedacom.confadapter.common.ConferenceInfo;
 import com.kedacom.confadapter.common.ConferencePresentParticipant;
 import com.kedacom.confadapter.media.MediaDescription;
@@ -128,7 +128,7 @@ public class H323TerminalManageService extends TerminalManageService implements 
 
     @Override
     @Async("confTaskExecutor")
-    public void OnInvited(String participantid, ConferenceInfo conferenceInfo, ConfEntity proxyMT) {
+    public void OnInvited(String participantid, ConferenceInfo conferenceInfo) {
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "OnInvited, participantid : " + participantid + ", confId : " + conferenceInfo.getId() + ", threadName:" + Thread.currentThread().getName());
         System.out.println("OnInvited, participantid : " + participantid + ", confId : " + conferenceInfo.getId() + ", threadName:" + Thread.currentThread().getName());
         TerminalService terminalService = usedVmtServiceMap.get(participantid);
@@ -147,9 +147,9 @@ public class H323TerminalManageService extends TerminalManageService implements 
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "OnInvited, found participant in free vmt map, proxyMt is null, check confEntity!!");
                 System.out.println("OnInvited, found participant in free vmt map, proxyMt is null, check confEntity!!");
 
-                if (null == proxyMT
-                        || ( (null == proxyMT.getId() || proxyMT.getId().isEmpty())
-                               && (null == proxyMT.getName() || proxyMT.getName().isEmpty()))) {
+                ConfSessionPeer proxyMT = conferenceInfo.getCallee();
+                if ((null == proxyMT.getId() || proxyMT.getId().isEmpty())
+                               && (null == proxyMT.getName() || proxyMT.getName().isEmpty())) {
                     LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "OnInvited, confEntity is null, ignore msg!!");
                     System.out.println("OnInvited, confEntity is null, ignore msg!!");
                     return;
@@ -159,7 +159,7 @@ public class H323TerminalManageService extends TerminalManageService implements 
             }
 
             //走入此处，表明有系统外的设备需要主动呼叫该虚拟终端代理的实体终端
-            P2PCallResult p2PCallResult = terminalService.translateCall(participantid);
+            P2PCallResult p2PCallResult = terminalService.translateCall(participantid, conferenceInfo.getCaller());
             if (null == p2PCallResult) {
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "OnInvited, translateCall, reject invitation!");
                 System.out.println("OnInvited, translateCall fail, reject invitation!");
@@ -298,7 +298,7 @@ public class H323TerminalManageService extends TerminalManageService implements 
             System.out.println("OnKickedOff, vmt(" + terminalService.getE164() + ") is offline, groupId : " + groupId + ", mtAccount : " + mtAccount);
 
             if (null != mtAccount) {
-                terminalService.publishStatus(mtAccount, TerminalOnlineStatusEnum.OFFLINE.getCode());
+                TerminalManageService.publishStatus(mtAccount, groupId, TerminalOnlineStatusEnum.OFFLINE.getCode());
             }
         }
 
@@ -623,7 +623,7 @@ public class H323TerminalManageService extends TerminalManageService implements 
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "P2PCallRequestSuccess, pubulish terminal status, account:" + p2PCallRequest.getAccount() + ", groupId: " + p2PCallRequest.getGroupId() + ", forwardResources: " + p2PCallRequest.getForwardResources().toString() + ", reverseResources: " + p2PCallRequest.getReverseResources().toString());
                 System.out.println("P2PCallRequestSuccess, pubulish terminal status, account: " + p2PCallRequest.getAccount() + ", groupId : " + p2PCallRequest.getGroupId() + ", forwardResources: " + p2PCallRequest.getForwardResources().toString() + ", reverseResources: " + p2PCallRequest.getReverseResources().toString());
 
-                terminalService.publishStatus(p2PCallRequest.getAccount(), TerminalOnlineStatusEnum.ONLINE.getCode(), p2PCallRequest.getForwardResources(), p2PCallRequest.getReverseResources());
+                TerminalManageService.publishStatus(p2PCallRequest.getAccount(), p2PCallRequest.getGroupId(), TerminalOnlineStatusEnum.ONLINE.getCode(), p2PCallRequest.getForwardResources(), p2PCallRequest.getReverseResources());
             }
             break;
         }

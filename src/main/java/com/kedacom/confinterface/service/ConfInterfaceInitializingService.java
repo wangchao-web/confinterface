@@ -55,6 +55,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
             loginMcuSrv();
         }
 
+        TerminalManageService.setPublishService(defaultListableBeanFactory.getBean(ConfInterfacePublishService.class));
         terminalManageService.setConfInterfaceService(confInterfaceService);
         Map<String, String> groups = confInterfaceService.getGroups();
         if (null == groups || groups.isEmpty()) {
@@ -156,6 +157,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
 
     private void registerVmts() {
         try {
+
             //查询数据库中是否已经存在vmt信息，如果存在，则直接使用Vmt中数据重新构建
             List<String> vmtList = confInterfaceService.getVmts();
 
