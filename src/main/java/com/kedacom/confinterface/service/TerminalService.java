@@ -936,7 +936,8 @@ public abstract class TerminalService {
 
     protected String constructSdp(MediaDescription mediaDescription) {
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"mediaDescription.getEncodingFormat().name() : " +mediaDescription.getEncodingFormat().name());
-        System.out.println("mediaDescription.getEncodingFormat().name() : " +mediaDescription.getEncodingFormat().name());
+        System.out.println("[constructSdp] mediaDescription.getEncodingFormat().name() : " +mediaDescription.getEncodingFormat().name() + ", rtpIp: " + mediaDescription.getRtpAddress().getIP() +
+                ", rtcpIp: " + mediaDescription.getRtcpAddress().getIP());
 
         if (null == mediaDescription)
             return "";
@@ -944,6 +945,7 @@ public abstract class TerminalService {
         String rtpProtocolType = getIpProtocolType(mediaDescription.getRtpAddress().getIP());
         String rtcpProtocolType = getIpProtocolType(mediaDescription.getRtcpAddress().getIP());
         if (null == rtpProtocolType || null == rtcpProtocolType){
+            System.out.println("[constructSdp] rtpProtocolType or rtcpProtocolType is null!!!!");
             return "";
         }
 
@@ -1626,13 +1628,16 @@ public abstract class TerminalService {
     }
 
     protected static boolean isIPv4(String strIp){
+        System.out.println("[isIPv4] strIp : " + strIp);
+
         if (!strIp.contains("."))
             return false;
 
         if (strIp.startsWith(".") || strIp.endsWith("."))
             return false;
 
-        String[] ipParts = strIp.split(".");
+        //注意，. 为特殊字符，如果要使用split进行切分，必须进行转义!!!!!!
+        String[] ipParts = strIp.split("\\.");
         if (ipParts.length != 4)
             return false;
 
@@ -1649,6 +1654,8 @@ public abstract class TerminalService {
     }
 
     protected static boolean isIPv6(String strIp) {
+        System.out.println("[isIPv6] strIp : " + strIp);
+
         if (!strIp.contains(":"))
             return false;
 
