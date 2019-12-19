@@ -226,6 +226,7 @@ public class ConfInterfaceService {
 
         for (Terminal terminal : joinConfMts) {
             TerminalService terminalService = terminalManageService.createTerminal(terminal.getMtE164(), false);
+            terminalService.setGroupId(groupId);
             groupConfInfo.addMember(terminalService);
         }
 

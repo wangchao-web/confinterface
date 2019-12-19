@@ -230,7 +230,7 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
             if (getConfMtInfoResponse.getOnline() == 0) {
                 if (!terminalService.isVmt()) {
                     //只上报会议终端的状态
-                    TerminalManageService.publishStatus(e164, terminalService.getGroupId(), TerminalOnlineStatusEnum.OFFLINE.getCode());
+                    TerminalManageService.publishStatus(e164, groupConfInfo.getGroupId(), TerminalOnlineStatusEnum.OFFLINE.getCode());
                 }
 
                 terminalService.setOnline(TerminalOnlineStatusEnum.OFFLINE.getCode());
