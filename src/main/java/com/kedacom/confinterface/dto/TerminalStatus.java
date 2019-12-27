@@ -82,6 +82,5 @@ public class TerminalStatus {
     private List<MediaResource> forwardResources;
     private List<MediaResource> reverseResources;
 
-    //ÖÕ¶Ëºô½ĞÊ§°ÜÊ±µÄ´íÎóÂë
     private int callFailureCode;
 }

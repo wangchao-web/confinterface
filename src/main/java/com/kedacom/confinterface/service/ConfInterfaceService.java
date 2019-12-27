@@ -1165,16 +1165,16 @@ public class ConfInterfaceService {
         p2PCallRequest.makeSuccessResponseMsg();
         if (!p2PCallParam.isDual()) {
             p2PCallRequest.setWaitMsg(new ArrayList<>(Arrays.asList(waitMsg, waitMsg, waitMsg, waitMsg)));
-            CallRemoteCap callRemoteCap = vmtService.callMt(p2PCallParam);
-            if (callRemoteCap.getBok()) {
+            TerminalOnlineStatusEnum terminalOnlineStatusEnum = vmtService.callMt(p2PCallParam);
+            if (terminalOnlineStatusEnum.getCode() == 1) {
                 vmtService.setDualStream(true);
             } else {
                 vmtService.delWaitMsg(waitMsg);
                 //vmtService.publishStatus(mtAccount, TerminalOnlineStatusEnum.OFFLINE.getCode());
                 //加上终端呼叫失败的错误码
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"callRemoteCap faileCode" + callRemoteCap.getTerminalOnlineStatusEnum().getCode());
-                System.out.println("callRemoteCap faileCode" + callRemoteCap.getTerminalOnlineStatusEnum().getCode());
-                TerminalManageService.publishStatus(mtAccount, groupId, TerminalOnlineStatusEnum.OFFLINE.getCode(),callRemoteCap.getTerminalOnlineStatusEnum().getCode());
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"callRemoteCap faileCode" + terminalOnlineStatusEnum.getCode());
+                System.out.println("callRemoteCap faileCode" + terminalOnlineStatusEnum.getCode() );
+                TerminalManageService.publishStatus(mtAccount, groupId, TerminalOnlineStatusEnum.OFFLINE.getCode(),terminalOnlineStatusEnum.getCode());
                 //vmtService.publishStatus(mtAccount, TerminalOnlineStatusEnum.OFFLINE.getCode(),callRemoteCap.getTerminalOnlineStatusEnum().getCode());
                 terminalManageService.freeVmt(vmtService.getE164());
                 vmtService.setGroupId(null);
