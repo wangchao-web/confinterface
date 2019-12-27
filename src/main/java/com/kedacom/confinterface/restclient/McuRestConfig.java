@@ -176,7 +176,7 @@ public class McuRestConfig {
     private String mcuIp;
     private int mcuRestPort;
     private String mcuRestApiVersion;
-    private int bitrate;
+    private int bitrate = 1024;
     private String protocal = ProtocalTypeEnum.H323.getName();
     private String videoFormat;
     private String audioFormat;

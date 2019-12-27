@@ -28,20 +28,34 @@ import java.util.concurrent.ConcurrentHashMap;
 @EnableScheduling
 public class  SchedulePublishService extends ConfInterfacePublishService{
 
+
     @Override
     public void publishStatus(String account, String groupId, int status) {
         publishStatus(account, groupId, status, null, null);
     }
 
     @Override
+    public void publishStatus(String account, String groupId, int status, int faileCode) {
+        TerminalStatusNotify terminalStatusNotify = new TerminalStatusNotify();
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"account : " + account +" publishStatus callFailureCode " + faileCode);
+        System.out.println("account : " + account +" publishStatus callFailureCode " + faileCode);
+        TerminalStatus terminalStatus = new TerminalStatus(account,"MT", status, null, null, faileCode);
+        terminalStatusNotify.addMtStatus(terminalStatus);
+        publishMessage(SubscribeMsgTypeEnum.TERMINAL_STATUS, groupId, terminalStatusNotify);
+    }
+
+    @Override
     public void publishStatus(String account, String groupId, int status, List<MediaResource> forwardResources, List<MediaResource> reverseResources) {
-        System.out.println("now in confInterfacePublishService publishStatus!!");
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"account : " + account + " now in confInterfacePublishService publishStatus!!");
+        System.out.println("account : " + account + " now in confInterfacePublishService publishStatus!!");
         String accountType = "MT";
 
         if (account.equals(groupId)) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"publishStatus, type: Conference!");
             System.out.println("publishStatus, type: Conference!");
             account = "Conference";
         } else if (status == TerminalOnlineStatusEnum.DUALSTREAM.getCode()) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"publishStatus, type: Dual!");
             System.out.println("publishStatus, type: Dual!");
             accountType = "Dual";
         }
@@ -68,7 +82,8 @@ public class  SchedulePublishService extends ConfInterfacePublishService{
 
     private void publishMessage(SubscribeMsgTypeEnum type, String groupId, Object publishMsg){
         Map<String, String> groupUrls = subscribeMsgs.get(type.getType());
-        System.out.println("restClientService : "+restClientService);
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"restClientService : "+restClientService);
+        System.out.println("restClientService : "+ restClientService);
         if (null == groupUrls) {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"publishMessage, has no client subscribe message, type :"+type.getType()+", name:"+type.getName());
             System.out.println("publishMessage, has no client subscribe message, type :"+type.getType()+", name:"+type.getName());
@@ -82,7 +97,7 @@ public class  SchedulePublishService extends ConfInterfacePublishService{
             return;
         }
 
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"publishMessage, groupId:" + groupId);
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"publishMessage, groupId:"+groupId);
         System.out.println("publishMessage, groupId:"+groupId);
         ResponseEntity<BaseResponseMsg> publishResponse = restClientService.exchangeJson(publishUrl, HttpMethod.POST, publishMsg, null, BaseResponseMsg.class);
         if (publishResponse.getStatusCode().is2xxSuccessful() && publishResponse.getBody().getCode() == 0) {

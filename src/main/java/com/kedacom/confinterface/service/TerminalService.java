@@ -2,10 +2,7 @@ package com.kedacom.confinterface.service;
 
 
 import com.kedacom.confadapter.ILocalConferenceParticipant;
-import com.kedacom.confadapter.common.ConfSessionPeer;
-import com.kedacom.confadapter.common.MediaCodec;
-import com.kedacom.confadapter.common.NetAddress;
-import com.kedacom.confadapter.common.RemoteParticipantInfo;
+import com.kedacom.confadapter.common.*;
 import com.kedacom.confadapter.media.*;
 import com.kedacom.confinterface.LogService.LogOutputTypeEnum;
 import com.kedacom.confinterface.LogService.LogTools;
@@ -93,6 +90,7 @@ public abstract class TerminalService {
     }
 
     public void bindProxyMT(ConfSessionPeer proxyMT){
+        System.out.println("ConfSessionPeer proxyMT " + proxyMT.getId() + " : " + proxyMT.getName());
         StringBuilder proxyAccount = new StringBuilder();
         if (null != proxyMT.getId() && !proxyMT.getId().isEmpty()){
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "bindProxyMT, proxyMt, id: " + proxyMT.getId());
@@ -438,6 +436,7 @@ public abstract class TerminalService {
     public void leftConference() {
         clearStatus();
         online.set(TerminalOnlineStatusEnum.OFFLINE.getCode());
+        proxyMTE164 = null;
         mtId = null;
         confId = null;
         groupId = null;
@@ -652,9 +651,10 @@ public abstract class TerminalService {
     }
 
     @Async("confTaskExecutor")
-    public boolean callMt(P2PCallParam p2PCallParam) {
+    public CallRemoteCap callMt(P2PCallParam p2PCallParam) {
         String account = p2PCallParam.getAccount();
         RemoteParticipantInfo remoteParticipantInfo = new RemoteParticipantInfo();
+        CallParameterEx callParameterEx = new CallParameterEx();
 
         if (p2PCallParam.getAccountType() == 1) {
             //ip地址呼叫,先解析是否携带别名，结构为ip:port/alias
@@ -680,17 +680,66 @@ public abstract class TerminalService {
         }
 
         synchronized (this) {
-            boolean bOK = conferenceParticipant.CallRemote(remoteParticipantInfo);
+            P2PCallMediaCap videoCodec = p2PCallParam.getVideoCodec();
+            boolean bOK = false;
+            if(videoCodec == null){
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"videoCodec : " + videoCodec);
+                System.out.println("videoCodec : " + videoCodec);
+                bOK = conferenceParticipant.CallRemote(remoteParticipantInfo);
+            }else{
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"videoCodec.getCodeFormat() : " + videoCodec.getCodeFormat() + " ,videoCodec.getResolution()" + videoCodec.getResolution() + " ,videoCodec.getBitrate() :" + videoCodec.getBitrate()+ " ,videoCodec.getFramerate()" + videoCodec.getFramerate());
+                System.out.println("videoCodec.getCodeFormat() : " + videoCodec.getCodeFormat() + " ,videoCodec.getResolution()" + videoCodec.getResolution() + " ,videoCodec.getBitrate() :" + videoCodec.getBitrate() + " ,videoCodec.getFramerate()" + videoCodec.getFramerate());
+                MediaCodec mediaCodec = new MediaCodec();
+                mediaCodec.getVideoCapability().setBitrate(videoCodec.getBitrate());
+                mediaCodec.getVideoCapability().setEncodingFormat(EncodingFormatEnum.FromName(videoCodec.getCodeFormat()));
+                mediaCodec.getVideoCapability().setResolution(ResolutionEnum.fromName(videoCodec.getResolution()));
+                mediaCodec.getVideoCapability().setFramerate(videoCodec.getFramerate());
+                callParameterEx.setCodec(mediaCodec);
+                bOK = conferenceParticipant.CallRemote(remoteParticipantInfo,callParameterEx);
+            }
+            //boolean bOK = conferenceParticipant.CallRemote(remoteParticipantInfo);
+
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, e164 + " : vmtE164 conferenceParticipant.CallRemote : " + account);
+            System.out.println(e164 + " : vmtE164 conferenceParticipant.CallRemote : " + account);
+            TerminalOnlineStatusEnum terminalOnlineStatusEnum = TerminalOnlineStatusEnum.ONLINE;
             if (bOK) {
                 remoteMtAccount = account;
-                LogTools.debug(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "callMt, vmt: " + e164 + ", CallRemote(groupId:" + groupId + ",account:" + account + ") - [YYYY-MM-DDThh:mm:ss.SSSZ] success");
-                System.out.println("callMt, CallRemote(groupId:" + groupId + ",account:" + account + "), vmt: " + e164);
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE," CallRemote success terminalOnlineStatusEnum : " + terminalOnlineStatusEnum.getCode());
+                System.out.println(" CallRemote success terminalOnlineStatusEnum : " + terminalOnlineStatusEnum.getCode());
+                LogTools.debug(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "startCallDevice(GroupID:" + groupId + ",account:" + account + ") - [YYYY-MM-DDThh:mm:ss.SSSZ] success");
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "account conferenceParticipant.CallRemote success " + account);
+                System.out.println("account conferenceParticipant.CallRemote success " + account);
             } else {
                 remoteMtAccount = null;
-                LogTools.debug(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "callMt, vmt: " + e164 + ",CallRemote(groupId:" + groupId + " ,account: " + account + ") - [YYYY-MM-DDThh:mm:ss.SSSZ] failed Errcode:50024, p2p call failed!");
-                System.out.println("callMt, vmt: " + e164 + ",CallRemote(groupId:" + groupId + " ,account: " + account + ") failed, 50024, p2p call failed!");
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"callParameterEx.getErrorReason() " + callParameterEx.getErrorReason().name());
+                System.out.println("callParameterEx.getErrorReason() " + callParameterEx.getErrorReason().name());
+                terminalOnlineStatusEnum= callFailureCode(callParameterEx.getErrorReason());
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"CallRemote failed terminalOnlineStatusEnum " + terminalOnlineStatusEnum.getCode());
+                System.out.println("CallRemote failed terminalOnlineStatusEnum " + terminalOnlineStatusEnum.getCode());
+                LogTools.debug(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "startCallDevice(GroupID:" + groupId + " ,account: " + account + ") - [YYYY-MM-DDThh:mm:ss.SSSZ] failed Errcode:" + 50024 + "p2p call failed!");
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "account conferenceParticipant.CallRemote failed " + account);
+                System.out.println("account conferenceParticipant.CallRemote failed " + account);
             }
-            return bOK;
+            CallRemoteCap callRemoteCap = new CallRemoteCap(bOK, terminalOnlineStatusEnum);
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"callRemoteCap : " + callRemoteCap.toString());
+            System.out.println("callRemoteCap : " + callRemoteCap.toString());
+            return callRemoteCap;
+        }
+    }
+
+    public TerminalOnlineStatusEnum callFailureCode(CallDisconnectReasonEnum callDisconnectReasonEnum){
+        switch (callDisconnectReasonEnum) {
+            case Busy:
+                //3被占用
+                return TerminalOnlineStatusEnum.OCCUPIED;
+            case McuOccupy:
+                //77
+                return TerminalOnlineStatusEnum.OCCUPIED;
+            case Rejected:
+                return TerminalOnlineStatusEnum.OCCUPIED;
+            default:
+                //6 会议终端故障(包括None,Unreachable,Local,Unknown,NoBandwidth,NoPermission,UnreachableGatekeeper,Reconnect,ConfHolding,Hascascaded,Custom,Adaptivebusy)
+                return TerminalOnlineStatusEnum.FAULT;
         }
     }
 
@@ -713,15 +762,22 @@ public abstract class TerminalService {
         }
     }
 
-    public P2PCallResult translateCall(String srcE164, ConfSessionPeer caller){
+    public P2PCallResult translateCall(String srcE164 , String srcAddress , int srcPort , String srcCallCode){
         TranslateCallParam translateCallParam = new TranslateCallParam();
         translateCallParam.setSrcDeviceID(srcE164);
-        translateCallParam.setSrcAddress(caller.getAddress().getIP());
-        translateCallParam.setSrcCallCode(caller.getId());
         translateCallParam.setDstDeviceID(proxyMTE164);
+        translateCallParam.setSrcPort(srcPort);
+        translateCallParam.setSrcAddress(srcAddress);
+        translateCallParam.setSrcCallCode(srcCallCode);
 
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"translateCall, notifyUrl:" + notifyURL.toString()+", srcE164: "+srcE164+", caller:" +caller.getId()+ ", proxyMt: " + proxyMTE164);
-        System.out.println("translateCall, notifyUrl:" + notifyURL.toString()+", srcE164: "+srcE164+", caller:" + caller.getId() + ", proxyMt: " + proxyMTE164);
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"srcAddress : " + srcAddress +",srcCallCode : " + srcCallCode + "srcPort" + srcPort);
+        System.out.println(" srcAddress : " + srcAddress +" ,srcCallCode : " + srcCallCode + "srcPort" + srcPort);
+
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"translateCallParam : " + translateCallParam.toString());
+        System.out.println("translateCallParam : " + translateCallParam.toString());
+
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"translateCall, notifyUrl:" + notifyURL.toString()+", srcE164: "+srcE164+", proxyMt: " + proxyMTE164);
+        System.out.println("translateCall, notifyUrl:" + notifyURL.toString()+", srcE164: "+srcE164+", proxyMt: " + proxyMTE164);
         translateCallParam.setNotifyURL(notifyURL.toString());
 
         ResponseEntity<JSONObject> translateCallResponse = restClientService.exchangeJson(scheduleP2PCallURL.toString(), HttpMethod.POST, translateCallParam, null, JSONObject.class);

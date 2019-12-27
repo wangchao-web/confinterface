@@ -42,6 +42,11 @@ public class UnifiedDevicePushService extends ConfInterfacePublishService{
     }
 
     @Override
+    public void publishStatus(String account, String groupId, int status, int faileCode) {
+
+    }
+
+    @Override
     public void addSubscribeMessage(int type, String groupId, String url) {
 
     }

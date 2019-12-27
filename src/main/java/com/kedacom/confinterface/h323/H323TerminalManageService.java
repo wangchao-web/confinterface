@@ -147,19 +147,19 @@ public class H323TerminalManageService extends TerminalManageService implements 
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "OnInvited, found participant in free vmt map, proxyMt is null, check confEntity!!");
                 System.out.println("OnInvited, found participant in free vmt map, proxyMt is null, check confEntity!!");
 
-                ConfSessionPeer proxyMT = conferenceInfo.getCallee();
-                if ((null == proxyMT.getId() || proxyMT.getId().isEmpty())
-                               && (null == proxyMT.getName() || proxyMT.getName().isEmpty())) {
+                if (null == conferenceInfo.getCallee()
+                        || ( (null == conferenceInfo.getCallee().getId() || conferenceInfo.getCallee().getId().isEmpty())
+                               && (null == conferenceInfo.getCallee().getName() || conferenceInfo.getCallee().getName().isEmpty()))) {
                     LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "OnInvited, confEntity is null, ignore msg!!");
                     System.out.println("OnInvited, confEntity is null, ignore msg!!");
                     return;
                 }
 
-                terminalService.bindProxyMT(proxyMT);
+                terminalService.bindProxyMT(conferenceInfo.getCallee());
             }
 
             //走入此处，表明有系统外的设备需要主动呼叫该虚拟终端代理的实体终端
-            P2PCallResult p2PCallResult = terminalService.translateCall(participantid, conferenceInfo.getCaller());
+            P2PCallResult p2PCallResult = terminalService.translateCall(participantid,conferenceInfo.getCaller().getAddress().getIP(),conferenceInfo.getCaller().getAddress().getPort(),conferenceInfo.getCaller().getId());
             if (null == p2PCallResult) {
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "OnInvited, translateCall, reject invitation!");
                 System.out.println("OnInvited, translateCall fail, reject invitation!");

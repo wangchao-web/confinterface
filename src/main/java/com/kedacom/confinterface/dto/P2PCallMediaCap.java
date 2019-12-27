@@ -1,6 +1,18 @@
 package com.kedacom.confinterface.dto;
 
+import javax.validation.constraints.NotNull;
+
 public class P2PCallMediaCap {
+    public P2PCallMediaCap(@NotNull String codeFormat, @NotNull String resolution, int bitrate, int framerate) {
+        this.codeFormat = codeFormat;
+        this.resolution = resolution;
+        this.bitrate = bitrate;
+        this.framerate = framerate;
+    }
+
+    public P2PCallMediaCap() {
+    }
+
     public String getCodeFormat() {
         return codeFormat;
     }
@@ -42,7 +54,9 @@ public class P2PCallMediaCap {
                 .toString();
     }
 
+    @NotNull
     private String codeFormat;
+    @NotNull
     private String resolution;
     private int    bitrate;
     private int    framerate;

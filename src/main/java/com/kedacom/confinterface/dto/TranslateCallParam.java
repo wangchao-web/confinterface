@@ -4,20 +4,16 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class TranslateCallParam  {
 
-    public String getSrcDeviceType() {
-        return srcDeviceType;
+
+
+
+
+    public int getSrcPort() {
+        return srcPort;
     }
 
-    public void setSrcDeviceType(String srcDeviceType) {
-        this.srcDeviceType = srcDeviceType;
-    }
-
-    public String getSrcDeviceID() {
-        return srcDeviceID;
-    }
-
-    public void setSrcDeviceID(String srcDeviceID) {
-        this.srcDeviceID = srcDeviceID;
+    public void setSrcPort(int srcPort) {
+        this.srcPort = srcPort;
     }
 
     public String getSrcAddress() {
@@ -34,6 +30,22 @@ public class TranslateCallParam  {
 
     public void setSrcCallCode(String srcCallCode) {
         this.srcCallCode = srcCallCode;
+    }
+
+    public String getSrcDeviceType() {
+        return srcDeviceType;
+    }
+
+    public void setSrcDeviceType(String srcDeviceType) {
+        this.srcDeviceType = srcDeviceType;
+    }
+
+    public String getSrcDeviceID() {
+        return srcDeviceID;
+    }
+
+    public void setSrcDeviceID(String srcDeviceID) {
+        this.srcDeviceID = srcDeviceID;
     }
 
     public String getDstDeviceType() {
@@ -63,12 +75,13 @@ public class TranslateCallParam  {
     @Override
     public String toString() {
         return new StringBuilder().append("srcDeviceType:").append(srcDeviceType)
-                .append("srcDeviceID:").append(srcDeviceID)
-                .append("srcAddress:").append(srcAddress)
-                .append("srcCallCode:").append(srcCallCode)
-                .append("dstDeviceType:").append(dstDeviceType)
-                .append("dstDeviceID:").append(dstDeviceID)
-                .append("notifyURL:").append(notifyURL)
+                .append(" ,srcDeviceID : ").append(srcDeviceID)
+                .append(" ,dstDeviceType : ").append(dstDeviceType)
+                .append(" ,dstDeviceID:").append(dstDeviceID)
+                .append(" ,srcAddress:").append(srcAddress)
+                .append(" ,srcCallCode:").append(srcCallCode)
+                .append(" ,srcPort:").append(srcPort)
+                .append(" ,notifyURL:").append(notifyURL)
                 .toString();
     }
 
@@ -78,17 +91,20 @@ public class TranslateCallParam  {
     @JsonProperty("SrcDeviceID")
     private String srcDeviceID;
 
+    @JsonProperty("DstDeviceType")
+    private String dstDeviceType;
+
+    @JsonProperty("DstDeviceID")
+    private String dstDeviceID;
+
     @JsonProperty("SrcAddress")
     private String srcAddress;
 
     @JsonProperty("SrcCallCode")
     private String srcCallCode;
 
-    @JsonProperty("DstDeviceType")
-    private String dstDeviceType;
-
-    @JsonProperty("DstDeviceID")
-    private String dstDeviceID;
+    @JsonProperty("SrcPort")
+    private int srcPort;
 
     @JsonProperty("NotifyURL")
     private String notifyURL;

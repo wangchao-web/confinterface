@@ -4,10 +4,19 @@ import org.hibernate.validator.constraints.Range;
 import javax.validation.constraints.NotBlank;
 
 public class P2PCallParam {
-    public P2PCallParam(int accountType, String account, int dual){
+    public P2PCallParam(int accountType, String account, int dual ,P2PCallMediaCap videoCodec){
         this.accountType = accountType;
         this.account = account;
         this.dual = dual;
+        this.videoCodec = videoCodec;
+    }
+
+    public P2PCallMediaCap getVideoCodec() {
+        return videoCodec;
+    }
+
+    public void setVideoCodec(P2PCallMediaCap videoCodec) {
+        this.videoCodec = videoCodec;
     }
 
     public int getAccountType() {
@@ -48,6 +57,7 @@ public class P2PCallParam {
         return new StringBuilder().append("accountType:").append(accountType)
                 .append(", account:").append(account)
                 .append(", dual:").append(dual)
+                .append(", videoCodec").append(videoCodec.toString())
                 .toString();
     }
 
@@ -59,4 +69,6 @@ public class P2PCallParam {
 
     @Range(min = 0, max = 1)
     private int dual;
+
+    private P2PCallMediaCap videoCodec;
 }

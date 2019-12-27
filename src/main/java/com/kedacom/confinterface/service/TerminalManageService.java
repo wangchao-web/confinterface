@@ -2,6 +2,8 @@ package com.kedacom.confinterface.service;
 
 import com.kedacom.confadapter.IConferenceManager;
 import com.kedacom.confadapter.ILocalConferenceParticipant;
+import com.kedacom.confinterface.LogService.LogOutputTypeEnum;
+import com.kedacom.confinterface.LogService.LogTools;
 import com.kedacom.confinterface.dao.Terminal;
 import com.kedacom.confinterface.dto.MediaResource;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -152,9 +154,11 @@ public abstract class TerminalManageService {
 
     public static void publishStatus(String account, String groupId, int status, List<MediaResource> forwardResources, List<MediaResource> reverseResources){
         if (null == confInterfacePublishService){
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"TerminalManagerService, 1, publishStatus, confInterfacePublishService is null **************");
             System.out.println("TerminalManagerService, 1, publishStatus, confInterfacePublishService is null **************");
             return;
         } else {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"TerminalManagerService, 1, publishStatus, confInterfacePublishService is not null **************");
             System.out.println("TerminalManagerService, 1, publishStatus, confInterfacePublishService is not null **************");
         }
         confInterfacePublishService.publishStatus(account, groupId, status, forwardResources, reverseResources);
@@ -162,13 +166,28 @@ public abstract class TerminalManageService {
 
     public static void publishStatus(String account, String groupId, int status){
         if (null == confInterfacePublishService){
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"TerminalManagerService, 2, publishStatus, confInterfacePublishService is null **************");
             System.out.println("TerminalManagerService, 2, publishStatus, confInterfacePublishService is null **************");
             return;
         } else {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"TerminalManagerService, 2, publishStatus, confInterfacePublishService is not null **************");
             System.out.println("TerminalManagerService, 2, publishStatus, confInterfacePublishService is not null **************");
         }
 
         confInterfacePublishService.publishStatus(account, groupId, status);
+    }
+
+    public static void publishStatus(String account, String groupId, int status , int faileCode){
+        if (null == confInterfacePublishService){
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"TerminalManagerService, account : " + account + "2, publishStatus, confInterfacePublishService is null **************");
+            System.out.println("TerminalManagerService, account : " + account + "2, publishStatus, confInterfacePublishService is null **************");
+            return;
+        } else {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"TerminalManagerService, account : " + account + " 2, publishStatus, confInterfacePublishService is not null **************");
+            System.out.println("TerminalManagerService, account : " + account + " 2, publishStatus, confInterfacePublishService is not null **************");
+        }
+
+        confInterfacePublishService.publishStatus(account, groupId, status,faileCode);
     }
 
     public static void setPublishService(ConfInterfacePublishService inConfInterfacePublishService){

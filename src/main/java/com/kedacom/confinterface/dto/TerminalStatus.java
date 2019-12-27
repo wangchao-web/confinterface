@@ -19,6 +19,23 @@ public class TerminalStatus {
         this.reverseResources = reverseResources;
     }
 
+    public TerminalStatus(String deviceId, String type, int status, List<MediaResource> forwardResources, List<MediaResource> reverseResources, int callFailureCode) {
+        this.deviceId = deviceId;
+        this.type = type;
+        this.status = status;
+        this.forwardResources = forwardResources;
+        this.reverseResources = reverseResources;
+        this.callFailureCode = callFailureCode;
+    }
+
+    public int getCallFailureCode() {
+        return callFailureCode;
+    }
+
+    public void setCallFailureCode(int callFailureCode) {
+        this.callFailureCode = callFailureCode;
+    }
+
     public String getDeviceId() {
         return deviceId;
     }
@@ -64,4 +81,7 @@ public class TerminalStatus {
     private int status;
     private List<MediaResource> forwardResources;
     private List<MediaResource> reverseResources;
+
+    //ÖÕ¶Ëºô½ÐÊ§°ÜÊ±µÄ´íÎóÂë
+    private int callFailureCode;
 }
