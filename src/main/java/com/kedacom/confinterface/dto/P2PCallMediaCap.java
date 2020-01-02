@@ -58,6 +58,6 @@ public class P2PCallMediaCap {
     private String codeFormat;
     @NotNull
     private String resolution;
-    private int    bitrate;
-    private int    framerate;
+    private int bitrate ;
+    private int framerate ;
 }

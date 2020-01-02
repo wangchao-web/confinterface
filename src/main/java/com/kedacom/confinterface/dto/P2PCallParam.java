@@ -2,6 +2,7 @@ package com.kedacom.confinterface.dto;
 
 import org.hibernate.validator.constraints.Range;
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.Null;
 
 public class P2PCallParam {
     public P2PCallParam(int accountType, String account, int dual ,P2PCallMediaCap videoCodec){
@@ -57,7 +58,6 @@ public class P2PCallParam {
         return new StringBuilder().append("accountType:").append(accountType)
                 .append(", account:").append(account)
                 .append(", dual:").append(dual)
-                .append(", videoCodec").append(videoCodec.toString())
                 .toString();
     }
 
@@ -69,6 +69,7 @@ public class P2PCallParam {
 
     @Range(min = 0, max = 1)
     private int dual;
+
 
     private P2PCallMediaCap videoCodec;
 }

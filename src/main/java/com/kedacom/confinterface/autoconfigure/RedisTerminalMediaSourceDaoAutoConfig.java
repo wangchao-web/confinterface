@@ -45,7 +45,6 @@ public class RedisTerminalMediaSourceDaoAutoConfig {
         jedisPoolConfig.setTestOnBorrow(redisConfig.isTestOnBorrow());
         jedisPoolConfig.setTestWhileIdle(redisConfig.isTestWhileIdle());
 
-
         return jedisPoolConfig;
     }
 

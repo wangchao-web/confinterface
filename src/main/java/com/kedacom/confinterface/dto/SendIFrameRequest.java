@@ -5,7 +5,7 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
-public class SendIFrameRequest extends BaseRequestMsg<SendIFrameResponse>{
+public class SendIFrameRequest extends BaseRequestMsg<BaseResponseMsg>{
 
     public SendIFrameRequest(String groupId, SendIFrameParam sendIFrameParam) {
         super(groupId);
@@ -18,17 +18,15 @@ public class SendIFrameRequest extends BaseRequestMsg<SendIFrameResponse>{
 
     @Override
     public void makeErrorResponseMsg(int code, HttpStatus status, String message) {
-        SendIFrameResponse sendIFrameRsp = new SendIFrameResponse(code, status.value(), message);
-        sendIFrameRsp.setSendIFrameParam(sendIFrameParam);
-        ResponseEntity<SendIFrameResponse> responseEntity = new ResponseEntity<>(sendIFrameRsp, status);
+        BaseResponseMsg sendIFrameRsp = new SendIFrameResponse(code, status.value(), message);
+        ResponseEntity<BaseResponseMsg> responseEntity = new ResponseEntity<>(sendIFrameRsp, status);
         responseMsg.setResult(responseEntity);
     }
 
     @Override
     public void makeSuccessResponseMsg() {
-        SendIFrameResponse sendIFrameRsp = new SendIFrameResponse(ConfInterfaceResult.OK.getCode(), HttpStatus.OK.value(), ConfInterfaceResult.OK.getMessage());
-        sendIFrameRsp.setSendIFrameParam(sendIFrameParam);
-        ResponseEntity<SendIFrameResponse> responseEntity = new ResponseEntity<>(sendIFrameRsp, HttpStatus.OK);
+        BaseResponseMsg sendIFrameRsp = new SendIFrameResponse(ConfInterfaceResult.OK.getCode(), HttpStatus.OK.value(), ConfInterfaceResult.OK.getMessage());
+        ResponseEntity<BaseResponseMsg> responseEntity = new ResponseEntity<>(sendIFrameRsp, HttpStatus.OK);
         responseMsg.setResult(responseEntity);
     }
 

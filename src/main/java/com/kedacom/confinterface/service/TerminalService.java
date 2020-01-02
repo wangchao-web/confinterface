@@ -177,6 +177,22 @@ public abstract class TerminalService {
         return reverseChannel;
     }
 
+    public boolean hasResourceId(boolean bReverse, String resourceId){
+        if (bReverse){
+            for (DetailMediaResouce detailMediaResouce : reverseChannel){
+                if (detailMediaResouce.getId().equals(resourceId))
+                    return true;
+            }
+        } else {
+            for (DetailMediaResouce detailMediaResouce : forwardChannel){
+                if (detailMediaResouce.getId().equals(resourceId))
+                    return true;
+            }
+        }
+
+        return false;
+    }
+
     public void setForwardChannel(CopyOnWriteArrayList<DetailMediaResouce> forwardChannel) {
         this.forwardChannel = forwardChannel;
     }
@@ -651,7 +667,7 @@ public abstract class TerminalService {
     }
 
     @Async("confTaskExecutor")
-    public TerminalOnlineStatusEnum callMt(P2PCallParam p2PCallParam) {
+    public TerminalOfflineStatusEnum callMt(P2PCallParam p2PCallParam) {
         String account = p2PCallParam.getAccount();
         RemoteParticipantInfo remoteParticipantInfo = new RemoteParticipantInfo();
         CallParameterEx callParameterEx = new CallParameterEx();
@@ -701,41 +717,82 @@ public abstract class TerminalService {
 
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, e164 + " : vmtE164 conferenceParticipant.CallRemote : " + account);
             System.out.println(e164 + " : vmtE164 conferenceParticipant.CallRemote : " + account);
-            TerminalOnlineStatusEnum terminalOnlineStatusEnum = TerminalOnlineStatusEnum.ONLINE;
+            TerminalOfflineStatusEnum terminalOfflineStatusEnum = TerminalOfflineStatusEnum.OK;
+            //TerminalOnlineStatusEnum terminalOnlineStatusEnum = TerminalOnlineStatusEnum.ONLINE;
             if (bOK) {
                 remoteMtAccount = account;
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE," CallRemote success terminalOnlineStatusEnum : " + terminalOnlineStatusEnum.getCode());
-                System.out.println(" CallRemote success terminalOnlineStatusEnum : " + terminalOnlineStatusEnum.getCode());
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE," CallRemote success terminalOfflineStatusEnum : " + terminalOfflineStatusEnum.getCode() + " : reason :  " + terminalOfflineStatusEnum.getReason());
+                System.out.println(" CallRemote success terminalOfflineStatusEnum : " + terminalOfflineStatusEnum.getCode() + " : reason :  " + terminalOfflineStatusEnum.getReason());
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "account conferenceParticipant.CallRemote success " + account);
                 System.out.println("account conferenceParticipant.CallRemote success " + account);
             } else {
                 remoteMtAccount = null;
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"callParameterEx.getErrorReason() " + callParameterEx.getErrorReason().name());
                 System.out.println("callParameterEx.getErrorReason() " + callParameterEx.getErrorReason().name());
-                terminalOnlineStatusEnum= callFailureCode(callParameterEx.getErrorReason());
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"CallRemote failed terminalOnlineStatusEnum " + terminalOnlineStatusEnum.getCode());
-                System.out.println("CallRemote failed terminalOnlineStatusEnum " + terminalOnlineStatusEnum.getCode());
+                terminalOfflineStatusEnum= callFailureCode(callParameterEx.getErrorReason());
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"CallRemote failed terminalOnlineStatusEnum " + terminalOfflineStatusEnum.getCode());
+                System.out.println("CallRemote failed terminalOnlineStatusEnum " + terminalOfflineStatusEnum.getCode());
                 LogTools.debug(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "startCallDevice(GroupID:" + groupId + " ,account: " + account + ") - [YYYY-MM-DDThh:mm:ss.SSSZ] failed Errcode:" + 50024 + "p2p call failed!");
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "account conferenceParticipant.CallRemote failed " + account);
                 System.out.println("account conferenceParticipant.CallRemote failed " + account);
             }
-            return terminalOnlineStatusEnum;
+            return terminalOfflineStatusEnum;
         }
     }
 
-    public TerminalOnlineStatusEnum callFailureCode(CallDisconnectReasonEnum callDisconnectReasonEnum){
+    public TerminalOfflineStatusEnum callFailureCode(CallDisconnectReasonEnum callDisconnectReasonEnum){
         switch (callDisconnectReasonEnum) {
+            case None:
+                //None 0 未知,协议栈未给理由
+                return TerminalOfflineStatusEnum.None;
             case Busy:
-                //3被占用
-                return TerminalOnlineStatusEnum.OCCUPIED;
-            case McuOccupy:
-                //77
-                return TerminalOnlineStatusEnum.OCCUPIED;
+                //Busy 1 终端正忙
+                return TerminalOfflineStatusEnum.Busy;
+            case Normal:
+                //Normal 2 终端正常挂断
+                return TerminalOfflineStatusEnum.Normal;
             case Rejected:
-                return TerminalOnlineStatusEnum.OCCUPIED;
+                //Rejected 3 终端拒绝
+                return TerminalOfflineStatusEnum.Rejected;
+            case Unreachable:
+                //Unreachable 4 对端不可达
+                return TerminalOfflineStatusEnum.Unreachable;
+            case Local:
+                //Local 5 本地挂断
+                return TerminalOfflineStatusEnum.Local;
+            case Unknown:
+                //Unknown 6 理由未知
+                return TerminalOfflineStatusEnum.Unknown;
+            case NoBandwidth:
+                //NoBandwidth 7 带宽不足
+                return TerminalOfflineStatusEnum.NoBandwidth;
+            case NoPermission:
+                //NoPermission 8 权限不足
+                return TerminalOfflineStatusEnum.NoPermission;
+            case UnreachableGatekeeper:
+                //UnreachableGatekeeper 9 Gk不可达
+                return TerminalOfflineStatusEnum.UnreachableGatekeeper;
+            case McuOccupy:
+                //McuOccupy 10 Mcu占用
+                return TerminalOfflineStatusEnum.McuOccupy;
+            case Reconnect:
+                //Reconnect 11 重新连接
+                return TerminalOfflineStatusEnum.Reconnect;
+            case ConfHolding:
+                //ConfHolding 12 会议正举行
+                return TerminalOfflineStatusEnum.ConfHolding;
+            case Hascascaded:
+                //Hascascaded 13 终端已经级联
+                return TerminalOfflineStatusEnum.Hascascaded;
+            case Custom:
+                //Custom 14 自定义
+                return TerminalOfflineStatusEnum.Custom;
+            case Adaptivebusy:
+                //Adaptivebusy 15 适配器忙
+                return TerminalOfflineStatusEnum.Adaptivebusy;
             default:
-                //6 会议终端故障(包括None,Unreachable,Local,Unknown,NoBandwidth,NoPermission,UnreachableGatekeeper,Reconnect,ConfHolding,Hascascaded,Custom,Adaptivebusy)
-                return TerminalOnlineStatusEnum.FAULT;
+                //其余未知理由
+                return TerminalOfflineStatusEnum.None;
         }
     }
 

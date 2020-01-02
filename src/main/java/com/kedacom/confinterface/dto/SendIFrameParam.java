@@ -5,30 +5,19 @@ import javax.validation.constraints.NotEmpty;
 import java.util.List;
 
 public class SendIFrameParam {
-    public String getMtE164() {
-        return mtE164;
+    public String getResourceId() {
+        return resourceId;
     }
 
-    public void setMtE164(String mtE164) {
-        this.mtE164 = mtE164;
-    }
-
-    public List<String> getResourceIds() {
-        return resourceIds;
-    }
-
-    public void setResourceIds(List<String> resourceIds) {
-        this.resourceIds = resourceIds;
+    public void setResourceId(String resourceId) {
+        this.resourceId = resourceId;
     }
 
     @Override
     public String toString() {
-        return new StringBuilder().append("mtE164:").append(mtE164).append(", resourceIds:").append(resourceIds).toString();
+        return new StringBuilder().append("resourceId:").append(resourceId).toString();
     }
 
     @NotBlank
-    private String mtE164;
-
-    @NotEmpty
-    private List<String> resourceIds;
+    private String resourceId;
 }

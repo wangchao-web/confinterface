@@ -148,7 +148,7 @@ public class ConfInterfaceController {
     }
 
     @PostMapping(value = "/iframe")
-    public DeferredResult<ResponseEntity<SendIFrameResponse>> sendIFrame(@RequestParam("GroupId") String groupId, @Valid @RequestBody SendIFrameParam sendIFrameParam){
+    public DeferredResult<ResponseEntity<BaseResponseMsg>> sendIFrame(@RequestParam("GroupId") String groupId, @Valid @RequestBody SendIFrameParam sendIFrameParam){
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now in sendIFrame, groupId:"+groupId+", iframeParam:"+sendIFrameParam);
         System.out.println("now in sendIFrame, groupId:"+groupId+", iframeParam:"+sendIFrameParam);
         SendIFrameRequest sendIFrameRequest = new SendIFrameRequest(groupId, sendIFrameParam);
@@ -252,7 +252,7 @@ public class ConfInterfaceController {
 
     @GetMapping(value = "/version")
     public String queryVersion(){
-        return "confinterface-V.1.0.7";
+        return "confinterface-V.1.0.8";
     }
 
     private DeferredResult<ResponseEntity<BaseResponseMsg>> silenceOrMute(String groupId, String mtE164, boolean silence, SilenceOrMuteParam silenceOrMuteParam){

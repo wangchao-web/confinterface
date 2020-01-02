@@ -43,7 +43,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
     public void run(String... args) throws Exception {
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "now in ConfInterfaceInitializingService, protocalType:" + baseSysConfig.getProtocalType());
         System.out.println("now in ConfInterfaceInitializingService, protocalType:" + baseSysConfig.getProtocalType());
-        System.out.println("confinterface-V.1.0.7-12.27");
+        System.out.println("confinterface-V.1.0.8-1.2");
         createConferenceManage();
         //初始化协议栈
         initConfAdapter();
