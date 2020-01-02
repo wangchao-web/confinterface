@@ -177,6 +177,22 @@ public abstract class TerminalService {
         return reverseChannel;
     }
 
+    public boolean hasResourceId(boolean bReverse, String resourceId){
+        if (bReverse){
+            for (DetailMediaResouce detailMediaResouce : reverseChannel){
+                if (detailMediaResouce.getId().equals(resourceId))
+                    return true;
+            }
+        } else {
+            for (DetailMediaResouce detailMediaResouce : forwardChannel){
+                if (detailMediaResouce.getId().equals(resourceId))
+                    return true;
+            }
+        }
+
+        return false;
+    }
+
     public void setForwardChannel(CopyOnWriteArrayList<DetailMediaResouce> forwardChannel) {
         this.forwardChannel = forwardChannel;
     }

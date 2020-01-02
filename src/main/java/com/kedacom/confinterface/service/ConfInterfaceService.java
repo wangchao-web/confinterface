@@ -900,44 +900,33 @@ public class ConfInterfaceService {
     public void sendIFrame(SendIFrameRequest sendIFrameRequest) {
         String groupId = sendIFrameRequest.getGroupId();
         SendIFrameParam sendIFrameParam = sendIFrameRequest.getSendIFrameParam();
-        String account = sendIFrameParam.getMtE164();
+        String resourceId = sendIFrameParam.getResourceId();
         TerminalService vmtService;
 
-        if (sendIFrameParam.getMtE164().isEmpty()) {
-            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50012 : invalid param!");
+        if (resourceId.isEmpty()){
+            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50012 : invalid param! resourceId is empty!");
             sendIFrameRequest.makeErrorResponseMsg(ConfInterfaceResult.INVALID_PARAM.getCode(), HttpStatus.OK, ConfInterfaceResult.INVALID_PARAM.getMessage());
             return;
         }
 
         GroupConfInfo groupConfInfo = groupConfInfoMap.get(groupId);
         if (null != groupConfInfo) {
-            TerminalService mtService = groupConfInfo.getMtMember(account);
-            if (null == mtService) {
-                LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50015 : terminal not exist in this conference!");
-                sendIFrameRequest.makeErrorResponseMsg(ConfInterfaceResult.TERMINAL_NOT_EXIST.getCode(), HttpStatus.OK, ConfInterfaceResult.TERMINAL_NOT_EXIST.getMessage());
-                return;
-            }
-
-            vmtService = groupConfInfo.getDstInspectionVmtTerminal(mtService);
-            if(null == vmtService) {
-                LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50012 : invalid param!");
-                sendIFrameRequest.makeErrorResponseMsg(ConfInterfaceResult.INVALID_PARAM.getCode(), HttpStatus.OK, ConfInterfaceResult.INVALID_PARAM.getMessage());
-                return;
-            }
+            vmtService = groupConfInfo.getVmt(resourceId);
         } else {
             P2PCallGroup p2PCallGroup = p2pCallGroupMap.get(groupId);
             if (null == p2PCallGroup) {
-                LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50002 : group not exist!");
+                LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50002 : P2P group not exist!");
                 sendIFrameRequest.makeErrorResponseMsg(ConfInterfaceResult.GROUP_NOT_EXIST.getCode(), HttpStatus.OK, ConfInterfaceResult.GROUP_NOT_EXIST.getMessage());
                 return;
             }
 
-            vmtService = p2PCallGroup.getVmt(account);
-            if (null == vmtService) {
-                LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50015 : terminal not exist in this conference!");
-                sendIFrameRequest.makeErrorResponseMsg(ConfInterfaceResult.TERMINAL_NOT_EXIST.getCode(), HttpStatus.OK, ConfInterfaceResult.TERMINAL_NOT_EXIST.getMessage());
-                return;
-            }
+            vmtService = p2PCallGroup.getVmtByResourceId(resourceId);
+        }
+
+        if(null == vmtService) {
+            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50012 : invalid param! resourceId:" + resourceId);
+            sendIFrameRequest.makeErrorResponseMsg(ConfInterfaceResult.INVALID_PARAM.getCode(), HttpStatus.OK, ConfInterfaceResult.INVALID_PARAM.getMessage());
+            return;
         }
 
         boolean bOK = vmtService.sendIFrame();

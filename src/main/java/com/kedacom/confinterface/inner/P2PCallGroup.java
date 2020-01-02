@@ -2,6 +2,8 @@ package com.kedacom.confinterface.inner;
 
 import com.kedacom.confinterface.service.TerminalService;
 
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class P2PCallGroup {
@@ -25,6 +27,17 @@ public class P2PCallGroup {
 
     public TerminalService getVmt(String mtAccount){
         return callMemberMap.get(mtAccount);
+    }
+
+    public TerminalService getVmtByResourceId(String resourceId){
+        for (Map.Entry<String, TerminalService> callMember : callMemberMap.entrySet()) {
+            TerminalService terminalService  = callMember.getValue();
+
+            if (terminalService.hasResourceId(true, resourceId))
+                return terminalService;
+        }
+
+        return null;
     }
 
     private String groupId;

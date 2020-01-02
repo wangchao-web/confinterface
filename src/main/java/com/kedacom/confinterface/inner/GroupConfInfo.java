@@ -153,6 +153,16 @@ public class GroupConfInfo {
         return usedVmtMembers.get(vmtE164);
     }
 
+    public TerminalService getVmt(String resourceId){
+        for (Map.Entry<String, TerminalService> vmtMember : usedVmtMembers.entrySet()){
+            TerminalService terminalService = vmtMember.getValue();
+            if (terminalService.hasResourceId(true, resourceId))
+                return terminalService;
+        }
+
+        return null;
+    }
+
     public void delVmtMembers(List<Terminal> vmts){
         synchronized (this) {
             for (Terminal vmt : vmts) {
