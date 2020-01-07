@@ -235,8 +235,8 @@ public class McuRestClientService {
 
     public List<JoinConferenceRspMtInfo> joinConference(String confId, List<Terminal> mts) {
         if (!loginSuccess) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"joinConference, has login out!!!");
-            System.out.println("joinConference, has login out!!!");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"[joinConference] has login out!!!");
+            System.out.println("[joinConference] has login out!!!");
             return null;
         }
 
@@ -247,8 +247,14 @@ public class McuRestClientService {
 
         List<JoinConferenceMtInfo> joinConferenceMtInfos = new ArrayList<>();
         for (Terminal mt : mts) {
+            String account = mt.getMtE164();
             JoinConferenceMtInfo joinConferenceMtInfo = new JoinConferenceMtInfo();
-            joinConferenceMtInfo.setAccount(mt.getMtE164());
+            joinConferenceMtInfo.setAccount(account);
+            if (account.contains(".") || account.contains("::")){
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"[joinConference] terminal account is ip : " + account);
+                System.out.println("[joinConference] terminal account is ip : " + account);
+                joinConferenceMtInfo.setAccount_type(7);  //设置账号类型为IP
+            }
             joinConferenceMtInfo.setBitrate(mcuRestConfig.getBitrate());
             joinConferenceMtInfo.setProtocol(mcuRestConfig.getProtocalCode());
 
@@ -262,20 +268,20 @@ public class McuRestClientService {
         mcuPostMsg.setParams(joinConferenceMts);
         JoinConferenceResponse response = restClientService.exchange(url.toString(), HttpMethod.POST, mcuPostMsg.getMsg(), urlencodeMediaType, args, JoinConferenceResponse.class);
         if (null == response) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"JoinConferenceResponse null!");
-            System.out.println("JoinConferenceResponse null!");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"[joinConference] JoinConferenceResponse null!");
+            System.out.println("[joinConference] JoinConferenceResponse null!");
             return null;
         }
 
         if (response.success()) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"JoinConferenceResponse success, confId : " + confId);
-            System.out.println("JoinConferenceResponse success, confId : " + confId);
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"[joinConference] JoinConferenceResponse success, confId : " + confId);
+            System.out.println("[joinConference] JoinConferenceResponse success, confId : " + confId);
             subscribeConfMts(confId);
             return response.getMts();
         } else {
             int errorCode = response.getError_code();
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"join conference failed! errcode : " + errorCode + ", errMsg : " + McuStatus.resolve(errorCode).getDescription());
-            System.out.println("join conference failed! errcode : " + errorCode + ", errMsg : " + McuStatus.resolve(errorCode).getDescription());
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"[joinConference] join conference failed! errcode : " + errorCode + ", errMsg : " + McuStatus.resolve(errorCode).getDescription());
+            System.out.println("[joinConference] join conference failed! errcode : " + errorCode + ", errMsg : " + McuStatus.resolve(errorCode).getDescription());
         }
 
         return null;
