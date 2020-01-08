@@ -4,6 +4,7 @@ import com.kedacom.confinterface.LogService.LogOutputTypeEnum;
 import com.kedacom.confinterface.LogService.LogTools;
 import com.kedacom.confinterface.dto.*;
 import com.kedacom.confinterface.inner.SubscribeMsgTypeEnum;
+import com.kedacom.confinterface.service.ConfInterfaceInitializingService;
 import com.kedacom.confinterface.service.ConfInterfaceService;
 import com.kedacom.confinterface.service.ConfInterfacePublishService;
 import com.kedacom.confinterface.util.ConfInterfaceResult;
@@ -252,7 +253,7 @@ public class ConfInterfaceController {
 
     @GetMapping(value = "/version")
     public String queryVersion(){
-        return "confinterface-V.1.0.8";
+        return ConfInterfaceInitializingService.VERSION;
     }
 
     private DeferredResult<ResponseEntity<BaseResponseMsg>> silenceOrMute(String groupId, String mtE164, boolean silence, SilenceOrMuteParam silenceOrMuteParam){

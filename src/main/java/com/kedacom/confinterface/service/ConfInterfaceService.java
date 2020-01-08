@@ -902,8 +902,9 @@ public class ConfInterfaceService {
         SendIFrameParam sendIFrameParam = sendIFrameRequest.getSendIFrameParam();
         String resourceId = sendIFrameParam.getResourceId();
         TerminalService vmtService;
-
-        if (resourceId.isEmpty()){
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "resourceId : " + resourceId);
+        System.out.println("resourceId : " + resourceId);
+        if (resourceId.isEmpty()) {
             LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50012 : invalid param! resourceId is empty!");
             sendIFrameRequest.makeErrorResponseMsg(ConfInterfaceResult.INVALID_PARAM.getCode(), HttpStatus.OK, ConfInterfaceResult.INVALID_PARAM.getMessage());
             return;
@@ -923,15 +924,18 @@ public class ConfInterfaceService {
             vmtService = p2PCallGroup.getVmtByResourceId(resourceId);
         }
 
-        if(null == vmtService) {
+        if (null == vmtService) {
             LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50012 : invalid param! resourceId:" + resourceId);
             sendIFrameRequest.makeErrorResponseMsg(ConfInterfaceResult.INVALID_PARAM.getCode(), HttpStatus.OK, ConfInterfaceResult.INVALID_PARAM.getMessage());
             return;
         }
 
         boolean bOK = vmtService.sendIFrame();
-
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "bOK :" + bOK);
+        System.out.println("bOK :" + bOK);
         if (bOK) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "send frame success");
+            System.out.println("send frame success");
             sendIFrameRequest.makeSuccessResponseMsg();
         } else {
             LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50014 : send i frame!");
@@ -1124,6 +1128,17 @@ public class ConfInterfaceService {
         final String groupId = p2PCallRequest.getGroupId();
         String mtAccount = p2PCallParam.getAccount();
 
+        P2PCallGroup callGroup = p2pCallGroupMap.get(groupId);
+        if (callGroup != null) {
+            ConcurrentHashMap<String, TerminalService> callMap = callGroup.getCallMap();
+            for (String mtAccounts : callMap.keySet()) {
+                if (mtAccount.equals(mtAccounts)) {
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50025 : " + " Error: The terminal has been called in the current group : " + groupId);
+                    p2PCallRequest.makeErrorResponseMsg(ConfInterfaceResult.TERMINALHASBEENCALLED.getCode(), HttpStatus.OK, ConfInterfaceResult.TERMINALHASBEENCALLED.getMessage());
+                    return;
+                }
+            }
+        }
         P2PCallGroup p2PCallGroup = p2pCallGroupMap.computeIfAbsent(groupId, k -> new P2PCallGroup(groupId));
       /*  if (p2PCallParam.isDual()) {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "mtAccount : " + mtAccount);
@@ -1154,16 +1169,17 @@ public class ConfInterfaceService {
         p2PCallRequest.makeSuccessResponseMsg();
         if (!p2PCallParam.isDual()) {
             p2PCallRequest.setWaitMsg(new ArrayList<>(Arrays.asList(waitMsg, waitMsg, waitMsg, waitMsg)));
-            TerminalOfflineStatusEnum terminalOfflineStatusEnum = vmtService.callMt(p2PCallParam);
-            if (terminalOfflineStatusEnum.getCode() == 200) {
+            TerminalOfflineReasonEnum terminalOfflineReasonEnum = vmtService.callMt(p2PCallParam);
+            if (terminalOfflineReasonEnum.getCode() == 200) {
                 vmtService.setDualStream(true);
+                p2PCallGroup.addCallMember(mtAccount, vmtService);
             } else {
                 vmtService.delWaitMsg(waitMsg);
                 //vmtService.publishStatus(mtAccount, TerminalOnlineStatusEnum.OFFLINE.getCode());
                 //加上终端呼叫失败的错误码
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"callRemoteCap faileCode" + terminalOfflineStatusEnum.getCode());
-                System.out.println("callRemoteCap faileCode" + terminalOfflineStatusEnum.getCode() );
-                TerminalManageService.publishStatus(mtAccount, groupId, TerminalOnlineStatusEnum.OFFLINE.getCode(),terminalOfflineStatusEnum.getCode());
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "callRemoteCap faileCode" + terminalOfflineReasonEnum.getCode());
+                System.out.println("callRemoteCap faileCode" + terminalOfflineReasonEnum.getCode());
+                TerminalManageService.publishStatus(mtAccount, groupId, TerminalOnlineStatusEnum.OFFLINE.getCode(), terminalOfflineReasonEnum.getCode());
                 //vmtService.publishStatus(mtAccount, TerminalOnlineStatusEnum.OFFLINE.getCode(),callRemoteCap.getTerminalOnlineStatusEnum().getCode());
                 terminalManageService.freeVmt(vmtService.getE164());
                 vmtService.setGroupId(null);
@@ -1262,7 +1278,7 @@ public class ConfInterfaceService {
 
         TerminalService vmtService = p2PCallGroup.getVmt(deviceId);
         if (null == vmtService) {
-            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"statusNotify, not find vmtService, deviceId: " + deviceId);
+            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "statusNotify, not find vmtService, deviceId: " + deviceId);
             return;
         }
 

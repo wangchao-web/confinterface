@@ -29,7 +29,8 @@ public enum ConfInterfaceResult {
     MAINSTREAM_NOT_EXIST(50026,"mainstream doesn't exist"),
     CLOSE_CHANNEL(50023, "close logical channel failed!"),
     P2PCALL(50024, "p2p call failed!"),
-    P2PCANCELCALL(50025, "p2p cancelCallMt failed!");
+    P2PCANCELCALL(50025, "p2p cancelCallMt failed!"),
+    TERMINALHASBEENCALLED(50026,"The terminal has been called");
 
     public int getCode(){
         return code;

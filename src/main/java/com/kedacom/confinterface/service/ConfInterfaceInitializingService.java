@@ -1,8 +1,5 @@
 package com.kedacom.confinterface.service;
-import com.kedacom.confadapter.ConferenceManagerFactory;
-import com.kedacom.confadapter.ConferenceProtoEnum;
-import com.kedacom.confadapter.IConferenceAdapterController;
-import com.kedacom.confadapter.IConferenceManager;
+import com.kedacom.confadapter.*;
 import com.kedacom.confinterface.LogService.LogOutputTypeEnum;
 import com.kedacom.confinterface.LogService.LogTools;
 import com.kedacom.confinterface.dao.BroadcastSrcMediaInfo;
@@ -27,11 +24,13 @@ import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -43,7 +42,8 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
     public void run(String... args) throws Exception {
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "now in ConfInterfaceInitializingService, protocalType:" + baseSysConfig.getProtocalType());
         System.out.println("now in ConfInterfaceInitializingService, protocalType:" + baseSysConfig.getProtocalType());
-        System.out.println("confinterface-V.1.0.8-1.02");
+
+        PrintBuildTime();
         createConferenceManage();
         //初始化协议栈
         initConfAdapter();
@@ -467,6 +467,20 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
         // 把字符串所有小写字母改为大写成为正规的mac地址并返回
         return sb.toString().toUpperCase();
     }
+    private static void PrintBuildTime() {
+        String utcBuildTime = "2020-01-08 14:24:12";
+        /*SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+        try {
+            Date utcBuildDate = sdf.parse(utcBuildTime);
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        sdf.setTimeZone(TimeZone.getDefault());*/
+
+        System.out.println("confinterface Compile time:" + utcBuildTime);
+        System.out.println("confinterface version " + VERSION);
+    }
 
     @Autowired
     private BaseSysConfig baseSysConfig;
@@ -489,5 +503,8 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
     @Autowired(required=false)
     private McuSdkClientService mcuSdkClientService;
 
+    public static final String VERSION = "confinterface-V.1.0.9";
+
     //protected final org.slf4j.Logger logger = LoggerFactory.getLogger(this.getClass());
+
 }

@@ -303,7 +303,7 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
         System.out.println("terminal (e164: " + failE164 + " ) join conference failed, error_code : " + subscribeEvent.getErrorCode());
 
         int status = 255;
-        TerminalOfflineStatusEnum terminalOfflineStatusEnum = TerminalOfflineStatusEnum.None;
+        TerminalOfflineReasonEnum terminalOfflineReasonEnum = TerminalOfflineReasonEnum.None;
         TerminalService terminalService = groupConfInfo.getMember(failE164);
         if (20423 == subscribeEvent.getErrorCode()) {
             status = TerminalOnlineStatusEnum.OCCUPIED.getCode();
@@ -321,30 +321,30 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
         }else if(21509 == subscribeEvent.getErrorCode()){
             //返回该错误码时，表明对端正忙，因此入会失败
             status = TerminalOnlineStatusEnum.OFFLINE.getCode();
-            terminalOfflineStatusEnum = TerminalOfflineStatusEnum.Busy;
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"TerminalOfflineStatusEnum.Busy.getReason() : "+TerminalOfflineStatusEnum.Busy.getReason());
-            System.out.println("TerminalOfflineStatusEnum.Busy.getReason() : "+TerminalOfflineStatusEnum.Busy.getReason());
+            terminalOfflineReasonEnum = TerminalOfflineReasonEnum.Busy;
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"TerminalOfflineReasonEnum.Busy.getReason() : "+ TerminalOfflineReasonEnum.Busy.getReason());
+            System.out.println("TerminalOfflineReasonEnum.Busy.getReason() : "+ TerminalOfflineReasonEnum.Busy.getReason());
             terminalService.setOnline(status);
         }else if(20403 == subscribeEvent.getErrorCode()){
             //返回该错误码时，指定终端已在会议中，因此入会失败
             status = TerminalOnlineStatusEnum.OFFLINE.getCode();
-            terminalOfflineStatusEnum = TerminalOfflineStatusEnum.McuOccupy;
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"TerminalOfflineStatusEnum.McuOccupy.getReason() : "+TerminalOfflineStatusEnum.McuOccupy.getReason());
-            System.out.println("TerminalOfflineStatusEnum.McuOccupy.getReason() : "+TerminalOfflineStatusEnum.McuOccupy.getReason());
+            terminalOfflineReasonEnum = TerminalOfflineReasonEnum.McuOccupy;
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"TerminalOfflineReasonEnum.McuOccupy.getReason() : "+ TerminalOfflineReasonEnum.McuOccupy.getReason());
+            System.out.println("TerminalOfflineReasonEnum.McuOccupy.getReason() : "+ TerminalOfflineReasonEnum.McuOccupy.getReason());
             terminalService.setOnline(status);
         }else if(20402 == subscribeEvent.getErrorCode()){
             //返回该错误码时，指定终端拒绝加入会议，因此入会失败
             status = TerminalOnlineStatusEnum.OFFLINE.getCode();
-            terminalOfflineStatusEnum = TerminalOfflineStatusEnum.Rejected;
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"TerminalOfflineStatusEnum.Rejected.getReason() : "+TerminalOfflineStatusEnum.Rejected.getReason());
-            System.out.println("TerminalOfflineStatusEnum.Rejected.getReason() : "+TerminalOfflineStatusEnum.Rejected.getReason());
+            terminalOfflineReasonEnum = TerminalOfflineReasonEnum.Rejected;
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"TerminalOfflineReasonEnum.Rejected.getReason() : "+ TerminalOfflineReasonEnum.Rejected.getReason());
+            System.out.println("TerminalOfflineReasonEnum.Rejected.getReason() : "+ TerminalOfflineReasonEnum.Rejected.getReason());
             terminalService.setOnline(status);
         }else if(21511 == subscribeEvent.getErrorCode()){
             //返回该错误码时，对端正常挂断，因此入会失败
             status = TerminalOnlineStatusEnum.OFFLINE.getCode();
-            terminalOfflineStatusEnum = TerminalOfflineStatusEnum.Normal;
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"TerminalOfflineStatusEnum.Normal.getReason() : "+TerminalOfflineStatusEnum.Normal.getReason());
-            System.out.println("TerminalOfflineStatusEnum.Normal.getReason() : "+TerminalOfflineStatusEnum.Normal.getReason());
+            terminalOfflineReasonEnum = TerminalOfflineReasonEnum.Normal;
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"TerminalOfflineReasonEnum.Normal.getReason() : "+ TerminalOfflineReasonEnum.Normal.getReason());
+            System.out.println("TerminalOfflineReasonEnum.Normal.getReason() : "+ TerminalOfflineReasonEnum.Normal.getReason());
             terminalService.setOnline(status);
         }
         else{
@@ -353,7 +353,7 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
         }
 
         if (!terminalService.isVmt()) {
-            TerminalManageService.publishStatus(terminalService.getE164(), terminalService.getGroupId(), status,terminalOfflineStatusEnum.getCode());
+            TerminalManageService.publishStatus(terminalService.getE164(), terminalService.getGroupId(), status, terminalOfflineReasonEnum.getCode());
         }
     }
 
