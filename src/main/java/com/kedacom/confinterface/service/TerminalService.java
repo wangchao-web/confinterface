@@ -703,11 +703,11 @@ public abstract class TerminalService {
                 System.out.println("videoCodec is null ******");
                 bOK = conferenceParticipant.CallRemote(remoteParticipantInfo);
             }else{
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"videoCodec.getCodeFormat() : " + videoCodec.getCodeFormat() + " ,videoCodec.getResolution()" + videoCodec.getResolution() + " ,videoCodec.getBitrate() :" + videoCodec.getBitrate()+ " ,videoCodec.getFramerate()" + videoCodec.getFramerate());
-                System.out.println("videoCodec.getCodeFormat() : " + videoCodec.getCodeFormat() + " ,videoCodec.getResolution()" + videoCodec.getResolution() + " ,videoCodec.getBitrate() :" + videoCodec.getBitrate() + " ,videoCodec.getFramerate()" + videoCodec.getFramerate());
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"videoCodec.getCodecFormat() : " + videoCodec.getCodecFormat() + " ,videoCodec.getResolution()" + videoCodec.getResolution() + " ,videoCodec.getBitrate() :" + videoCodec.getBitrate()+ " ,videoCodec.getFramerate()" + videoCodec.getFramerate());
+                System.out.println("videoCodec.getCodecFormat() : " + videoCodec.getCodecFormat() + " ,videoCodec.getResolution()" + videoCodec.getResolution() + " ,videoCodec.getBitrate() :" + videoCodec.getBitrate() + " ,videoCodec.getFramerate()" + videoCodec.getFramerate());
                 MediaCodec mediaCodec = new MediaCodec();
                 mediaCodec.getVideoCapability().setBitrate(videoCodec.getBitrate());
-                mediaCodec.getVideoCapability().setEncodingFormat(EncodingFormatEnum.FromName(videoCodec.getCodeFormat()));
+                mediaCodec.getVideoCapability().setEncodingFormat(EncodingFormatEnum.FromName(videoCodec.getCodecFormat()));
                 mediaCodec.getVideoCapability().setResolution(ResolutionEnum.fromName(videoCodec.getResolution()));
                 mediaCodec.getVideoCapability().setFramerate(videoCodec.getFramerate());
                 callParameterEx.setCodec(mediaCodec);
@@ -1493,7 +1493,7 @@ public abstract class TerminalService {
         MediaCodec mediaCodec = new MediaCodec();
         VideoCodecCapability videoCodecCapability = new VideoCodecCapability();
 
-        videoCodecCapability.setEncodingFormat(EncodingFormatEnum.FromName(p2PCallMediaCap.getCodeFormat()));
+        videoCodecCapability.setEncodingFormat(EncodingFormatEnum.FromName(p2PCallMediaCap.getCodecFormat()));
         videoCodecCapability.setResolution(ResolutionEnum.fromName(p2PCallMediaCap.getResolution()));
         videoCodecCapability.setBitrate(p2PCallMediaCap.getBitrate());
         videoCodecCapability.setFramerate(p2PCallMediaCap.getFramerate());
