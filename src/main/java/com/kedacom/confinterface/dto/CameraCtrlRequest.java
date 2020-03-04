@@ -6,18 +6,9 @@ import org.springframework.http.ResponseEntity;
 
 public class CameraCtrlRequest extends BaseRequestMsg<BaseResponseMsg> {
 
-    public CameraCtrlRequest(String groupId, String mtE164, CameraCtrlParam cameraCtrlParam) {
+    public CameraCtrlRequest(String groupId, CameraCtrlParam cameraCtrlParam) {
         super(groupId);
-        this.mtE164 = mtE164;
         this.cameraCtrlParam = cameraCtrlParam;
-    }
-
-    public String getMtE164() {
-        return mtE164;
-    }
-
-    public void setMtE164(String mtE164) {
-        this.mtE164 = mtE164;
     }
 
     public CameraCtrlParam getCameraCtrlParam() {
@@ -42,6 +33,5 @@ public class CameraCtrlRequest extends BaseRequestMsg<BaseResponseMsg> {
         responseMsg.setResult(responseEntity);
     }
 
-    private String mtE164;
     private CameraCtrlParam cameraCtrlParam;
 }

@@ -2,7 +2,17 @@ package com.kedacom.confinterface.dto;
 
 import org.hibernate.validator.constraints.Range;
 
+import javax.validation.constraints.NotBlank;
+
 public class CameraCtrlParam {
+
+    public String getResourceId() {
+        return resourceId;
+    }
+
+    public void setResourceId(String resourceId) {
+        this.resourceId = resourceId;
+    }
 
     public int getState() {
         return state;
@@ -24,6 +34,9 @@ public class CameraCtrlParam {
     public String toString() {
         return new StringBuilder().append("state:").append(state).append(", type:").append(type).toString();
     }
+
+    @NotBlank
+    private String resourceId;
 
     @Range(min = 0, max = 1)
     private int state;   //摄像头状态,0-开始,1-停止

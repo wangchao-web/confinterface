@@ -871,26 +871,54 @@ public class ConfInterfaceService {
         }
 
         String groupId = cameraCtrlRequest.getGroupId();
+        CameraCtrlParam cameraCtrlParam = cameraCtrlRequest.getCameraCtrlParam();
+        String resourceId = cameraCtrlParam.getResourceId();
+
         GroupConfInfo groupConfInfo = groupConfInfoMap.get(groupId);
-        if (null == groupConfInfo) {
-            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50002 : group not exist!");
-            cameraCtrlRequest.makeErrorResponseMsg(ConfInterfaceResult.GROUP_NOT_EXIST.getCode(), HttpStatus.OK, ConfInterfaceResult.GROUP_NOT_EXIST.getMessage());
-            return;
-        }
+        if (null != groupConfInfo) {
+            TerminalService vmtService = groupConfInfo.getVmt(resourceId);
+            if (null == vmtService) {
+                LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "ctrlCamera, has not found vmt by resourceId : " + resourceId);
+                cameraCtrlRequest.makeErrorResponseMsg(ConfInterfaceResult.INVALID_PARAM.getCode(), HttpStatus.OK, ConfInterfaceResult.INVALID_PARAM.getMessage());
+                return;
+            }
 
-        String confId = groupConfInfo.getConfId();
-        TerminalService mtService = groupConfInfo.getMtMember(cameraCtrlRequest.getMtE164());
-        if (null == mtService) {
-            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50015 : terminal not exist in this conference!");
-            cameraCtrlRequest.makeErrorResponseMsg(ConfInterfaceResult.TERMINAL_NOT_EXIST.getCode(), HttpStatus.OK, ConfInterfaceResult.TERMINAL_NOT_EXIST.getMessage());
-            return;
-        }
+            TerminalService mtService = groupConfInfo.getSrcInspectionTerminal(vmtService);
+            if (null == mtService) {
+                LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "ctrlCamera, vmt(" + vmtService.getE164() + ") not inspect mt!");
+                cameraCtrlRequest.makeErrorResponseMsg(ConfInterfaceResult.TERMINAL_NOT_EXIST.getCode(), HttpStatus.OK, ConfInterfaceResult.TERMINAL_NOT_EXIST.getMessage());
+                return;
+            }
 
-        McuStatus mcuStatus = mcuRestClientService.ctrlCamera(confId, mtService.getMtId(), cameraCtrlRequest.getCameraCtrlParam());
-        if (null == mcuStatus || mcuStatus.getValue() > 0) {
-            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50007 : control camera failed!");
-            cameraCtrlRequest.makeErrorResponseMsg(ConfInterfaceResult.CONTROL_CAMERA.getCode(), HttpStatus.OK, mcuStatus.getDescription());
-            return;
+            String confId = groupConfInfo.getConfId();
+            McuStatus mcuStatus = mcuRestClientService.ctrlCamera(confId, mtService.getMtId(), cameraCtrlRequest.getCameraCtrlParam());
+            if (null == mcuStatus || mcuStatus.getValue() > 0) {
+                LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50007 : mcu control camera failed!");
+                cameraCtrlRequest.makeErrorResponseMsg(ConfInterfaceResult.CONTROL_CAMERA.getCode(), HttpStatus.OK, mcuStatus.getDescription());
+                return;
+            }
+        } else {
+            //如果点对点呼叫，则通过H323协议栈进行控制
+            P2PCallGroup p2PCallGroup = p2pCallGroupMap.get(groupId);
+            if (null == p2PCallGroup) {
+                LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50002 : P2P group not exist!");
+                cameraCtrlRequest.makeErrorResponseMsg(ConfInterfaceResult.GROUP_NOT_EXIST.getCode(), HttpStatus.OK, ConfInterfaceResult.GROUP_NOT_EXIST.getMessage());
+                return;
+            }
+
+            TerminalService vmtService = p2PCallGroup.getVmtByResourceId(resourceId);
+            if (null == vmtService) {
+                LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "ctrlCamera, p2pCall, has not found vmt by resourceId : " + resourceId);
+                cameraCtrlRequest.makeErrorResponseMsg(ConfInterfaceResult.INVALID_PARAM.getCode(), HttpStatus.OK, ConfInterfaceResult.INVALID_PARAM.getMessage());
+                return;
+            }
+
+            boolean bOK = vmtService.ctrlCamera(cameraCtrlParam.getState(), cameraCtrlParam.getType());
+            if (!bOK){
+                LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50007 : protocol control camera failed!");
+                cameraCtrlRequest.makeErrorResponseMsg(ConfInterfaceResult.CONTROL_CAMERA.getCode(), HttpStatus.OK, ConfInterfaceResult.CONTROL_CAMERA.getMessage());
+                return;
+            }
         }
 
         cameraCtrlRequest.makeSuccessResponseMsg();

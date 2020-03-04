@@ -549,6 +549,10 @@ public abstract class TerminalService {
         return conferenceParticipant.RequestKeyframe();
     }
 
+    public boolean ctrlCamera(int state, int type){
+        return true;
+    }
+
     public void clearExchange() {
         List<DetailMediaResouce> forwardMediaResouces = forwardChannel;
         List<DetailMediaResouce> reverseMediaResouces = reverseChannel;

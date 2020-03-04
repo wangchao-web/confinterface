@@ -123,11 +123,11 @@ public class ConfInterfaceController {
         return cancelInspectionRequest.getResponseMsg();
     }
 
-    @PostMapping(value = "/mts/{mtE164}/camera")
-    public DeferredResult<ResponseEntity<BaseResponseMsg>> ctrlCamera(@RequestParam("GroupId") String groupId, @PathVariable String mtE164, @Valid @RequestBody CameraCtrlParam cameraCtrlParam) {
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now in ctrlCamera, groupId: " + groupId + ", mtE164:" + mtE164 + ", CameraCtrlParam:" + cameraCtrlParam + ", time : " + System.currentTimeMillis());
-        System.out.println("now in ctrlCamera, groupId: " + groupId + ", mtE164:" + mtE164 + ", CameraCtrlParam:" + cameraCtrlParam + ", time : " + System.currentTimeMillis());
-        CameraCtrlRequest cameraCtrlRequest = new CameraCtrlRequest(groupId, mtE164, cameraCtrlParam);
+    @PostMapping(value = "/cameracontrol")
+    public DeferredResult<ResponseEntity<BaseResponseMsg>> ctrlCamera(@RequestParam("GroupId") String groupId, @Valid @RequestBody CameraCtrlParam cameraCtrlParam) {
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now in ctrlCamera, groupId: " + groupId + ", CameraCtrlParam:" + cameraCtrlParam + ", time : " + System.currentTimeMillis());
+        System.out.println("now in ctrlCamera, groupId: " + groupId + ", CameraCtrlParam:" + cameraCtrlParam + ", time : " + System.currentTimeMillis());
+        CameraCtrlRequest cameraCtrlRequest = new CameraCtrlRequest(groupId, cameraCtrlParam);
         confInterfaceService.ctrlCamera(cameraCtrlRequest);
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now finished ctrlCamera, time : " + System.currentTimeMillis());
         System.out.println("now finished ctrlCamera, time : " + System.currentTimeMillis());
