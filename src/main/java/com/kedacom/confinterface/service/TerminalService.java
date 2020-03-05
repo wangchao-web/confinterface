@@ -550,6 +550,83 @@ public abstract class TerminalService {
     }
 
     public boolean ctrlCamera(int state, int type){
+        PTZOperation ptzOperation = new PTZOperation();
+        ptzOperation.setCmd(PTZCmdEnum.Invalid);
+
+        System.out.println("ctrlCamera, type : " + type);
+
+        switch (type){
+            case 1:
+            case 5:
+            case 6:
+                //上
+                ptzOperation.setCmd(PTZCmdEnum.TiltUp);
+                break;
+            case 2:
+            case 7:
+            case 8:
+                //下
+                ptzOperation.setCmd(PTZCmdEnum.TiltDown);
+                break;
+            case 3:
+                //左
+                ptzOperation.setCmd(PTZCmdEnum.PanLeft);
+                break;
+            case 4:
+                //右
+                ptzOperation.setCmd(PTZCmdEnum.PanRight);
+                break;
+            case 9:
+                //视野小
+                ptzOperation.setCmd(PTZCmdEnum.ZoomIn);
+                break;
+            case 10:
+                //视野大
+                ptzOperation.setCmd(PTZCmdEnum.ZoomOut);
+                break;
+            case 11:
+                //调焦短
+                ptzOperation.setCmd(PTZCmdEnum.FocusIn);
+                break;
+            case 12:
+                //调焦长
+                ptzOperation.setCmd(PTZCmdEnum.FocusOut);
+                break;
+            case 13:
+                //亮度加
+                ptzOperation.setCmd(PTZCmdEnum.BrightnessUp);
+                break;
+            case 14:
+                //亮度减
+                ptzOperation.setCmd(PTZCmdEnum.BrightnessDown);
+                break;
+        }
+
+        boolean bOk = conferenceParticipant.RequestPTZOpr(ptzOperation);
+        if (!bOk) {
+            System.out.println("ctrlCamera, RequestPTZOpr failed!");
+            return false;
+        }
+
+        switch (type){
+            case 5:
+            case 7:
+                ptzOperation.setCmd(PTZCmdEnum.PanLeft);
+                break;
+            case 6:
+            case 8:
+                ptzOperation.setCmd(PTZCmdEnum.PanRight);
+                break;
+            default:
+                return true;
+        }
+
+        bOk = conferenceParticipant.RequestPTZOpr(ptzOperation);
+        if (!bOk) {
+            System.out.println("ctrlCamera, 2, RequestPTZOpr failed!");
+            return false;
+        }
+
         return true;
     }
 
