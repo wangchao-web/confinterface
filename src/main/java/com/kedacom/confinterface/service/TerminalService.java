@@ -63,6 +63,68 @@ public abstract class TerminalService {
         this.waitMsg = null;
     }
 
+    public TerminalService(String groupId, String e164, String ip, String name, String confId, String mtId, int online,boolean bVmt) {
+        super();
+        this.e164 = e164;
+        this.proxyMTE164 = null;
+        this.dynamicBind = -1;
+        this.mtId = mtId;
+        this.groupId = groupId;
+        this.ip = ip;
+        this.remoteMtAccount = null;
+        this.name = name;
+        this.online = new AtomicInteger();
+        if(online == 0){
+            this.online.set(TerminalOnlineStatusEnum.OFFLINE.getCode());
+        }else{
+            this.online.set(TerminalOnlineStatusEnum.ONLINE.getCode());
+        }
+        this.inspectionStatus = new AtomicInteger();
+        this.inspectionStatus.set(InspectionStatusEnum.UNKNOWN.getCode());
+        this.inspectedStatus = new AtomicInteger();
+        this.inspectedStatus.set(InspectionStatusEnum.UNKNOWN.getCode());
+        this.toBeSpeaker = new AtomicBoolean(false);
+        this.supportDualStream = new AtomicBoolean(false);
+        this.inspectVideoStatus = new AtomicInteger();
+        this.inspectVideoStatus.set(InspectionStatusEnum.UNKNOWN.getCode());
+        this.inspectAudioStatus = new AtomicInteger();
+        this.inspectAudioStatus.set(InspectionStatusEnum.UNKNOWN.getCode());
+        this.confId = confId;
+        if (bVmt)
+            this.type = 2;
+        else
+            this.type = 1;
+        this.inspectionParam = null;
+        this.inspentedTerminals = null;
+        this.forwardChannel = null;
+        this.reverseChannel = null;
+        this.conferenceParticipant = null;
+        this.waitMsg = null;
+    }
+
+    public String getIp() {
+        return ip;
+    }
+
+    public void setIp(String ip) {
+        this.ip = ip;
+    }
+
+    public AtomicInteger getOnline() {
+        return online;
+    }
+
+    public void setOnline(AtomicInteger online) {
+        this.online = online;
+    }
+
+    public Boolean getInspectionAndInspectioned() {
+        return isInspectionAndInspectioned;
+    }
+
+    public void setInspectionAndInspectioned(Boolean inspectionAndInspectioned) {
+        isInspectionAndInspectioned = inspectionAndInspectioned;
+    }
 
     public String getGroupId() {
         return groupId;
@@ -547,6 +609,97 @@ public abstract class TerminalService {
 
     public boolean sendIFrame() {
         return conferenceParticipant.RequestKeyframe();
+    }
+
+    public boolean ctrlCamera(int state, int type){
+        PTZOperation ptzOperation = new PTZOperation();
+        ptzOperation.setCmd(PTZCmdEnum.Invalid);
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"ctrlCamera, type : " + type);
+        System.out.println("ctrlCamera, type : " + type);
+
+        switch (type){
+            case 1:
+            case 5:
+            case 6:
+                //上,上左，上右
+                ptzOperation.setCmd(PTZCmdEnum.TiltUp);
+                break;
+            case 2:
+            case 7:
+            case 8:
+                //下，下左，下右
+                ptzOperation.setCmd(PTZCmdEnum.TiltDown);
+                break;
+            case 3:
+                //左
+                ptzOperation.setCmd(PTZCmdEnum.PanLeft);
+                break;
+            case 4:
+                //右
+                ptzOperation.setCmd(PTZCmdEnum.PanRight);
+                break;
+            case 9:
+                //视野小
+                ptzOperation.setCmd(PTZCmdEnum.ZoomIn);
+                break;
+            case 10:
+                //视野大
+                ptzOperation.setCmd(PTZCmdEnum.ZoomOut);
+                break;
+            case 11:
+                //调焦短
+                ptzOperation.setCmd(PTZCmdEnum.FocusIn);
+                break;
+            case 12:
+                //调焦长
+                ptzOperation.setCmd(PTZCmdEnum.FocusOut);
+                break;
+            case 13:
+                //亮度加
+                ptzOperation.setCmd(PTZCmdEnum.BrightnessUp);
+                break;
+            case 14:
+                //亮度减
+                ptzOperation.setCmd(PTZCmdEnum.BrightnessDown);
+                break;
+        }
+
+        boolean bOk = conferenceParticipant.RequestPTZOpr(ptzOperation);
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"first RequestPTZOpr bOk :" +bOk);
+        System.out.println("first RequestPTZOpr bOk :" +bOk);
+        if (!bOk) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"ctrlCamera, RequestPTZOpr failed!");
+            System.out.println("ctrlCamera, RequestPTZOpr failed!");
+            return false;
+        }
+
+        switch (type){
+            case 5:
+            case 7:
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"type PTZCmdEnum.PanLeft　: " +type);
+                System.out.println("type PTZCmdEnum.PanLeft　: " +type);
+                ptzOperation.setCmd(PTZCmdEnum.PanLeft);
+                break;
+            case 6:
+            case 8:
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"type PTZCmdEnum.PanRight　: " +type);
+                System.out.println("type PTZCmdEnum.PanRight　: " +type);
+                ptzOperation.setCmd(PTZCmdEnum.PanRight);
+                break;
+            default:
+                return true;
+        }
+
+        bOk = conferenceParticipant.RequestPTZOpr(ptzOperation);
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"second RequestPTZOpr bOk : " +bOk);
+        System.out.println("second RequestPTZOpr bOk : " +bOk);
+        if (!bOk) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"ctrlCamera, 2, RequestPTZOpr failed!");
+            System.out.println("ctrlCamera, 2, RequestPTZOpr failed!");
+            return false;
+        }
+
+        return true;
     }
 
     public void clearExchange() {
@@ -1833,8 +1986,31 @@ public abstract class TerminalService {
         return true;
     }
 
+    public void isOline(int online){
+        if(online == 0){
+            this.online.set(TerminalOnlineStatusEnum.OFFLINE.getCode());
+        }else{
+            this.online.set(TerminalOnlineStatusEnum.ONLINE.getCode());
+        }
+    }
+
+
+    @Override
+    public String toString() {
+        return new StringBuilder().append("groupId:").append(groupId)
+                .append(", e164:").append(e164)
+                .append(", ip:").append(ip)
+                .append(", name:").append(name)
+                .append(", confId:").append(confId)
+                .append(", mtId:").append(mtId)
+                .append(", type:").append(type)
+                .append(", online:").append(online)
+                .toString();
+    }
+
     protected String groupId;
     protected String e164;
+    protected String ip;
     protected String proxyMTE164;
     protected int dynamicBind;
     protected String name;
@@ -1864,6 +2040,9 @@ public abstract class TerminalService {
     protected static StringBuilder scheduleP2PCallURL = null;
     protected static StringBuilder notifyURL = null;
     public Map<String, MediaResource> dualSource = new HashMap<>();
+
+    //显控双向选看
+    protected Boolean isInspectionAndInspectioned = false;
 
     protected ConcurrentHashMap<String, BaseRequestMsg> waitMsg;
 

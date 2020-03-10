@@ -4,19 +4,23 @@ import com.kedacom.confinterface.util.ConfInterfaceResult;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
-public class CameraCtrlRequest extends BaseRequestMsg<BaseResponseMsg> {
+public class SendSmsRequest extends BaseRequestMsg<BaseResponseMsg> {
 
-    public CameraCtrlRequest(String groupId, CameraCtrlParam cameraCtrlParam) {
+    public SendSmsRequest(String groupId) {
         super(groupId);
-        this.cameraCtrlParam = cameraCtrlParam;
     }
 
-    public CameraCtrlParam getCameraCtrlParam() {
-        return cameraCtrlParam;
+    public SendSmsRequest(String groupId, SendSmsParam sendSmsParam) {
+        super(groupId);
+        this.sendSmsParam = sendSmsParam;
     }
 
-    public void setCameraCtrlParam(CameraCtrlParam cameraCtrlParam) {
-        this.cameraCtrlParam = cameraCtrlParam;
+    public SendSmsParam getSendSmsParam() {
+        return sendSmsParam;
+    }
+
+    public void setSendSmsParam(SendSmsParam sendSmsParam) {
+        this.sendSmsParam = sendSmsParam;
     }
 
     @Override
@@ -33,5 +37,5 @@ public class CameraCtrlRequest extends BaseRequestMsg<BaseResponseMsg> {
         responseMsg.setResult(responseEntity);
     }
 
-    private CameraCtrlParam cameraCtrlParam;
+    private SendSmsParam sendSmsParam;
 }

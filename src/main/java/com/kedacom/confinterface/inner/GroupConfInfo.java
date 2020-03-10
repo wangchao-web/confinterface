@@ -28,6 +28,7 @@ public class GroupConfInfo {
         this.waitDealTask = null;
     }
 
+
     public String getGroupId() {
         return groupId;
     }
@@ -57,19 +58,19 @@ public class GroupConfInfo {
     }
 
     public void setBroadcastVmtService(TerminalService terminalService) {
-        if (null != terminalService){
+        if (null != terminalService) {
             this.broadcastVmtService = terminalService;
             this.broadcastVmtService.setSupportDualStream(true);
             return;
         }
 
-        synchronized (freeVmtMembers){
-            for(Map.Entry<String, TerminalService> vmt : freeVmtMembers.entrySet()){
+        synchronized (freeVmtMembers) {
+            for (Map.Entry<String, TerminalService> vmt : freeVmtMembers.entrySet()) {
                 this.broadcastVmtService = vmt.getValue();
                 break;
             }
 
-            if (null == broadcastVmtService){
+            if (null == broadcastVmtService) {
                 return;
             }
 
@@ -101,15 +102,20 @@ public class GroupConfInfo {
     }
 
     public TerminalService delMtMember(String mtE164) {
+
         synchronized (this) {
             TerminalService terminalService = mtMembers.get(mtE164);
-            if (null == terminalService)
+            if (null == terminalService) {
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"terminalService is null delMtMember : " + mtE164);
+                System.out.println("terminalService is null delMtMember : " + mtE164);
                 return null;
-
+            }
             String mtId = terminalService.getMtId();
-            if (null != mtId)
+            if (null != mtId) {
                 mtIdMap.remove(terminalService.getMtId());
-
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"remove mtIdMap  mtId : " + mtId);
+                System.out.println("remove mtIdMap  mtId : " + mtId);
+            }
             return mtMembers.remove(mtE164);
         }
     }
@@ -118,11 +124,11 @@ public class GroupConfInfo {
         return usedVmtMembers;
     }
 
-    public TerminalService getNoInspectTerminalServiceFromUsedVmtMember(){
+    public TerminalService getNoInspectTerminalServiceFromUsedVmtMember() {
         //return usedVmtMembers.search(1, (k,v)->v.getInspectionParam() == null ? v : null);
-        synchronized (usedVmtMembers){
-            for (Map.Entry<String, TerminalService> usedVmt : usedVmtMembers.entrySet()){
-                if (usedVmt.getValue().getInspectionParam() == null){
+        synchronized (usedVmtMembers) {
+            for (Map.Entry<String, TerminalService> usedVmt : usedVmtMembers.entrySet()) {
+                if (usedVmt.getValue().getInspectionParam() == null) {
                     return usedVmt.getValue();
                 }
             }
@@ -131,12 +137,12 @@ public class GroupConfInfo {
         }
     }
 
-    public TerminalService getNotBeInspectedTerminalServiceFromUsedVmtMember(){
-        synchronized (usedVmtMembers){
-            for (Map.Entry<String, TerminalService> usedVmt : usedVmtMembers.entrySet()){
+    public TerminalService getNotBeInspectedTerminalServiceFromUsedVmtMember() {
+        synchronized (usedVmtMembers) {
+            for (Map.Entry<String, TerminalService> usedVmt : usedVmtMembers.entrySet()) {
                 TerminalService vmtService = usedVmt.getValue();
                 if (null == vmtService.getInspentedTerminals()
-                        || vmtService.getInspentedTerminals().isEmpty()){
+                        || vmtService.getInspentedTerminals().isEmpty()) {
                     return vmtService;
                 }
             }
@@ -153,8 +159,8 @@ public class GroupConfInfo {
         return usedVmtMembers.get(vmtE164);
     }
 
-    public TerminalService getVmt(String resourceId){
-        for (Map.Entry<String, TerminalService> vmtMember : usedVmtMembers.entrySet()){
+    public TerminalService getVmt(String resourceId) {
+        for (Map.Entry<String, TerminalService> vmtMember : usedVmtMembers.entrySet()) {
             TerminalService terminalService = vmtMember.getValue();
             if (terminalService.hasResourceId(true, resourceId))
                 return terminalService;
@@ -163,7 +169,7 @@ public class GroupConfInfo {
         return null;
     }
 
-    public void delVmtMembers(List<Terminal> vmts){
+    public void delVmtMembers(List<Terminal> vmts) {
         synchronized (this) {
             for (Terminal vmt : vmts) {
                 if (null != broadcastVmtService && broadcastVmtService.getE164().equals(vmt.getMtE164())) {
@@ -199,11 +205,16 @@ public class GroupConfInfo {
         }
     }
 
-    public void delMember(TerminalService member){
-        if (member.isVmt()){
+    public void delMember(TerminalService member) {
+        if (member.isVmt()) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"delMember member is Vmt");
+            System.out.println("delMember member is Vmt");
             TerminalService removeService = freeVmtMembers.remove(member.getE164());
-            if (null == removeService)
+            if (null == removeService) {
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"delMember removeServicec is null ");
+                System.out.println("delMember removeServicec is null ");
                 usedVmtMembers.remove(member.getE164());
+            }
         } else {
             mtMembers.remove(member.getE164());
         }
@@ -213,7 +224,7 @@ public class GroupConfInfo {
             mtIdMap.remove(mtId);
     }
 
-    public TerminalService getMember(String e164){
+    public TerminalService getMember(String e164) {
         if (null != broadcastVmtService && broadcastVmtService.getE164().equals(e164))
             return broadcastVmtService;
 
@@ -283,7 +294,7 @@ public class GroupConfInfo {
             }
 
             if (null == freeTerminalService) {
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"getVmt2Use, has get no free vmt!!!");
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "getVmt2Use, has get no free vmt!!!");
                 System.out.println("getVmt2Use, has get no free vmt!!!");
                 return null;
             }
@@ -308,7 +319,7 @@ public class GroupConfInfo {
         }
     }
 
-    public TerminalService findUsedVmt(String vmtE164){
+    public TerminalService findUsedVmt(String vmtE164) {
         return usedVmtMembers.get(vmtE164);
     }
 
@@ -328,28 +339,28 @@ public class GroupConfInfo {
         return null;
     }
 
-    public TerminalService getDstInspectionTerminal(String dstMtId){
+    public TerminalService getDstInspectionTerminal(String dstMtId) {
         String dstE164 = getE164(dstMtId);
         if (null == dstE164)
             return null;
 
         TerminalService dstTerminal = mtMembers.get(dstE164);
-        if (null != dstTerminal){
-            return  dstTerminal;
+        if (null != dstTerminal) {
+            return dstTerminal;
         }
 
         return getVmtMember(dstE164);
     }
 
-    public TerminalService getDstInspectionVmtTerminal(TerminalService srcService){
+    public TerminalService getDstInspectionVmtTerminal(TerminalService srcService) {
         Map<String, InspectedParam> inspentedTerminals = srcService.getInspentedTerminals();
         if (null == inspentedTerminals) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"getDstInspectionVmtTerminal, null == inspentedTerminals");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "getDstInspectionVmtTerminal, null == inspentedTerminals");
             System.out.println("getDstInspectionVmtTerminal, null == inspentedTerminals");
             return null;
         }
 
-        for (Map.Entry<String, InspectedParam> inspectedParamEntry : inspentedTerminals.entrySet()){
+        for (Map.Entry<String, InspectedParam> inspectedParamEntry : inspentedTerminals.entrySet()) {
             InspectedParam inspectedParam = inspectedParamEntry.getValue();
             if (inspectedParam.isVmt()) {
                 return getVmtMember(inspectedParamEntry.getKey());
@@ -359,9 +370,9 @@ public class GroupConfInfo {
         return null;
     }
 
-    public TerminalService getSrcInspectionTerminal(TerminalService dstTerminal){
+    public TerminalService getSrcInspectionTerminal(TerminalService dstTerminal) {
         if (null == dstTerminal) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"getSrcInspectionTerminal, null == dstTerminal");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "getSrcInspectionTerminal, null == dstTerminal");
             System.out.println("getSrcInspectionTerminal, null == dstTerminal");
             return null;
         }
@@ -372,15 +383,15 @@ public class GroupConfInfo {
             return null;
 
         String inspectE164 = inspectionSrcParam.getMtE164();
-        if (dstTerminal.isVmt()){
+        if (dstTerminal.isVmt()) {
             //虚拟终端只会选看会议终端，不会选看虚拟终端
             srcTerminal = mtMembers.get(inspectE164);
-        }else {
+        } else {
             //会议终端可以选看虚拟终端，也可以选看会议终端
             srcTerminal = usedVmtMembers.get(inspectE164);
-            if (null == srcTerminal){
+            if (null == srcTerminal) {
                 srcTerminal = freeVmtMembers.get(inspectE164);
-                if (null == srcTerminal){
+                if (null == srcTerminal) {
                     srcTerminal = mtMembers.get(inspectE164);
                 }
             }
@@ -393,24 +404,32 @@ public class GroupConfInfo {
         return ((freeVmtMembers.size() + usedVmtMembers.size() + mtMembers.size() + 1) == 191);
     }
 
-    public int getVmtMemberNum(){
+    public int getVmtMemberNum() {
         return (freeVmtMembers.size() + usedVmtMembers.size());
     }
 
-    public int getMtMemberNum(){
+    public int getMtMemberNum() {
         return mtMembers.size();
     }
 
-    public int getFreeVmtMemberNum(){
+    public int getFreeVmtMemberNum() {
         return freeVmtMembers.size();
     }
-    public void cancelGroup(){
+    public int getUsedVmtMember() {
+        return usedVmtMembers.size();
+    }
+
+    public void cancelGroup() {
         this.broadcastVmtService = null;
         this.mtMembers = null;
         this.freeVmtMembers = null;
         this.usedVmtMembers = null;
         this.waitDealTask = null;
         this.mtIdMap = null;
+        //基于mcu上自己创建的会议删除
+        this.groupId = "";
+        this.confId = "";
+        this.createdConf = "";
     }
 
     public boolean isConfinterface() {
@@ -419,6 +438,26 @@ public class GroupConfInfo {
 
     public void setConfinterface(boolean confinterface) {
         this.confinterface = confinterface;
+    }
+
+    public String getCreatedConf() {
+        return createdConf;
+    }
+
+    public void setCreatedConf(String createdConf) {
+        this.createdConf = createdConf;
+    }
+
+    public void setMtMembers(ConcurrentHashMap<String, TerminalService> mtMembers) {
+        this.mtMembers = mtMembers;
+    }
+
+    public ConcurrentHashMap<String, String> getMtIdMap() {
+        return mtIdMap;
+    }
+
+    public void setMtIdMap(ConcurrentHashMap<String, String> mtIdMap) {
+        this.mtIdMap = mtIdMap;
     }
 
     private String groupId;
@@ -430,6 +469,7 @@ public class GroupConfInfo {
     private ConcurrentHashMap<String, TerminalService> usedVmtMembers;   //E164号为key
     private ConcurrentHashMap<String, TerminalService> mtMembers;        //E164号为key
     private Map<String, BaseRequestMsg<? extends BaseResponseMsg>> waitDealTask; //E164号为key
-    private ConcurrentHashMap<String, String> mtIdMap;
+    private ConcurrentHashMap<String, String> mtIdMap;//mtId号为key,e164为value
     private boolean confinterface = false;
+    private String createdConf; //用来判断是会议服务自己创建的会议还是mcu创建的会议 confinterface为会议自己创建,mcu为mcu创建的会议
 }

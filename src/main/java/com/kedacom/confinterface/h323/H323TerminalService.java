@@ -37,6 +37,7 @@ public class H323TerminalService extends TerminalService {
     }
 
 
+
     public Future<Boolean> startRegGK() {
         if (regGK)
             return new AsyncResult<>(true);

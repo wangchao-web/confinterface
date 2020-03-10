@@ -22,6 +22,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -31,6 +32,10 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
     @Async("confTaskExecutor")
     @Override
     public void onApplicationEvent(SubscribeEvent subscribeEvent) {
+        if (!confInterfaceService.getConfGroupMap().containsKey(subscribeEvent.getConfId())){
+            confProcessSubscribeMsg(subscribeEvent);
+        }
+
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"onApplicationEvent, recv subscribe event, confId:" + subscribeEvent.getConfId() + ", channel:" + subscribeEvent.getChannel() + ", threadName:" + Thread.currentThread().getName());
         System.out.println("onApplicationEvent, recv subscribe event, confId:" + subscribeEvent.getConfId() + ", channel:" + subscribeEvent.getChannel() + ", threadName:" + Thread.currentThread().getName());
         String groupId = confInterfaceService.getGroupId(subscribeEvent.getConfId());
@@ -255,6 +260,8 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
                 return;
             }
         } else {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"getConfMtInfoResponse.getOnline() : " + getConfMtInfoResponse.getOnline());
+            System.out.println("getConfMtInfoResponse.getOnline() : " + getConfMtInfoResponse.getOnline());
             if (getConfMtInfoResponse.getOnline() == 1) {
                 if (null == groupConfInfo.getE164(mtId)) {
                     terminalService.setMtId(mtId);
@@ -357,6 +364,37 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
         }
     }
 
+    private void confProcessSubscribeMsg(SubscribeEvent subscribeEvent){
+        //判断是什么通道
+        String channel = subscribeEvent.getChannel();
+        String method = subscribeEvent.getMethod();
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"confProcessSubscribeMsg, method : " + method + ", channel : " + channel);
+        System.out.println("confProcessSubscribeMsg, method : " + method + ", channel : " + channel);
+        String[] parseResult = channel.split("/");
+        String confId = parseResult[2];
+        if (parseResult.length == 3) {
+            //会议信息订阅
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"get conf info subscribe message, channel :" + channel);
+            System.out.println("get conf info subscribe message, channel :" + channel);
+            if (method.equals(SubscribeMethodEnum.DELETE.getName())) {
+                System.out.println("remove confInfo confiD : " + confId + "groupId : " + confInterfaceService.getConfGroupMap().get(confId));
+                String groupID = confInterfaceService.getConfGroupMap().get(confId);
+                GroupConfInfo groupConfInfo = confInterfaceService.getGroupConfInfoMap().get(groupID);
+                confInterfaceService.delGroupConfInfo(groupConfInfo);
+            }else{
+                String groupID = UUID.randomUUID().toString().replaceAll("\\-", "");
+                GroupConfInfo groupConfInfo = new GroupConfInfo(groupID,confId);
+                groupConfInfo.setCreatedConf("mcu");
+                confInterfaceService.addGroupConfInfo(groupConfInfo);
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"get conf info subscribe message add ConfId : " + confId + "groupId : " + groupID);
+                System.out.println("get conf info subscribe message add ConfId : " + confId + "groupId : " + groupID);
+
+
+            }
+
+        }
+    }
+
     private void processSubscribeMsg(SubscribeEvent subscribeEvent, GroupConfInfo groupConfInfo) {
         //判断是什么通道
         String channel = subscribeEvent.getChannel();
@@ -371,6 +409,25 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
             if (channel.contains("cascades")) {
                 //todo:通道列表,获取通道列表信息，并推送给调度服务
                 if (method.equals(SubscribeMethodEnum.DELETE.getName())) {
+                    String confId = parseResult[2];
+                    String mtId = parseResult[6];
+                    ConcurrentHashMap<String, String> mtIdMap = groupConfInfo.getMtIdMap();
+                    if(mtIdMap == null || mtIdMap.isEmpty() || !mtIdMap.containsKey(mtId)){
+                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"cascades DELETE mtIdMap is null or empty or !mtIdMap.containsKey(mtId) mtId :" +mtId);
+                        System.out.println("cascades DELETE mtIdMap is null or empty or !mtIdMap.containsKey(mtId) mtId :" +mtId);
+                    }else{
+                        String E164 = mtIdMap.get(mtId);
+                        TerminalService member = groupConfInfo.getMember(E164);
+                        if(member == null){
+                            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"cascades delete member is null  ******* ");
+                            System.out.println("cascades delete member is null  ******* ");
+                        }else {
+                            groupConfInfo.delMember(member);
+                        }
+                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"cascades DELETE mtId : " + mtId +", E164 : " +E164);
+                        System.out.println("cascades DELETE mtId : " + mtId + ", E164 : " +E164);
+                    }
+
                     return;
                 }
                 processSubscribeMts(groupConfInfo, channel);
@@ -409,7 +466,11 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"processConfDeleted, groupId:" + groupId + ", confId:" + confId);
         System.out.println("processConfDeleted, groupId:" + groupId + ", confId:" + confId);
 
-        mcuRestClientService.endConference(confId, false);
+        if(groupConfInfo.getCreatedConf().equals("confinterface")) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"confinterface is confinterface create not endConference");
+            System.out.println("confinterface is mcu create not endConference");
+            mcuRestClientService.endConference(confId, false);
+        }
         confInterfaceService.delGroupConfInfo(groupConfInfo);
         groupConfInfo.cancelGroup();
         terminalMediaSourceService.delGroup(groupConfInfo.getGroupId());

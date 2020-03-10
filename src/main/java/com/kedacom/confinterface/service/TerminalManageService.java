@@ -194,6 +194,14 @@ public abstract class TerminalManageService {
         confInterfacePublishService = inConfInterfacePublishService;
     }
 
+    public  int queryFreeVmtServiceMap(){
+        return freeVmtServiceMap.size();
+    }
+
+    public  int queryUsedVmtServiceMap(){
+        return usedVmtServiceMap.size();
+    }
+
     protected IConferenceManager conferenceManager;
     protected Map<String, TerminalService> freeVmtServiceMap;
     protected Map<String, TerminalService> usedVmtServiceMap;

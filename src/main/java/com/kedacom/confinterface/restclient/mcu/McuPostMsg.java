@@ -1,6 +1,8 @@
 package com.kedacom.confinterface.restclient.mcu;
 
 import net.sf.json.JSONObject;
+
+import javax.naming.ldap.PagedResultsControl;
 import java.net.URLEncoder;
 
 public class McuPostMsg {
@@ -9,6 +11,12 @@ public class McuPostMsg {
         super();
         this.account_token = accountToken;
         this.params = null;
+    }
+
+    public McuPostMsg(String account_token, int start, int count) {
+        this.account_token = account_token;
+        this.start = start;
+        this.count = count;
     }
 
     public String getAccount_token() {
@@ -50,4 +58,6 @@ public class McuPostMsg {
 
     private String account_token;
     private String params;
+    private int start ; // 获取的视频会议列表的起始会议位置, 0表示第一个会议, 默认为0
+    private int count; //获取的视频会议列表的起始会议位置, 0表示第一个会议, 默认为0
 }

@@ -117,6 +117,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
 
             //构造被选看信息
             constructInspectedParam(groupConfInfo);
+            groupConfInfo.setCreatedConf("confinterface");
             confInterfaceService.addGroupConfInfo(groupConfInfo);
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "groupId : " + groupId + ", wait vmts online! joinConfVmtNum : " + joinConfVmtNum);
             System.out.println("groupId : " + groupId + ", wait vmts online! joinConfVmtNum : " + joinConfVmtNum);

@@ -53,7 +53,8 @@ public class  SchedulePublishService extends ConfInterfacePublishService{
         if (account.equals(groupId)) {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"publishStatus, type: Conference!");
             System.out.println("publishStatus, type: Conference!");
-            account = "Conference";
+            accountType = "Conference";
+            //account = "Conference";
         } else if (status == TerminalOnlineStatusEnum.DUALSTREAM.getCode()) {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"publishStatus, type: Dual!");
             System.out.println("publishStatus, type: Dual!");

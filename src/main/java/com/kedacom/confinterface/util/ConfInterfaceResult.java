@@ -1,5 +1,7 @@
 package com.kedacom.confinterface.util;
 
+import javax.management.Query;
+
 public enum ConfInterfaceResult {
     OK(0, "Ok"),
     NOT_SUPPORT_METHOD(1, "not support this method!"),
@@ -30,7 +32,12 @@ public enum ConfInterfaceResult {
     CLOSE_CHANNEL(50023, "close logical channel failed!"),
     P2PCALL(50024, "p2p call failed!"),
     P2PCANCELCALL(50025, "p2p cancelCallMt failed!"),
-    TERMINALHASBEENCALLED(50026,"The terminal has been called");
+    TERMINALHASBEENCALLED(50026,"The terminal has been called"),
+    QUERY_CONFS_INFO_IS_NULL(50027,"query confs info is null"),
+    QUERY_CONFS_CASCADES_INFO_IS_NULL(50028,"query confs cascades info is null"),
+    CONF_NOT_EXIT(50029,"confid not exit"),
+    QUERY_CONFS_CASCADES_MT_INFO_IS_NULL(50030,"query confs cascades mt info is null"),
+    SEND_SMS_FAILED(50031,"send message failed");
 
     public int getCode(){
         return code;

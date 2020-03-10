@@ -6,9 +6,11 @@ import com.kedacom.confinterface.dto.*;
 import com.kedacom.confinterface.inner.*;
 import com.kedacom.confinterface.dao.Terminal;
 import com.kedacom.confinterface.restclient.mcu.*;
+import com.kedacom.confinterface.restclient.mcu.ConfsCascadesMtsRspInfo;
 import com.kedacom.confinterface.service.ConfInterfaceService;
 import com.kedacom.confinterface.service.TerminalManageService;
 import com.kedacom.confinterface.service.TerminalService;
+import com.sun.scenario.effect.impl.sw.sse.SSEBlend_SRC_OUTPeer;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
@@ -205,6 +207,8 @@ public class McuRestClientService {
             return McuStatus.TimeOut;
 
         McuBaseResponse response = null;
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"endConference :　");
+        System.out.println("endConference :　");
         if (deleteConf) {
             StringBuilder url = new StringBuilder();
             constructUrl(url, "/api/v1/mc/confs/{conf_id}");
@@ -1001,6 +1005,183 @@ public class McuRestClientService {
         confSubcribeChannelMap.put(confId, subscribeChannelList);
     }
 
+    //订阅会议级联信息
+    public void subscribeConfCascadesInfo(String confId) {
+        //会议级联信息通道/confs/{conf_id}/cascades
+        StringBuilder subscribeChannel = new StringBuilder();
+        subscribeChannel.delete(0, subscribeChannel.length());
+        subscribeChannel.append("/confs/");
+        subscribeChannel.append(confId);
+        subscribeChannel.append("/cascades");
+
+        List<String> subscribeChannelList = confSubcribeChannelMap.get(confId);
+        if (null == subscribeChannelList) {
+            subscribeChannelList = Collections.synchronizedList(new ArrayList<>());
+        }
+
+        for (String channel : subscribeChannelList) {
+            if (channel.equals(subscribeChannel.toString()))
+                return;
+        }
+
+        mcuSubscribeClientService.subscribe(subscribeChannel.toString());
+        subscribeChannelList.add(subscribeChannel.toString());
+        confSubcribeChannelMap.put(confId, subscribeChannelList);
+    }
+    //订阅所有会议信息
+    public void subscribeAllConfInfo() {
+
+        //会议级联信息通道/confs/**
+        StringBuilder subscribeChannel = new StringBuilder();
+        subscribeChannel.delete(0, subscribeChannel.length());
+        subscribeChannel.append("/confs/**");
+
+        List<String> subscribeChannelList = confSubcribeChannelMap.get("");
+        if (null == subscribeChannelList) {
+            subscribeChannelList = Collections.synchronizedList(new ArrayList<>());
+        }
+
+        for (String channel : subscribeChannelList) {
+            if (channel.equals(subscribeChannel.toString()))
+                return;
+        }
+
+        mcuSubscribeClientService.subscribe(subscribeChannel.toString());
+        subscribeChannelList.add(subscribeChannel.toString());
+        confSubcribeChannelMap.put("", subscribeChannelList);
+    }
+
+    public List<ConfsDetailRspInfo> queryConfs(){
+        if (!loginSuccess) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"[queryConfs] has login out!!!");
+            System.out.println("[queryConfs] has login out!!!");
+            return null;
+        }
+
+        StringBuilder url = new StringBuilder();
+        constructUrl(url, "/api/v1/vc/confs");
+        Map<String, Object> args = new HashMap<>();
+        args.put("account_token", accountToken);
+
+        ConfsInfoResponse response = restClientService.exchange(url.toString(), HttpMethod.GET, null, urlencodeMediaType, args, ConfsInfoResponse.class);
+        if (null == response) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"[QueryConfs] JoinConferenceResponse null!");
+            System.out.println("[QueryConfs] QueryConfs null!");
+            return null;
+        }
+
+        if (response.success()) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"[QueryConfs] QueryConfs success");
+            System.out.println("[QueryConfs] QueryConfs success");
+            return response.getConfs();
+        } else {
+            int errorCode = response.getError_code();
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"[QueryConfs] QueryConfs failed! errcode : " + errorCode + ", errMsg : " + McuStatus.resolve(errorCode).getDescription());
+            System.out.println("[QueryConfs] QueryConfs failed! errcode : " + errorCode + ", errMsg : " + McuStatus.resolve(errorCode).getDescription());
+        }
+
+        return null;
+    }
+
+    public ConfsCascadesResponse queryConfsCascades(String confId) {
+        if (!loginSuccess) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"queryConfsCascades, has login out!!!");
+            System.out.println("queryConfsCascades, has login out!!!");
+            return null;
+        }
+        //url : /api/v1/vc/confs/{conf_id}/cascades
+        StringBuilder url = new StringBuilder();
+        constructUrl(url, "/api/v1/vc/confs/{conf_id}/cascades?account_token={account_token}");
+        Map<String, String> args = new HashMap<>();
+        args.put("conf_id", confId);
+        args.put("account_token", accountToken);
+
+        ConfsCascadesResponse confsCascadesResponse = restClientService.exchange(url.toString(), HttpMethod.GET, null, urlencodeMediaType, args, ConfsCascadesResponse.class);
+        if (null == confsCascadesResponse) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"confsCascadesResponse, null == confsCascadesResponse");
+            System.out.println("confsCascadesResponse, null == confsCascadesResponse");
+            return null;
+        }
+
+        if (!confsCascadesResponse.success()) {
+            int errorCode = confsCascadesResponse.getError_code();
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"confsCascadesResponse, failed! errcode:" + errorCode + ",errmsg:" + McuStatus.resolve(errorCode).getDescription());
+            System.out.println("confsCascadesResponse, failed! errcode:" + errorCode + ",errmsg:" + McuStatus.resolve(errorCode).getDescription());
+            return null;
+        }
+
+        return confsCascadesResponse;
+    }
+
+    public List<ConfsCascadesMtsRspInfo> queryConfsCascadesMts(String confId, String cascadeId) {
+        if (!loginSuccess) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"[queryConfsCascadesMts] has login out!!!");
+            System.out.println("[queryConfsCascadesMts] has login out!!!");
+            return null;
+        }
+
+        StringBuilder url = new StringBuilder();
+        constructUrl(url, "/api/v1/vc/confs/{conf_id}/cascades/{cascade_id}/mts");
+        Map<String, Object> args = new HashMap<>();
+        args.put("conf_id", confId);
+        args.put("cascade_id", cascadeId);
+        args.put("account_token", accountToken);
+
+        ConfsCascadesMtsResponse response = restClientService.exchange(url.toString(), HttpMethod.GET, null, urlencodeMediaType, args, ConfsCascadesMtsResponse.class);
+        if (null == response) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"[queryConfsCascadesMts] queryConfsCascadesMts null!");
+            System.out.println("[queryConfsCascadesMts] queryConfsCascadesMts null!");
+            return null;
+        }
+
+        if (response.success()) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"[queryConfsCascadesMts] queryConfsCascadesMts success");
+            System.out.println("[queryConfsCascadesMts] queryConfsCascadesMts success");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"response.getConfsCascadesMtsRspInfos : " + response.getMts());
+            System.out.println("response.getConfsCascadesMtsRspInfos : " + response.getMts());
+            return response.getMts();
+        } else {
+            int errorCode = response.getError_code();
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"[queryConfsCascadesMts] queryConfsCascadesMts failed! errcode : " + errorCode + ", errMsg : " + McuStatus.resolve(errorCode).getDescription());
+            System.out.println("[queryConfsCascadesMts] queryConfsCascadesMts failed! errcode : " + errorCode + ", errMsg : " + McuStatus.resolve(errorCode).getDescription());
+        }
+
+        return null;
+    }
+
+    public McuStatus sendMsm(String confId, SendSmsParam sendSmsParam,List<TerminalIdInfo> smsInfoMts){
+        if (!loginSuccess) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"[sendMsm] has login out!!!");
+            System.out.println("[sendMsm] has login out!!!");
+            return null;
+        }
+
+        StringBuilder url = new StringBuilder();
+        constructUrl(url, "/api/v1/vc/confs/{conf_id}/sms");
+        Map<String, String> args = new HashMap<>();
+        args.put("conf_id", confId);
+
+        SendSmsInfo sendSmsInfo = new SendSmsInfo(sendSmsParam.getMessage(),sendSmsParam.getType(),sendSmsParam.getRollNum(),sendSmsParam.getRollSpeed());
+        sendSmsInfo.setMts(smsInfoMts);
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"Mcu sendSmsInfo : " + sendSmsInfo.toString());
+        System.out.println("Mcu sendSmsInfo : " + sendSmsInfo.toString());
+        McuPostMsg mcuPostMsg = new McuPostMsg(accountToken);
+        mcuPostMsg.setParams(sendSmsInfo);
+        McuBaseResponse sendSmsreSponse = restClientService.exchange(url.toString(), HttpMethod.POST, mcuPostMsg.getMsg(), urlencodeMediaType, args, McuBaseResponse.class);
+
+        if (null == sendSmsreSponse) {
+            return McuStatus.Unknown;
+        }
+
+        if (sendSmsreSponse.success()) {
+            return McuStatus.OK;
+        }
+
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"sendSmsreSponse.getError_code() :" + sendSmsreSponse.getError_code());
+        System.out.println("sendSmsreSponse.getError_code() :" + sendSmsreSponse.getError_code());
+        return McuStatus.resolve(sendSmsreSponse.getError_code());
+    }
+
     @Autowired
     private RestClientService restClientService;
 
@@ -1024,4 +1205,7 @@ public class McuRestClientService {
     public volatile boolean loginSuccess = false;
     private Map<String, List<String>> confSubcribeChannelMap;
     private static String activeProf = "dev";
+
+
+
 }
