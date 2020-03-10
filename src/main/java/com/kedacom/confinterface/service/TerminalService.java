@@ -559,13 +559,13 @@ public abstract class TerminalService {
             case 1:
             case 5:
             case 6:
-                //上
+                //上,上左，上右
                 ptzOperation.setCmd(PTZCmdEnum.TiltUp);
                 break;
             case 2:
             case 7:
             case 8:
-                //下
+                //下，下左，下右
                 ptzOperation.setCmd(PTZCmdEnum.TiltDown);
                 break;
             case 3:
