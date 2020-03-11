@@ -24,6 +24,7 @@ public class RestClientService {
             HttpEntity httpEntity = new HttpEntity(param, httpHeaders);
             return restTemplate.postForEntity(url, httpEntity, returnType);
         } catch (Exception e){
+            System.out.println("postForEntity Exception");
             e.printStackTrace();
         }
         return null;
@@ -85,6 +86,8 @@ public class RestClientService {
                 return restTemplate.exchange(url, method, httpEntity, returnType);
             }
         } catch (Exception e){
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"Exception exchangeJson");
+            System.out.println("Exception exchangeJson");
             e.printStackTrace();
         }
         return null;

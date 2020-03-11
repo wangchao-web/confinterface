@@ -83,8 +83,8 @@ public class  SchedulePublishService extends ConfInterfacePublishService{
 
     private void publishMessage(SubscribeMsgTypeEnum type, String groupId, Object publishMsg){
         Map<String, String> groupUrls = subscribeMsgs.get(type.getType());
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"restClientService : "+restClientService);
-        System.out.println("restClientService : "+ restClientService);
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"type : "+ type + " ,groupId : " +groupId + ",publishMsg : "+publishMsg.toString());
+        System.out.println("type : "+ type + " ,groupId : " +groupId + ",publishMsg : "+publishMsg.toString());
         if (null == groupUrls) {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"publishMessage, has no client subscribe message, type :"+type.getType()+", name:"+type.getName());
             System.out.println("publishMessage, has no client subscribe message, type :"+type.getType()+", name:"+type.getName());

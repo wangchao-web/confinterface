@@ -7,27 +7,26 @@ public class TerminalMtId implements Serializable {
 
     public TerminalMtId(){
         super();
-        this.mtId = null;
+        this.account = null;
     }
 
-    public TerminalMtId(String mtId) {
-        super();
-        this.mtId = mtId;
+    public TerminalMtId(@NotBlank String account) {
+        this.account = account;
     }
 
-    public String getMtId() {
-        return mtId;
+    public String getAccount() {
+        return account;
     }
 
-    public void setMtId(String mtId) {
-        this.mtId = mtId;
+    public void setAccount(String account) {
+        this.account = account;
     }
 
     @Override
     public String toString() {
-        return mtId;
+        return account;
     }
 
     @NotBlank
-    protected String mtId;
+    protected String account;
 }

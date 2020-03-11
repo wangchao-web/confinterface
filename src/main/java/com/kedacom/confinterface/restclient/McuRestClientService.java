@@ -38,7 +38,7 @@ public class McuRestClientService {
     public boolean login() {
         if (loginSuccess) {
             if (mcuSubscribeClientService.isHandShakeOk()) {
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"login success and handshake OK!");
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "login success and handshake OK!");
                 System.out.println("login success and handshake OK!");
                 return true;
             }
@@ -51,7 +51,7 @@ public class McuRestClientService {
         String[] activeProfs = env.getActiveProfiles();
         if (activeProfs.length > 0) {
             activeProf = activeProfs[0];
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"constructUrl: active prof is " + activeProf);
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "constructUrl: active prof is " + activeProf);
             System.out.println("constructUrl: active prof is " + activeProf);
         }
 
@@ -67,12 +67,12 @@ public class McuRestClientService {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"mcuRestConfig.getSoftwareKey() : " + mcuRestConfig.getSoftwareKey());
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "mcuRestConfig.getSoftwareKey() : " + mcuRestConfig.getSoftwareKey());
         System.out.println("mcuRestConfig.getSoftwareKey() : " + mcuRestConfig.getSoftwareKey());
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"mcuRestConfig.getSoftwareKey() : " + mcuRestConfig.getSoftwareKey());
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "mcuRestConfig.getSoftwareKey() : " + mcuRestConfig.getSoftwareKey());
         System.out.println("mcuRestConfig.getSecretKey() : " + mcuRestConfig.getSecretKey());
 
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"param: " + param.toString());
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "param: " + param.toString());
         System.out.println("param: " + param.toString());
 
         StringBuilder url = new StringBuilder();
@@ -81,20 +81,20 @@ public class McuRestClientService {
         //System.out.println(restClientService);
         ResponseEntity<AccountTokenResponse> result = restClientService.postForEntity(url.toString(), param.toString(), urlencodeMediaType, AccountTokenResponse.class);
         if (null == result) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"get token failed!!!!!!!!!!!!");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "get token failed!!!!!!!!!!!!");
             System.out.println("get token failed!!!!!!!!!!!!");
             return false;
         }
 
         if (result.getBody().getSuccess() == 0) {
             int errorCode = result.getBody().getError_code();
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"get token failed! errCode:" + errorCode + ", errMsg:" + McuStatus.resolve(errorCode).getDescription());
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "get token failed! errCode:" + errorCode + ", errMsg:" + McuStatus.resolve(errorCode).getDescription());
             System.out.println("get token failed! errCode:" + errorCode + ", errMsg:" + McuStatus.resolve(errorCode).getDescription());
             return false;
         }
 
         accountToken = result.getBody().getAccount_token();
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"token: " + accountToken);
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "token: " + accountToken);
         System.out.println("token: " + accountToken);
 
         param.delete(0, param.length());
@@ -110,7 +110,7 @@ public class McuRestClientService {
             e.printStackTrace();
         }
 
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"login param: " + param.toString());
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "login param: " + param.toString());
         System.out.println("login param: " + param.toString());
         constructUrl(url, "/api/v1/system/login");
 
@@ -118,30 +118,30 @@ public class McuRestClientService {
         ResponseEntity<LoginResponse> loginResult = restClientService.postForEntity(url.toString(), param.toString(), urlencodeMediaType, LoginResponse.class);
         if (loginResult.getBody().getSuccess() == 0) {
             int errorCode = loginResult.getBody().getError_code();
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"login fail, errCode:" + errorCode + ", errMsg:" + McuStatus.resolve(errorCode).getDescription());
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "login fail, errCode:" + errorCode + ", errMsg:" + McuStatus.resolve(errorCode).getDescription());
             System.out.println("login fail, errCode:" + errorCode + ", errMsg:" + McuStatus.resolve(errorCode).getDescription());
 
             loginSuccess = false;
             return false;
         }
 
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"login Ok, start get cookies!");
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "login Ok, start get cookies!");
         System.out.println("login Ok, start get cookies!");
 
         HttpHeaders httpHeaders = loginResult.getHeaders();
         List<String> getCookies = httpHeaders.get("Set-Cookie");
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"Set-Cookie: " + getCookies);
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Set-Cookie: " + getCookies);
         System.out.println("Set-Cookie: " + getCookies);
         if (getCookies.size() >= 1) {
             cookies = new ArrayList<>();
             for (String cookie : getCookies) {
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"login, cookie:" + cookie);
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "login, cookie:" + cookie);
                 System.out.println("login, cookie:" + cookie);
                 String[] cookieParse = cookie.split(";", 2);
                 cookies.add(cookieParse[0]);
             }
 
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"get cooke OK, cookie : " + cookies);
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "get cooke OK, cookie : " + cookies);
             System.out.println("get cooke OK, cookie : " + cookies);
         }
 
@@ -152,14 +152,14 @@ public class McuRestClientService {
             confSubcribeChannelMap = new ConcurrentHashMap<>();
         }
 
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"login successfully!! handshake:" + mcuSubscribeClientService.isHandShakeOk());
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "login successfully!! handshake:" + mcuSubscribeClientService.isHandShakeOk());
         System.out.println("login successfully!! handshake:" + mcuSubscribeClientService.isHandShakeOk());
         return mcuSubscribeClientService.isHandShakeOk();
     }
 
     public String createConference() {
         if (!loginSuccess) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"createConference, has login out!!!");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "createConference, has login out!!!");
             System.out.println("createConference, has login out!!!");
             return null;
         }
@@ -174,7 +174,7 @@ public class McuRestClientService {
         createConferenceParam.setVideo_formats(mcuRestConfig.getVideoFormat());
         createConferenceParam.setAudio_formats(mcuRestConfig.getAudioFormat());
 
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"createConfParam:" + createConferenceParam.toString());
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "createConfParam:" + createConferenceParam.toString());
         System.out.println("createConfParam:" + createConferenceParam.toString());
 
         constructUrl(url, "/api/v1/mc/confs");
@@ -182,7 +182,7 @@ public class McuRestClientService {
         mcuPostMsg.setParams(createConferenceParam);
         CreateConferenceResponse createConferenceResponse = restClientService.exchange(url.toString(), HttpMethod.POST, mcuPostMsg.getMsg(), urlencodeMediaType, CreateConferenceResponse.class);
         if (null == createConferenceResponse) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"createConferenceResponse is null");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "createConferenceResponse is null");
             System.out.println("createConferenceResponse is null");
             return null;
         }
@@ -191,12 +191,12 @@ public class McuRestClientService {
             //创建会议成功，返回confId
             List<String> channels = new ArrayList<>();
             confSubcribeChannelMap.put(createConferenceResponse.getConf_id(), channels);
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"createConferenceResponse, success:" + createConferenceResponse.getSuccess() + ", ConfId:" + createConferenceResponse.getConf_id());
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "createConferenceResponse, success:" + createConferenceResponse.getSuccess() + ", ConfId:" + createConferenceResponse.getConf_id());
             System.out.println("createConferenceResponse, success:" + createConferenceResponse.getSuccess() + ", ConfId:" + createConferenceResponse.getConf_id());
             return createConferenceResponse.getConf_id();
         } else {
             int errorCode = createConferenceResponse.getError_code();
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"create conference failed! errCode : " + errorCode + ", errMsg : " + McuStatus.resolve(errorCode).getDescription());
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "create conference failed! errCode : " + errorCode + ", errMsg : " + McuStatus.resolve(errorCode).getDescription());
             System.out.println("create conference failed! errCode : " + errorCode + ", errMsg : " + McuStatus.resolve(errorCode).getDescription());
             return null;
         }
@@ -207,7 +207,7 @@ public class McuRestClientService {
             return McuStatus.TimeOut;
 
         McuBaseResponse response = null;
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"endConference :　");
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "endConference :　");
         System.out.println("endConference :　");
         if (deleteConf) {
             StringBuilder url = new StringBuilder();
@@ -239,7 +239,7 @@ public class McuRestClientService {
 
     public List<JoinConferenceRspMtInfo> joinConference(String confId, List<Terminal> mts) {
         if (!loginSuccess) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"[joinConference] has login out!!!");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "[joinConference] has login out!!!");
             System.out.println("[joinConference] has login out!!!");
             return null;
         }
@@ -249,13 +249,17 @@ public class McuRestClientService {
         Map<String, String> args = new HashMap<>();
         args.put("conf_id", confId);
 
+        Map<String, String> confGroupMap = confInterfaceService.getConfGroupMap();
+        String groupId = confGroupMap.get(confId);
+        GroupConfInfo groupConfInfo = confInterfaceService.getGroupConfInfoMap().get(groupId);
+
         List<JoinConferenceMtInfo> joinConferenceMtInfos = new ArrayList<>();
         for (Terminal mt : mts) {
             String account = mt.getMtE164();
             JoinConferenceMtInfo joinConferenceMtInfo = new JoinConferenceMtInfo();
             joinConferenceMtInfo.setAccount(account);
-            if (account.contains(".") || account.contains("::")){
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"[joinConference] terminal account is ip : " + account);
+            if (account.contains(".") || account.contains("::")) {
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "[joinConference] terminal account is ip : " + account);
                 System.out.println("[joinConference] terminal account is ip : " + account);
                 joinConferenceMtInfo.setAccount_type(7);  //设置账号类型为IP
             }
@@ -272,19 +276,23 @@ public class McuRestClientService {
         mcuPostMsg.setParams(joinConferenceMts);
         JoinConferenceResponse response = restClientService.exchange(url.toString(), HttpMethod.POST, mcuPostMsg.getMsg(), urlencodeMediaType, args, JoinConferenceResponse.class);
         if (null == response) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"[joinConference] JoinConferenceResponse null!");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "[joinConference] JoinConferenceResponse null!");
             System.out.println("[joinConference] JoinConferenceResponse null!");
             return null;
         }
 
         if (response.success()) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"[joinConference] JoinConferenceResponse success, confId : " + confId);
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "[joinConference] JoinConferenceResponse success, confId : " + confId);
             System.out.println("[joinConference] JoinConferenceResponse success, confId : " + confId);
-            subscribeConfMts(confId);
+            if(!groupConfInfo.getCreatedConf().equals("mcu")){
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"[joinConference] JoinConferenceResponse success groupId : " + groupId +", groupConfInfo.getCreatedConf() : " +groupConfInfo.getCreatedConf());
+                System.out.println("[joinConference] JoinConferenceResponse success groupId : " + groupId +", groupConfInfo.getCreatedConf() : " +groupConfInfo.getCreatedConf());
+                subscribeConfMts(confId);
+            }
             return response.getMts();
         } else {
             int errorCode = response.getError_code();
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"[joinConference] join conference failed! errcode : " + errorCode + ", errMsg : " + McuStatus.resolve(errorCode).getDescription());
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "[joinConference] join conference failed! errcode : " + errorCode + ", errMsg : " + McuStatus.resolve(errorCode).getDescription());
             System.out.println("[joinConference] join conference failed! errcode : " + errorCode + ", errMsg : " + McuStatus.resolve(errorCode).getDescription());
         }
 
@@ -296,7 +304,7 @@ public class McuRestClientService {
             return McuStatus.OK;
 
         if (!loginSuccess) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"leftConference, has login out!!!");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "leftConference, has login out!!!");
             System.out.println("leftConference, has login out!!!");
             return McuStatus.TimeOut;
         }
@@ -315,7 +323,7 @@ public class McuRestClientService {
             return McuStatus.Unknown;
 
         if (!response.success()) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"left conference failed! errCode : " + response.getError_code());
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "left conference failed! errCode : " + response.getError_code());
             System.out.println("left conference failed! errCode : " + response.getError_code());
         }
 
@@ -331,7 +339,7 @@ public class McuRestClientService {
 
     public McuStatus inspections(String confId, String mode, String srcMtId, String dstMtId) {
         if (!loginSuccess) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"inspections, has login out!!!");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "inspections, has login out!!!");
             System.out.println("inspections, has login out!!!");
             return McuStatus.TimeOut;
         }
@@ -357,7 +365,7 @@ public class McuRestClientService {
             mcuPostMsg.setParams(mcuInspectionParam);
             McuBaseResponse response = restClientService.exchange(url.toString(), HttpMethod.POST, mcuPostMsg.getMsg(), urlencodeMediaType, args, McuBaseResponse.class);
             if (null == response) {
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"inspections, video, null == response");
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "inspections, video, null == response");
                 System.out.println("inspections, video, null == response");
                 return McuStatus.Unknown;
             }
@@ -365,7 +373,7 @@ public class McuRestClientService {
             if (!response.success()) {
                 int errorCode = response.getError_code();
                 McuStatus mcuStatus = McuStatus.resolve(response.getError_code());
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"inspections, dstMtId(" + dstMtId + ") inspect srcMtId(" + srcMtId + ") video failed! errcode : " + errorCode + ", errMsg : " + mcuStatus.getDescription());
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "inspections, dstMtId(" + dstMtId + ") inspect srcMtId(" + srcMtId + ") video failed! errcode : " + errorCode + ", errMsg : " + mcuStatus.getDescription());
                 System.out.println("inspections, dstMtId(" + dstMtId + ") inspect srcMtId(" + srcMtId + ") video failed! errcode : " + errorCode + ", errMsg : " + mcuStatus.getDescription());
                 return mcuStatus;
             }
@@ -376,14 +384,14 @@ public class McuRestClientService {
             mcuPostMsg.setParams(mcuInspectionParam);
             McuBaseResponse response = restClientService.exchange(url.toString(), HttpMethod.POST, mcuPostMsg.getMsg(), urlencodeMediaType, args, McuBaseResponse.class);
             if (null == response) {
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"inspections, audio, null == response");
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "inspections, audio, null == response");
                 System.out.println("inspections, audio, null == response");
                 return McuStatus.Unknown;
             }
             if (!response.success()) {
                 int errorCode = response.getError_code();
                 McuStatus mcuStatus = McuStatus.resolve(response.getError_code());
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"inspections, dstMtId(" + dstMtId + ") inspect srcMtId(" + srcMtId + ") audio failed! errCode :" + errorCode + ", errMsg:" + mcuStatus.getDescription());
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "inspections, dstMtId(" + dstMtId + ") inspect srcMtId(" + srcMtId + ") audio failed! errCode :" + errorCode + ", errMsg:" + mcuStatus.getDescription());
                 System.out.println("inspections, dstMtId(" + dstMtId + ") inspect srcMtId(" + srcMtId + ") audio failed! errCode :" + errorCode + ", errMsg:" + mcuStatus.getDescription());
                 return mcuStatus;
             }
@@ -394,7 +402,7 @@ public class McuRestClientService {
 
     public McuStatus cancelInspection(String confId, String mode, String mtId) {
         if (!loginSuccess) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"cancelInspection, has login out!!!");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "cancelInspection, has login out!!!");
             System.out.println("cancelInspection, has login out!!!");
             return McuStatus.TimeOut;
         }
@@ -410,12 +418,12 @@ public class McuRestClientService {
             args.put("mode", "1");
             McuBaseResponse response = restClientService.exchange(url.toString(), HttpMethod.DELETE, mcuPostMsg.getMsg(), urlencodeMediaType, args, McuBaseResponse.class);
             if (null == response) {
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"cancelInspection, video, null == response");
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "cancelInspection, video, null == response");
                 System.out.println("cancelInspection, video, null == response");
                 return McuStatus.Unknown;
             }
             if (!response.success()) {
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"cancelInspection, video, cancel inspection(" + "mtId:" + mtId + ",confId:" + confId + ", mode: video) failed! errCode : " + response.getError_code());
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "cancelInspection, video, cancel inspection(" + "mtId:" + mtId + ",confId:" + confId + ", mode: video) failed! errCode : " + response.getError_code());
                 System.out.println("cancelInspection, video, cancel inspection(" + "mtId:" + mtId + ",confId:" + confId + ", mode: video) failed! errCode : " + response.getError_code());
                 return McuStatus.resolve(response.getError_code());
             }
@@ -425,12 +433,12 @@ public class McuRestClientService {
             args.put("mode", "2");
             McuBaseResponse response = restClientService.exchange(url.toString(), HttpMethod.DELETE, mcuPostMsg.getMsg(), urlencodeMediaType, args, McuBaseResponse.class);
             if (null == response) {
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"cancelInspection, audio, null == response");
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "cancelInspection, audio, null == response");
                 System.out.println("cancelInspection, audio, null == response");
                 return McuStatus.Unknown;
             }
             if (!response.success()) {
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"cancelInspection, audio, cancel inspection(" + "mtId:" + mtId + ",confId:" + confId + ", mode: audio) failed! errCode : " + response.getError_code());
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "cancelInspection, audio, cancel inspection(" + "mtId:" + mtId + ",confId:" + confId + ", mode: audio) failed! errCode : " + response.getError_code());
                 System.out.println("cancelInspection, audio, cancel inspection(" + "mtId:" + mtId + ",confId:" + confId + ", mode: audio) failed! errCode : " + response.getError_code());
                 return McuStatus.resolve(response.getError_code());
             }
@@ -441,7 +449,7 @@ public class McuRestClientService {
 
     public String getDualStream(String confId) {
         if (!loginSuccess) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"getDualStream, has login out!!!");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "getDualStream, has login out!!!");
             System.out.println("getDualStream, has login out!!!");
             return null;
         }
@@ -455,14 +463,14 @@ public class McuRestClientService {
 
         GetDualStreamResponse getDualStreamResponse = restClientService.exchange(url.toString(), HttpMethod.GET, null, urlencodeMediaType, args, GetDualStreamResponse.class);
         if (null == getDualStreamResponse) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"getDualStream, null == getDualStreamResponse");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "getDualStream, null == getDualStreamResponse");
             System.out.println("getDualStream, null == getDualStreamResponse");
             return null;
         }
 
         if (!getDualStreamResponse.success()) {
             int errorCode = getDualStreamResponse.getError_code();
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"getDualStream, failed! errcode:" + errorCode + ",errmsg:" + McuStatus.resolve(errorCode).getDescription());
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "getDualStream, failed! errcode:" + errorCode + ",errmsg:" + McuStatus.resolve(errorCode).getDescription());
             System.out.println("getDualStream, failed! errcode:" + errorCode + ",errmsg:" + McuStatus.resolve(errorCode).getDescription());
             return null;
         }
@@ -472,7 +480,7 @@ public class McuRestClientService {
 
     public String getSpeaker(String confId) {
         if (!loginSuccess) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"getSpeaker, has login out!!!");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "getSpeaker, has login out!!!");
             System.out.println("getSpeaker, has login out!!!");
             return null;
         }
@@ -485,14 +493,14 @@ public class McuRestClientService {
 
         GetSpeakerResponse getSpeakerResponse = restClientService.exchange(url.toString(), HttpMethod.GET, null, urlencodeMediaType, args, GetSpeakerResponse.class);
         if (null == getSpeakerResponse) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"getSpeaker, null == getSpeakerResponse");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "getSpeaker, null == getSpeakerResponse");
             System.out.println("getSpeaker, null == getSpeakerResponse");
             return null;
         }
 
         if (!getSpeakerResponse.success()) {
             int errorCode = getSpeakerResponse.getError_code();
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"getSpeaker, failed! errcode:" + errorCode + ",errmsg:" + McuStatus.resolve(errorCode).getDescription());
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "getSpeaker, failed! errcode:" + errorCode + ",errmsg:" + McuStatus.resolve(errorCode).getDescription());
             System.out.println("getSpeaker, failed! errcode:" + errorCode + ",errmsg:" + McuStatus.resolve(errorCode).getDescription());
             return null;
         }
@@ -502,7 +510,7 @@ public class McuRestClientService {
 
     public McuStatus setSpeaker(String confId, String mtId) {
         if (!loginSuccess) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"setSpeaker, has login out!!!");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "setSpeaker, has login out!!!");
             System.out.println("setSpeaker, has login out!!!");
             return McuStatus.TimeOut;
         }
@@ -518,13 +526,13 @@ public class McuRestClientService {
         mcuPostMsg.setParams(terminalId);
         McuBaseResponse response = restClientService.exchange(url.toString(), HttpMethod.PUT, mcuPostMsg.getMsg(), urlencodeMediaType, args, McuBaseResponse.class);
         if (null == response) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"setSpeaker, exchange put, null == response");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "setSpeaker, exchange put, null == response");
             System.out.println("setSpeaker, exchange put, null == response");
             return McuStatus.Unknown;
         }
 
         if (!response.success()) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"setSpeaker, exchange put failed! errcode:" + response.getError_code());
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "setSpeaker, exchange put failed! errcode:" + response.getError_code());
             System.out.println("setSpeaker, exchange put failed! errcode:" + response.getError_code());
             return McuStatus.resolve(response.getError_code());
         }
@@ -534,7 +542,7 @@ public class McuRestClientService {
 
     public McuStatus cancelSpeaker(String confId) {
         if (!loginSuccess) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"cancelSpeaker, has login out!!!");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "cancelSpeaker, has login out!!!");
             System.out.println("cancelSpeaker, has login out!!!");
             return McuStatus.TimeOut;
         }
@@ -559,7 +567,7 @@ public class McuRestClientService {
 
     public McuStatus ctrlCamera(String confId, String mtId, CameraCtrlParam cameraCtrlParam) {
         if (!loginSuccess) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"ctrlCamera, has login out!!!");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "ctrlCamera, has login out!!!");
             System.out.println("ctrlCamera, has login out!!!");
             return McuStatus.TimeOut;
         }
@@ -586,7 +594,7 @@ public class McuRestClientService {
 
     public McuStatus sendIFrame(String confId, TransportAddress transportAddress) {
         if (!loginSuccess) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"sendIFrame, has login out!!!");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "sendIFrame, has login out!!!");
             System.out.println("sendIFrame, has login out!!!");
             return McuStatus.TimeOut;
         }
@@ -615,7 +623,7 @@ public class McuRestClientService {
 
     public McuStatus ctrlVolume(String confId, String mtId, McuCtrlVolumeParam ctrlVolumeParam) {
         if (!loginSuccess) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"ctrlVolume, has login out!!!");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "ctrlVolume, has login out!!!");
             System.out.println("ctrlVolume, has login out!!!");
             return McuStatus.TimeOut;
         }
@@ -642,7 +650,7 @@ public class McuRestClientService {
 
     public McuStatus silenceOrMute(String confId, String mtId, boolean silence, SilenceOrMuteParam silenceOrMuteParam) {
         if (!loginSuccess) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"silenceOrMute, has login out!!!");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "silenceOrMute, has login out!!!");
             System.out.println("silenceOrMute, has login out!!!");
             return McuStatus.TimeOut;
         }
@@ -675,7 +683,7 @@ public class McuRestClientService {
 
     public McuStatus ctrlDualStream(String confId, String mtId, boolean dual) {
         if (!loginSuccess) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"ctrlDualStream, has login out!!!");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "ctrlDualStream, has login out!!!");
             System.out.println("ctrlDualStream, has login out!!!");
             return McuStatus.TimeOut;
         }
@@ -709,7 +717,7 @@ public class McuRestClientService {
 
     public McuStatus onlineMts(String confId, OnlineMtsInfo onlineMtsInfo) {
         if (!loginSuccess) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"onlineMts, has login out!!!");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "onlineMts, has login out!!!");
             System.out.println("onlineMts, has login out!!!");
             return McuStatus.TimeOut;
         }
@@ -736,7 +744,7 @@ public class McuRestClientService {
 
     public Map<String, CascadeTerminalInfo> getCascadesTerminal(String confId, String cascadeId, boolean e164Key) {
         if (!loginSuccess) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"getCascadesTerminal, has login out!!!");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "getCascadesTerminal, has login out!!!");
             System.out.println("getCascadesTerminal, has login out!!!");
             return null;
         }
@@ -751,26 +759,26 @@ public class McuRestClientService {
 
         GetCascadesMtResponse getCascadesMtResponse = restClientService.exchange(url.toString(), HttpMethod.GET, null, urlencodeMediaType, args, GetCascadesMtResponse.class);
         if (null == getCascadesMtResponse) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"getCascadesTerminal, null == getCascadesMtResponse");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "getCascadesTerminal, null == getCascadesMtResponse");
             System.out.println("getCascadesTerminal, null == getCascadesMtResponse");
             return null;
         }
 
         if (!getCascadesMtResponse.success()) {
             int errorCode = getCascadesMtResponse.getError_code();
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"getCascadesTerminal failed! errCode :" + errorCode + ", errMsg:" + McuStatus.resolve(errorCode).getDescription());
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "getCascadesTerminal failed! errCode :" + errorCode + ", errMsg:" + McuStatus.resolve(errorCode).getDescription());
             System.out.println("getCascadesTerminal failed! errCode :" + errorCode + ", errMsg:" + McuStatus.resolve(errorCode).getDescription());
             return null;
         }
 
         List<CascadeTerminalInfo> terminalInfos = getCascadesMtResponse.getMts();
         if (null == terminalInfos || terminalInfos.isEmpty()) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"GetCascadesMtResponse has no result!!");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "GetCascadesMtResponse has no result!!");
             System.out.println("GetCascadesMtResponse has no result!!");
             return null;
         }
 
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"getCascadesTerminal, total terminal num :" + terminalInfos.size());
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "getCascadesTerminal, total terminal num :" + terminalInfos.size());
         System.out.println("getCascadesTerminal, total terminal num :" + terminalInfos.size());
         Map<String, CascadeTerminalInfo> terminalInfoMap = new HashMap<>();
         if (e164Key) {
@@ -788,7 +796,7 @@ public class McuRestClientService {
 
     public GetConfMtInfoResponse getConfMtInfo(String confId, String mtId) {
         if (!loginSuccess) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"getCascadesTerminal, has login out!!!");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "getCascadesTerminal, has login out!!!");
             System.out.println("getCascadesTerminal, has login out!!!");
             return null;
         }
@@ -803,14 +811,14 @@ public class McuRestClientService {
 
         GetConfMtInfoResponse getConfMtInfoResponse = restClientService.exchange(url.toString(), HttpMethod.GET, null, urlencodeMediaType, args, GetConfMtInfoResponse.class);
         if (null == getConfMtInfoResponse) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"getConfMtInfo, null == getCascadesMtResponse");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "getConfMtInfo, null == getCascadesMtResponse");
             System.out.println("getConfMtInfo, null == getCascadesMtResponse");
             return null;
         }
 
         if (!getConfMtInfoResponse.success()) {
             int errorCode = getConfMtInfoResponse.getError_code();
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"getConfMtInfo failed! errCode :" + errorCode + ", errmsg:" + McuStatus.resolve(errorCode).getDescription());
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "getConfMtInfo failed! errCode :" + errorCode + ", errmsg:" + McuStatus.resolve(errorCode).getDescription());
             System.out.println("getConfMtInfo failed! errCode :" + errorCode + ", errmsg:" + McuStatus.resolve(errorCode).getDescription());
             return null;
         }
@@ -842,8 +850,9 @@ public class McuRestClientService {
                         System.out.println("remoteCallMt: " + terminalEntry.getKey());
 
                         TerminalService terminalService = terminalEntry.getValue();
+                        String groupId = terminalService.getGroupId();
                         terminalService.cancelCallMt();
-                        TerminalManageService.publishStatus(terminalEntry.getKey(), terminalService.getGroupId(),TerminalOnlineStatusEnum.OFFLINE.getCode());
+                        TerminalManageService.publishStatus(terminalEntry.getKey(), groupId, TerminalOnlineStatusEnum.OFFLINE.getCode());
 
                         p2PCallGroup.removeCallMember(terminalEntry.getKey());
                     }
@@ -1028,6 +1037,7 @@ public class McuRestClientService {
         subscribeChannelList.add(subscribeChannel.toString());
         confSubcribeChannelMap.put(confId, subscribeChannelList);
     }
+
     //订阅所有会议信息
     public void subscribeAllConfInfo() {
 
@@ -1051,9 +1061,9 @@ public class McuRestClientService {
         confSubcribeChannelMap.put("", subscribeChannelList);
     }
 
-    public List<ConfsDetailRspInfo> queryConfs(){
+    public List<ConfsDetailRspInfo> queryConfs() {
         if (!loginSuccess) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"[queryConfs] has login out!!!");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "[queryConfs] has login out!!!");
             System.out.println("[queryConfs] has login out!!!");
             return null;
         }
@@ -1065,18 +1075,18 @@ public class McuRestClientService {
 
         ConfsInfoResponse response = restClientService.exchange(url.toString(), HttpMethod.GET, null, urlencodeMediaType, args, ConfsInfoResponse.class);
         if (null == response) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"[QueryConfs] JoinConferenceResponse null!");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "[QueryConfs] JoinConferenceResponse null!");
             System.out.println("[QueryConfs] QueryConfs null!");
             return null;
         }
 
         if (response.success()) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"[QueryConfs] QueryConfs success");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "[QueryConfs] QueryConfs success");
             System.out.println("[QueryConfs] QueryConfs success");
             return response.getConfs();
         } else {
             int errorCode = response.getError_code();
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"[QueryConfs] QueryConfs failed! errcode : " + errorCode + ", errMsg : " + McuStatus.resolve(errorCode).getDescription());
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "[QueryConfs] QueryConfs failed! errcode : " + errorCode + ", errMsg : " + McuStatus.resolve(errorCode).getDescription());
             System.out.println("[QueryConfs] QueryConfs failed! errcode : " + errorCode + ", errMsg : " + McuStatus.resolve(errorCode).getDescription());
         }
 
@@ -1085,7 +1095,7 @@ public class McuRestClientService {
 
     public ConfsCascadesResponse queryConfsCascades(String confId) {
         if (!loginSuccess) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"queryConfsCascades, has login out!!!");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "queryConfsCascades, has login out!!!");
             System.out.println("queryConfsCascades, has login out!!!");
             return null;
         }
@@ -1098,14 +1108,14 @@ public class McuRestClientService {
 
         ConfsCascadesResponse confsCascadesResponse = restClientService.exchange(url.toString(), HttpMethod.GET, null, urlencodeMediaType, args, ConfsCascadesResponse.class);
         if (null == confsCascadesResponse) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"confsCascadesResponse, null == confsCascadesResponse");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "confsCascadesResponse, null == confsCascadesResponse");
             System.out.println("confsCascadesResponse, null == confsCascadesResponse");
             return null;
         }
 
         if (!confsCascadesResponse.success()) {
             int errorCode = confsCascadesResponse.getError_code();
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"confsCascadesResponse, failed! errcode:" + errorCode + ",errmsg:" + McuStatus.resolve(errorCode).getDescription());
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "confsCascadesResponse, failed! errcode:" + errorCode + ",errmsg:" + McuStatus.resolve(errorCode).getDescription());
             System.out.println("confsCascadesResponse, failed! errcode:" + errorCode + ",errmsg:" + McuStatus.resolve(errorCode).getDescription());
             return null;
         }
@@ -1115,7 +1125,7 @@ public class McuRestClientService {
 
     public List<ConfsCascadesMtsRspInfo> queryConfsCascadesMts(String confId, String cascadeId) {
         if (!loginSuccess) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"[queryConfsCascadesMts] has login out!!!");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "[queryConfsCascadesMts] has login out!!!");
             System.out.println("[queryConfsCascadesMts] has login out!!!");
             return null;
         }
@@ -1129,29 +1139,29 @@ public class McuRestClientService {
 
         ConfsCascadesMtsResponse response = restClientService.exchange(url.toString(), HttpMethod.GET, null, urlencodeMediaType, args, ConfsCascadesMtsResponse.class);
         if (null == response) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"[queryConfsCascadesMts] queryConfsCascadesMts null!");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "[queryConfsCascadesMts] queryConfsCascadesMts null!");
             System.out.println("[queryConfsCascadesMts] queryConfsCascadesMts null!");
             return null;
         }
 
         if (response.success()) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"[queryConfsCascadesMts] queryConfsCascadesMts success");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "[queryConfsCascadesMts] queryConfsCascadesMts success");
             System.out.println("[queryConfsCascadesMts] queryConfsCascadesMts success");
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"response.getConfsCascadesMtsRspInfos : " + response.getMts());
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "response.getConfsCascadesMtsRspInfos : " + response.getMts());
             System.out.println("response.getConfsCascadesMtsRspInfos : " + response.getMts());
             return response.getMts();
         } else {
             int errorCode = response.getError_code();
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"[queryConfsCascadesMts] queryConfsCascadesMts failed! errcode : " + errorCode + ", errMsg : " + McuStatus.resolve(errorCode).getDescription());
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "[queryConfsCascadesMts] queryConfsCascadesMts failed! errcode : " + errorCode + ", errMsg : " + McuStatus.resolve(errorCode).getDescription());
             System.out.println("[queryConfsCascadesMts] queryConfsCascadesMts failed! errcode : " + errorCode + ", errMsg : " + McuStatus.resolve(errorCode).getDescription());
         }
 
         return null;
     }
 
-    public McuStatus sendMsm(String confId, SendSmsParam sendSmsParam,List<TerminalIdInfo> smsInfoMts){
+    public McuStatus sendMsm(String confId, SendSmsParam sendSmsParam, List<TerminalIdInfo> smsInfoMts) {
         if (!loginSuccess) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"[sendMsm] has login out!!!");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "[sendMsm] has login out!!!");
             System.out.println("[sendMsm] has login out!!!");
             return null;
         }
@@ -1161,9 +1171,9 @@ public class McuRestClientService {
         Map<String, String> args = new HashMap<>();
         args.put("conf_id", confId);
 
-        SendSmsInfo sendSmsInfo = new SendSmsInfo(sendSmsParam.getMessage(),sendSmsParam.getType(),sendSmsParam.getRollNum(),sendSmsParam.getRollSpeed());
+        SendSmsInfo sendSmsInfo = new SendSmsInfo(sendSmsParam.getMessage(), sendSmsParam.getType(), sendSmsParam.getRollNum(), sendSmsParam.getRollSpeed());
         sendSmsInfo.setMts(smsInfoMts);
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"Mcu sendSmsInfo : " + sendSmsInfo.toString());
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Mcu sendSmsInfo : " + sendSmsInfo.toString());
         System.out.println("Mcu sendSmsInfo : " + sendSmsInfo.toString());
         McuPostMsg mcuPostMsg = new McuPostMsg(accountToken);
         mcuPostMsg.setParams(sendSmsInfo);
@@ -1177,7 +1187,7 @@ public class McuRestClientService {
             return McuStatus.OK;
         }
 
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"sendSmsreSponse.getError_code() :" + sendSmsreSponse.getError_code());
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "sendSmsreSponse.getError_code() :" + sendSmsreSponse.getError_code());
         System.out.println("sendSmsreSponse.getError_code() :" + sendSmsreSponse.getError_code());
         return McuStatus.resolve(sendSmsreSponse.getError_code());
     }
@@ -1194,6 +1204,9 @@ public class McuRestClientService {
     @Autowired
     private Environment env;
 
+    @Autowired
+    private ConfInterfaceService confInterfaceService;
+
     protected final org.slf4j.Logger logger = LoggerFactory.getLogger(this.getClass());
 
     private final MediaType urlencodeMediaType = MediaType.APPLICATION_FORM_URLENCODED;
@@ -1205,7 +1218,6 @@ public class McuRestClientService {
     public volatile boolean loginSuccess = false;
     private Map<String, List<String>> confSubcribeChannelMap;
     private static String activeProf = "dev";
-
 
 
 }
