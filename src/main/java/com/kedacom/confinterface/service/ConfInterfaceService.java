@@ -1199,7 +1199,6 @@ public class ConfInterfaceService {
                 p2PCallGroup.addCallMember(mtAccount, vmtService);
             } else {
                 vmtService.delWaitMsg(waitMsg);
-                //vmtService.publishStatus(mtAccount, TerminalOnlineStatusEnum.OFFLINE.getCode());
                 //加上终端呼叫失败的错误码
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "callRemoteCap faileCode" + terminalOfflineReasonEnum.getCode());
                 System.out.println("callRemoteCap faileCode" + terminalOfflineReasonEnum.getCode());
