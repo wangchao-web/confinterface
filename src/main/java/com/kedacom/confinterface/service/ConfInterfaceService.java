@@ -865,10 +865,6 @@ public class ConfInterfaceService {
 
     @Async("confTaskExecutor")
     public void ctrlCamera(CameraCtrlRequest cameraCtrlRequest) {
-        if (!baseSysConfig.isUseMcu()) {
-            cameraCtrlRequest.makeErrorResponseMsg(ConfInterfaceResult.NOT_SUPPORT_METHOD.getCode(), HttpStatus.OK, ConfInterfaceResult.NOT_SUPPORT_METHOD.getMessage());
-            return;
-        }
 
         String groupId = cameraCtrlRequest.getGroupId();
         CameraCtrlParam cameraCtrlParam = cameraCtrlRequest.getCameraCtrlParam();
