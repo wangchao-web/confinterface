@@ -249,9 +249,9 @@ public class McuRestClientService {
         Map<String, String> args = new HashMap<>();
         args.put("conf_id", confId);
 
-        Map<String, String> confGroupMap = confInterfaceService.getConfGroupMap();
+        /*Map<String, String> confGroupMap = confInterfaceService.getConfGroupMap();
         String groupId = confGroupMap.get(confId);
-        GroupConfInfo groupConfInfo = confInterfaceService.getGroupConfInfoMap().get(groupId);
+        GroupConfInfo groupConfInfo = confInterfaceService.getGroupConfInfoMap().get(groupId);*/
 
         List<JoinConferenceMtInfo> joinConferenceMtInfos = new ArrayList<>();
         for (Terminal mt : mts) {
@@ -284,11 +284,11 @@ public class McuRestClientService {
         if (response.success()) {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "[joinConference] JoinConferenceResponse success, confId : " + confId);
             System.out.println("[joinConference] JoinConferenceResponse success, confId : " + confId);
-            if(!groupConfInfo.getCreatedConf().equals("mcu")){
+            /*if(!groupConfInfo.getCreatedConf().equals("mcu")){
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"[joinConference] JoinConferenceResponse success groupId : " + groupId +", groupConfInfo.getCreatedConf() : " +groupConfInfo.getCreatedConf());
                 System.out.println("[joinConference] JoinConferenceResponse success groupId : " + groupId +", groupConfInfo.getCreatedConf() : " +groupConfInfo.getCreatedConf());
-                subscribeConfMts(confId);
-            }
+            }*/
+            subscribeConfMts(confId);
             return response.getMts();
         } else {
             int errorCode = response.getError_code();
@@ -939,7 +939,8 @@ public class McuRestClientService {
         subscribeChannel.delete(0, subscribeChannel.length());
         subscribeChannel.append("/confs/");
         subscribeChannel.append(confId);
-        subscribeChannel.append("/cascades/0/mts/*");
+        //subscribeChannel.append("/cascades/0/mts/*");
+        subscribeChannel.append("/cascades/**");
 
         subscribeChannelList.add(subscribeChannel.toString());
         mcuSubscribeClientService.subscribe(subscribeChannel.toString());
@@ -1016,12 +1017,12 @@ public class McuRestClientService {
 
     //订阅会议级联信息
     public void subscribeConfCascadesInfo(String confId) {
-        //会议级联信息通道/confs/{conf_id}/cascades
+        //会议级联信息通道/confs/{conf_id}/cascades/**
         StringBuilder subscribeChannel = new StringBuilder();
         subscribeChannel.delete(0, subscribeChannel.length());
         subscribeChannel.append("/confs/");
         subscribeChannel.append(confId);
-        subscribeChannel.append("/cascades");
+        subscribeChannel.append("/cascades/**");
 
         List<String> subscribeChannelList = confSubcribeChannelMap.get(confId);
         if (null == subscribeChannelList) {
@@ -1044,7 +1045,7 @@ public class McuRestClientService {
         //会议级联信息通道/confs/**
         StringBuilder subscribeChannel = new StringBuilder();
         subscribeChannel.delete(0, subscribeChannel.length());
-        subscribeChannel.append("/confs/**");
+        subscribeChannel.append("/confs/*");
 
         List<String> subscribeChannelList = confSubcribeChannelMap.get("");
         if (null == subscribeChannelList) {
@@ -1069,8 +1070,8 @@ public class McuRestClientService {
         }
 
         StringBuilder url = new StringBuilder();
-        constructUrl(url, "/api/v1/vc/confs");
-        Map<String, Object> args = new HashMap<>();
+        constructUrl(url, "/api/v1/vc/confs?account_token={account_token}");
+        Map<String, String> args = new HashMap<>();
         args.put("account_token", accountToken);
 
         ConfsInfoResponse response = restClientService.exchange(url.toString(), HttpMethod.GET, null, urlencodeMediaType, args, ConfsInfoResponse.class);
@@ -1131,7 +1132,7 @@ public class McuRestClientService {
         }
 
         StringBuilder url = new StringBuilder();
-        constructUrl(url, "/api/v1/vc/confs/{conf_id}/cascades/{cascade_id}/mts");
+        constructUrl(url, "/api/v1/vc/confs/{conf_id}/cascades/{cascade_id}/mts?account_token={account_token}");
         Map<String, Object> args = new HashMap<>();
         args.put("conf_id", confId);
         args.put("cascade_id", cascadeId);
@@ -1204,8 +1205,6 @@ public class McuRestClientService {
     @Autowired
     private Environment env;
 
-    @Autowired
-    private ConfInterfaceService confInterfaceService;
 
     protected final org.slf4j.Logger logger = LoggerFactory.getLogger(this.getClass());
 

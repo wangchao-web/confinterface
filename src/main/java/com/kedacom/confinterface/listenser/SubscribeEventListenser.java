@@ -32,22 +32,22 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
     @Async("confTaskExecutor")
     @Override
     public void onApplicationEvent(SubscribeEvent subscribeEvent) {
-        if (!confInterfaceService.getConfGroupMap().containsKey(subscribeEvent.getConfId())){
+        if (!confInterfaceService.getConfGroupMap().containsKey(subscribeEvent.getConfId())) {
             confProcessSubscribeMsg(subscribeEvent);
         }
 
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"onApplicationEvent, recv subscribe event, confId:" + subscribeEvent.getConfId() + ", channel:" + subscribeEvent.getChannel() + ", threadName:" + Thread.currentThread().getName());
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "onApplicationEvent, recv subscribe event, confId:" + subscribeEvent.getConfId() + ", channel:" + subscribeEvent.getChannel() + ", threadName:" + Thread.currentThread().getName());
         System.out.println("onApplicationEvent, recv subscribe event, confId:" + subscribeEvent.getConfId() + ", channel:" + subscribeEvent.getChannel() + ", threadName:" + Thread.currentThread().getName());
         String groupId = confInterfaceService.getGroupId(subscribeEvent.getConfId());
         if (null == groupId) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"not find groupId, confId : " + subscribeEvent.getConfId());
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "not find groupId, confId : " + subscribeEvent.getConfId());
             System.out.println("not find groupId, confId : " + subscribeEvent.getConfId());
             return;
         }
 
         GroupConfInfo groupConfInfo = confInterfaceService.getGroupConfInfo(groupId);
         if (null == groupConfInfo) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"not find groupConfInfo, groupId : " + groupId);
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "not find groupConfInfo, groupId : " + groupId);
             System.out.println("not find groupConfInfo, groupId : " + groupId);
             return;
         }
@@ -55,44 +55,44 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
         BaseRequestMsg<? extends BaseResponseMsg> requestMsg = groupConfInfo.getWaitDealTask(subscribeEvent.getChannel());
         if (null == requestMsg) {
             //非外部请求的消息，根据通道判断是什么内容的更新删除
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"no requestMsg..........");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "no requestMsg..........");
             System.out.println("no requestMsg..........");
             processSubscribeMsg(subscribeEvent, groupConfInfo);
             return;
         }
 
         if (requestMsg instanceof BroadCastRequest) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"process BroadCastRequest.......");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "process BroadCastRequest.......");
             System.out.println("process BroadCastRequest.......");
             BroadCastRequest broadCastRequest = (BroadCastRequest) requestMsg;
             processBroadcastRequest(subscribeEvent, groupConfInfo, broadCastRequest);
         } else if (requestMsg instanceof JoinDiscussionGroupRequest) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"process JoinDiscussionGroupRequest.........");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "process JoinDiscussionGroupRequest.........");
             System.out.println("process JoinDiscussionGroupRequest.........");
             JoinDiscussionGroupRequest joinDiscussionGroupRequest = (JoinDiscussionGroupRequest) requestMsg;
             processJoinDiscussionRequest(subscribeEvent, groupConfInfo, joinDiscussionGroupRequest);
         } else if (requestMsg instanceof LeftDiscussionGroupRequest) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"process LeftDiscussionGroupRequest..........");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "process LeftDiscussionGroupRequest..........");
             System.out.println("process LeftDiscussionGroupRequest..........");
             LeftDiscussionGroupRequest leftDiscussionGroupRequest = (LeftDiscussionGroupRequest) requestMsg;
             processLeftDiscussionRequest(subscribeEvent, groupConfInfo, leftDiscussionGroupRequest);
         } else if (requestMsg instanceof InspectionRequest) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"process InspectionRequest..........");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "process InspectionRequest..........");
             System.out.println("process InspectionRequest..........");
             InspectionRequest inspectionRequest = (InspectionRequest) requestMsg;
             processInspectionRequest(subscribeEvent, groupConfInfo, inspectionRequest);
         } else if (requestMsg instanceof CancelInspectionRequest) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"process CancelInspectionRequest..........");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "process CancelInspectionRequest..........");
             System.out.println("process CancelInspectionRequest..........");
             CancelInspectionRequest cancelInspectionRequest = (CancelInspectionRequest) requestMsg;
             processCancelInspectionRequest(subscribeEvent, groupConfInfo, cancelInspectionRequest);
         } else if (requestMsg instanceof CancelDualStreamRequest) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"process CancelDualStreamRequest..........");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "process CancelDualStreamRequest..........");
             System.out.println("process CancelDualStreamRequest..........");
             CancelDualStreamRequest cancelDualStreamRequest = (CancelDualStreamRequest) requestMsg;
             processCancelDualStreamRequest(subscribeEvent, groupConfInfo, cancelDualStreamRequest);
         } else if (requestMsg instanceof StartDualStreamRequest) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"process StartDualStreamRequest..........");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "process StartDualStreamRequest..........");
             System.out.println("process StartDualStreamRequest..........");
             StartDualStreamRequest startDualStreamRequest = (StartDualStreamRequest) requestMsg;
             processStartDualStreamRequest(subscribeEvent, groupConfInfo, startDualStreamRequest);
@@ -104,7 +104,7 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
         int broadcastType = groupConfInfo.getBroadcastType();
         if (broadcastType == BroadcastTypeEnum.OTHER.getCode()) {
             //如果广播源不是会议终端，则该广播源为虚拟终端，直接设置虚拟终端为发言人
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"vmt, setSpeaker, confId : " + confId + ", mtId: " + broadcastMtId);
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "vmt, setSpeaker, confId : " + confId + ", mtId: " + broadcastMtId);
             System.out.println("vmt, setSpeaker, confId : " + confId + ", mtId: " + broadcastMtId);
             mcuRestClientService.setSpeaker(confId, broadcastMtId);
             return;
@@ -115,12 +115,12 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
             String broadcastE164 = groupConfInfo.getBroadcastMtE164();
             TerminalService mtService = groupConfInfo.getMtMember(broadcastE164);
             if (mtService.isOnline()) {
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"terminal, setSpeaker, confId : " + confId + ", e164: " + mtService.getE164() + ", mtId: " + mtService.getMtId());
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "terminal, setSpeaker, confId : " + confId + ", e164: " + mtService.getE164() + ", mtId: " + mtService.getMtId());
                 System.out.println("terminal, setSpeaker, confId : " + confId + ", e164: " + mtService.getE164() + ", mtId: " + mtService.getMtId());
                 mcuRestClientService.setSpeaker(confId, mtService.getMtId());
             } else {
                 //等到设备上线后,再设置为发言人
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"terminal, not online, set to be speaker, confId : " + confId + ", e164: " + mtService.getE164() + ", mtId: " + mtService.getMtId());
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "terminal, not online, set to be speaker, confId : " + confId + ", e164: " + mtService.getE164() + ", mtId: " + mtService.getMtId());
                 System.out.println("terminal, not online, set to be speaker, confId : " + confId + ", e164: " + mtService.getE164() + ", mtId: " + mtService.getMtId());
                 mtService.setToBeSpeaker(true);
             }
@@ -133,7 +133,7 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
             McuStatus mcuStatus = mcuRestClientService.inspections(confId, mode, srcMtId, dstMtId);
             if (mcuStatus.getValue() == 0 || tryTimes == 1) {
                 //选看成功或者尝试次数到了，直接退出循环
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"tryInspections, confId:" + confId + ", mode:" + mode + ", srcMtId:" + srcMtId + ", dstMtId:" + dstMtId + ", errCode:" + mcuStatus.getValue() + ", tryTimes:" + tryTimes);
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "tryInspections, confId:" + confId + ", mode:" + mode + ", srcMtId:" + srcMtId + ", dstMtId:" + dstMtId + ", errCode:" + mcuStatus.getValue() + ", tryTimes:" + tryTimes);
                 System.out.println("tryInspections, confId:" + confId + ", mode:" + mode + ", srcMtId:" + srcMtId + ", dstMtId:" + dstMtId + ", errCode:" + mcuStatus.getValue() + ", tryTimes:" + tryTimes);
                 break;
             }
@@ -157,11 +157,11 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
             String mode = inspectionSrcParam.getMode();
             TerminalService inspectionSrcService = groupConfInfo.getMember(inspectionSrcE164);
             if (inspectionSrcService.isOnline()) {
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"src[" + inspectionSrcE164 + "] is online, and logical channel has been opened, " + "dst[" + onlineTerminal.getE164() + "] start inspection!");
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "src[" + inspectionSrcE164 + "] is online, and logical channel has been opened, " + "dst[" + onlineTerminal.getE164() + "] start inspection!");
                 System.out.println("src[" + inspectionSrcE164 + "] is online, and logical channel has been opened, " + "dst[" + onlineTerminal.getE164() + "] start inspection!");
                 tryInspections(confId, mode, inspectionSrcService.getMtId(), onlineTerminal.getMtId());
             } else {
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"src[" + inspectionSrcE164 + "] is not online, set be inspected by dst[" + onlineTerminal.getE164() + "]");
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "src[" + inspectionSrcE164 + "] is not online, set be inspected by dst[" + onlineTerminal.getE164() + "]");
                 System.out.println("src[" + inspectionSrcE164 + "] is not online, set be inspected by dst[" + onlineTerminal.getE164() + "]");
                 InspectedParam inspectedParam = new InspectedParam();
                 inspectedParam.setVmt(onlineTerminal.isVmt());
@@ -170,16 +170,16 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
         }
 
         //是否被选看
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"check terminal[" + onlineTerminal.getE164() + "] whether be inspected!");
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "check terminal[" + onlineTerminal.getE164() + "] whether be inspected!");
         System.out.println("check terminal[" + onlineTerminal.getE164() + "] whether be inspected!");
         ConcurrentHashMap<String, InspectedParam> inspectedTerminals = onlineTerminal.getInspentedTerminals();
         if (null == inspectedTerminals) {
             //没有被选看，直接返回
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"terminal[" + onlineTerminal.getE164() + "] not be inspected!");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "terminal[" + onlineTerminal.getE164() + "] not be inspected!");
             System.out.println("terminal[" + onlineTerminal.getE164() + "] not be inspected!");
             return;
         }
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"terminal[" + onlineTerminal.getE164() + "] start dealing be inspected! total " + inspectedTerminals.size() + " terminal inspect this termianl!");
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "terminal[" + onlineTerminal.getE164() + "] start dealing be inspected! total " + inspectedTerminals.size() + " terminal inspect this termianl!");
         System.out.println("terminal[" + onlineTerminal.getE164() + "] start dealing be inspected! total " + inspectedTerminals.size() + " terminal inspect this termianl!");
         TerminalService dstInspectionService;
         for (ConcurrentHashMap.Entry<String, InspectedParam> inspectedTerminal : inspectedTerminals.entrySet()) {
@@ -188,20 +188,20 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
                 continue;
 
             if (!dstInspectionService.isOnline()) {
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"dstTerminal[" + dstInspectionService.getE164() + "] is not online, processing inspection when dst is online!");
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "dstTerminal[" + dstInspectionService.getE164() + "] is not online, processing inspection when dst is online!");
                 System.out.println("dstTerminal[" + dstInspectionService.getE164() + "] is not online, processing inspection when dst is online!");
                 continue;
             }
 
             if (inspectedTerminal.getValue().getStatus() == InspectionStatusEnum.OK) {
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"dstTerminal[" + dstInspectionService.getE164() + "] has inspected srcTerminal[" + onlineTerminal.getE164() + "]");
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "dstTerminal[" + dstInspectionService.getE164() + "] has inspected srcTerminal[" + onlineTerminal.getE164() + "]");
                 System.out.println("dstTerminal[" + dstInspectionService.getE164() + "] has inspected srcTerminal[" + onlineTerminal.getE164() + "]");
                 continue;
             }
 
             inspectionSrcParam = dstInspectionService.getInspectionParam();
             String mode = inspectionSrcParam.getMode();
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"dst[" + dstInspectionService.getE164() + "] is online, and logical channel has been opened, start inspect src[" + onlineTerminal.getE164() + "]");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "dst[" + dstInspectionService.getE164() + "] is online, and logical channel has been opened, start inspect src[" + onlineTerminal.getE164() + "]");
             System.out.println("dst[" + dstInspectionService.getE164() + "] is online, and logical channel has been opened, start inspect src[" + onlineTerminal.getE164() + "]");
             tryInspections(confId, mode, onlineTerminal.getMtId(), dstInspectionService.getMtId());
         }
@@ -218,19 +218,62 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
         if (null == getConfMtInfoResponse)
             return;
 
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"processSubscribeMts, ConfMtInfo:" + getConfMtInfoResponse.toString());
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processSubscribeMts, ConfMtInfo:" + getConfMtInfoResponse.toString());
         System.out.println("processSubscribeMts, ConfMtInfo:" + getConfMtInfoResponse.toString());
-        String e164 = getConfMtInfoResponse.getE164();
+        String e164;
+
+        if (getConfMtInfoResponse.getE164().isEmpty()) {
+            e164 = getConfMtInfoResponse.getIp();
+        } else {
+            e164 = getConfMtInfoResponse.getE164();
+        }
+        //String e164 = getConfMtInfoResponse.getE164();
         TerminalService terminalService = groupConfInfo.getMember(e164);
+
         if (null == terminalService) {
+            if (groupConfInfo.getCreatedConf().equals("mcu")) {
+                Boolean bVmt = false;
+                groupConfInfo.addMtId(getConfMtInfoResponse.getMt_id(), e164);
+                if (getConfMtInfoResponse.getAlias().contains("confInterface")) {
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "The terminal is VMT  name set bVmt is true : " + getConfMtInfoResponse.getAlias());
+                    System.out.println("The terminal is VMT  name set bVmt is true : " + getConfMtInfoResponse.getAlias());
+                    bVmt = true;
+                }
+                TerminalService terminal = terminalManageService.createTerminal(e164, bVmt);
+                terminal.setE164(e164);
+                terminal.setConfId(confId);
+                terminal.setGroupId(groupConfInfo.getGroupId());
+                terminal.setIp(getConfMtInfoResponse.getIp());
+                terminal.setName(getConfMtInfoResponse.getAlias());
+                terminal.setMtId(getConfMtInfoResponse.getMt_id());
+                terminal.isOline(getConfMtInfoResponse.getOnline());
+                groupConfInfo.addMember(terminal);
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processSubscribeMts createTerminal  ,terminal  " + terminal.toString());
+                System.out.println("processSubscribeMts createTerminal  ,terminal  " + terminal.toString());
+            }
             return;
+        } else {
+            String terminalServiceMtId = terminalService.getMtId();
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "terminalServiceMtId : " + terminalServiceMtId + "mtId : " + mtId);
+            System.out.println("terminalServiceMtId : " + terminalServiceMtId + "mtId : " + mtId);
+            if (terminalServiceMtId != null) {
+                if (groupConfInfo.getCreatedConf().equals("mcu") && !terminalServiceMtId.equals(mtId)) {
+                    if (getConfMtInfoResponse.getOnline() == 1) {
+                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processSubscribeMts terminalService account : " + terminalService.getE164() + "Online : " + terminalService.getOnline() + "terminalService mtID : " + terminalService.getMtId() + " , getConfMtInfoResponse mtId : " + getConfMtInfoResponse.getMt_id());
+                        System.out.println("processSubscribeMts terminalService account : " + terminalService.getE164() + "Online : " + terminalService.getOnline() + "terminalService mtID : " + terminalService.getMtId() + " , getConfMtInfoResponse mtId : " + getConfMtInfoResponse.getMt_id());
+                        terminalService.isOline(getConfMtInfoResponse.getOnline());
+                        terminalService.setMtId(getConfMtInfoResponse.getMt_id());
+                    }
+                    return;
+                }
+            }
         }
 
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"processSubscribeMts, mtId:" + mtId + ", e164:" + e164 + ", terminalService mtId:" + terminalService.getMtId());
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processSubscribeMts, mtId:" + mtId + ", e164:" + e164 + ", terminalService mtId:" + terminalService.getMtId());
         System.out.println("processSubscribeMts, mtId:" + mtId + ", e164:" + e164 + ", terminalService mtId:" + terminalService.getMtId());
 
         if (terminalService.isOnline()) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"processSubscribeMts, terminal(e164:" + terminalService.getE164() + ",mtId:" + mtId + ") is current online!");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processSubscribeMts, terminal(e164:" + terminalService.getE164() + ",mtId:" + mtId + ") is current online!");
             System.out.println("processSubscribeMts, terminal(e164:" + terminalService.getE164() + ",mtId:" + mtId + ") is current online!");
             if (getConfMtInfoResponse.getOnline() == 0) {
                 if (!terminalService.isVmt()) {
@@ -240,7 +283,7 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
 
                 terminalService.setOnline(TerminalOnlineStatusEnum.OFFLINE.getCode());
 
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"terminal(e164:" + e164 + ",mtId:" + mtId + ") is offline! confId:" + groupConfInfo.getConfId() + ", vmt:" + terminalService.isVmt());
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "terminal(e164:" + e164 + ",mtId:" + mtId + ") is offline! confId:" + groupConfInfo.getConfId() + ", vmt:" + terminalService.isVmt());
                 System.out.println("terminal(e164:" + e164 + ",mtId:" + mtId + ") is offline! confId:" + groupConfInfo.getConfId() + ", vmt:" + terminalService.isVmt());
                 //判断是否有其他的终端选看该终端，如果有，则重置相应终端的选看状态
                 if (!terminalService.isInspected())
@@ -260,13 +303,15 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
                 return;
             }
         } else {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"getConfMtInfoResponse.getOnline() : " + getConfMtInfoResponse.getOnline());
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "getConfMtInfoResponse.getOnline() : " + getConfMtInfoResponse.getOnline());
             System.out.println("getConfMtInfoResponse.getOnline() : " + getConfMtInfoResponse.getOnline());
             if (getConfMtInfoResponse.getOnline() == 1) {
                 if (null == groupConfInfo.getE164(mtId)) {
                     terminalService.setMtId(mtId);
                     terminalService.setConfId(groupConfInfo.getConfId());
                     groupConfInfo.addMtId(mtId, terminalService.getE164());
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"terminalService.setMtId : "+mtId);
+                    System.out.println("terminalService.setMtId : "+mtId);
                 }
 
                 //等到逻辑通道成功打开再设置为终端上线，在逻辑通道没有打开之前，进行选看等其他操作会失败
@@ -274,14 +319,14 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
                     //只会打开音频逻辑通道
                     if (!getConfMtInfoResponse.getA_snd_chn().isEmpty() && !getConfMtInfoResponse.getA_rcv_chn().isEmpty()) {
                         terminalService.setOnline(TerminalOnlineStatusEnum.ONLINE.getCode());
-                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"telephone terminal(E164:" + e164 + ",mtId:" + mtId + ") is online! confId:" + groupConfInfo.getConfId() + ", vmt:" + terminalService.isVmt());
+                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "telephone terminal(E164:" + e164 + ",mtId:" + mtId + ") is online! confId:" + groupConfInfo.getConfId() + ", vmt:" + terminalService.isVmt());
                         System.out.println("telephone terminal(E164:" + e164 + ",mtId:" + mtId + ") is online! confId:" + groupConfInfo.getConfId() + ", vmt:" + terminalService.isVmt());
                     }
                 } else {
                     if (!getConfMtInfoResponse.getA_snd_chn().isEmpty() && !getConfMtInfoResponse.getA_rcv_chn().isEmpty()
                             && !getConfMtInfoResponse.getV_snd_chn().isEmpty() && !getConfMtInfoResponse.getV_rcv_chn().isEmpty()) {
                         terminalService.setOnline(TerminalOnlineStatusEnum.ONLINE.getCode());
-                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"terminal(E164:" + e164 + ",mtId:" + mtId + ") is online! confId:" + groupConfInfo.getConfId() + ", vmt:" + terminalService.isVmt() + ", type:" + getConfMtInfoResponse.getType());
+                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "terminal(E164:" + e164 + ",mtId:" + mtId + ") is online! confId:" + groupConfInfo.getConfId() + ", vmt:" + terminalService.isVmt() + ", type:" + getConfMtInfoResponse.getType());
                         System.out.println("terminal(E164:" + e164 + ",mtId:" + mtId + ") is online! confId:" + groupConfInfo.getConfId() + ", vmt:" + terminalService.isVmt() + ", type:" + getConfMtInfoResponse.getType());
                     }
                 }
@@ -289,6 +334,12 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
                 if (terminalService.isOnline() && !terminalService.isVmt()) {
                     System.out.println("terminal is online and not vmt, publishStatus!! e164:" + e164);
                     TerminalManageService.publishStatus(e164, groupConfInfo.getGroupId(), TerminalOnlineStatusEnum.ONLINE.getCode());
+                }
+                //groupConfInfo.addMtId(mtId, terminalService.getE164());
+                if (groupConfInfo.getDelay() == 1) {
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "setDelay is 2 ");
+                    System.out.println("setDelay is 2 ");
+                    groupConfInfo.setDelay(2);
                 }
             }
 
@@ -302,11 +353,11 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
 
     private void processSubscribeMtsNotify(SubscribeEvent subscribeEvent, GroupConfInfo groupConfInfo) {
         //添加失败
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now in processSubscribeMtsNotify......");
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "now in processSubscribeMtsNotify......");
         System.out.println("now in processSubscribeMtsNotify......");
         JoinConfFailInfo joinConfFailInfo = (JoinConfFailInfo) subscribeEvent.getContent();
         String failE164 = joinConfFailInfo.getJoinConfFailMt().getAccount();
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"terminal (e164: " + failE164 + " ) join conference failed, error_code : " + subscribeEvent.getErrorCode());
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "terminal (e164: " + failE164 + " ) join conference failed, error_code : " + subscribeEvent.getErrorCode());
         System.out.println("terminal (e164: " + failE164 + " ) join conference failed, error_code : " + subscribeEvent.getErrorCode());
 
         int status = 255;
@@ -317,44 +368,43 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
             //返回该错误码时，表明终端被另外一个会议占用，因此入会失败
             terminalService.setOnline(status);
             terminalService.setOccupyConfName(joinConfFailInfo.getOccupy_confname());
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"occupy conf name : " + terminalService.getOccupyConfName());
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "occupy conf name : " + terminalService.getOccupyConfName());
             System.out.println("occupy conf name : " + terminalService.getOccupyConfName());
-        } else if(20445 == subscribeEvent.getErrorCode()){
+        } else if (20445 == subscribeEvent.getErrorCode()) {
             //返回该错误码时，表明未被注册，因此入会失败
             status = TerminalOnlineStatusEnum.UNREGISTERED.getCode();
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"TerminalOnlineStatusEnum.UNREGISTERED.getCode() : "+TerminalOnlineStatusEnum.UNREGISTERED.getCode());
-            System.out.println("TerminalOnlineStatusEnum.UNREGISTERED.getCode() : "+TerminalOnlineStatusEnum.UNREGISTERED.getCode());
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "TerminalOnlineStatusEnum.UNREGISTERED.getCode() : " + TerminalOnlineStatusEnum.UNREGISTERED.getCode());
+            System.out.println("TerminalOnlineStatusEnum.UNREGISTERED.getCode() : " + TerminalOnlineStatusEnum.UNREGISTERED.getCode());
             terminalService.setOnline(status);
-        }else if(21509 == subscribeEvent.getErrorCode()){
+        } else if (21509 == subscribeEvent.getErrorCode()) {
             //返回该错误码时，表明对端正忙，因此入会失败
             status = TerminalOnlineStatusEnum.OFFLINE.getCode();
             terminalOfflineReasonEnum = TerminalOfflineReasonEnum.Busy;
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"TerminalOfflineReasonEnum.Busy.getReason() : "+ TerminalOfflineReasonEnum.Busy.getReason());
-            System.out.println("TerminalOfflineReasonEnum.Busy.getReason() : "+ TerminalOfflineReasonEnum.Busy.getReason());
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "TerminalOfflineReasonEnum.Busy.getReason() : " + TerminalOfflineReasonEnum.Busy.getReason());
+            System.out.println("TerminalOfflineReasonEnum.Busy.getReason() : " + TerminalOfflineReasonEnum.Busy.getReason());
             terminalService.setOnline(status);
-        }else if(20403 == subscribeEvent.getErrorCode()){
+        } else if (20403 == subscribeEvent.getErrorCode()) {
             //返回该错误码时，指定终端已在会议中，因此入会失败
             status = TerminalOnlineStatusEnum.OFFLINE.getCode();
             terminalOfflineReasonEnum = TerminalOfflineReasonEnum.McuOccupy;
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"TerminalOfflineReasonEnum.McuOccupy.getReason() : "+ TerminalOfflineReasonEnum.McuOccupy.getReason());
-            System.out.println("TerminalOfflineReasonEnum.McuOccupy.getReason() : "+ TerminalOfflineReasonEnum.McuOccupy.getReason());
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "TerminalOfflineReasonEnum.McuOccupy.getReason() : " + TerminalOfflineReasonEnum.McuOccupy.getReason());
+            System.out.println("TerminalOfflineReasonEnum.McuOccupy.getReason() : " + TerminalOfflineReasonEnum.McuOccupy.getReason());
             terminalService.setOnline(status);
-        }else if(20402 == subscribeEvent.getErrorCode()){
+        } else if (20402 == subscribeEvent.getErrorCode()) {
             //返回该错误码时，指定终端拒绝加入会议，因此入会失败
             status = TerminalOnlineStatusEnum.OFFLINE.getCode();
             terminalOfflineReasonEnum = TerminalOfflineReasonEnum.Rejected;
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"TerminalOfflineReasonEnum.Rejected.getReason() : "+ TerminalOfflineReasonEnum.Rejected.getReason());
-            System.out.println("TerminalOfflineReasonEnum.Rejected.getReason() : "+ TerminalOfflineReasonEnum.Rejected.getReason());
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "TerminalOfflineReasonEnum.Rejected.getReason() : " + TerminalOfflineReasonEnum.Rejected.getReason());
+            System.out.println("TerminalOfflineReasonEnum.Rejected.getReason() : " + TerminalOfflineReasonEnum.Rejected.getReason());
             terminalService.setOnline(status);
-        }else if(21511 == subscribeEvent.getErrorCode()){
+        } else if (21511 == subscribeEvent.getErrorCode()) {
             //返回该错误码时，对端正常挂断，因此入会失败
             status = TerminalOnlineStatusEnum.OFFLINE.getCode();
             terminalOfflineReasonEnum = TerminalOfflineReasonEnum.Normal;
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"TerminalOfflineReasonEnum.Normal.getReason() : "+ TerminalOfflineReasonEnum.Normal.getReason());
-            System.out.println("TerminalOfflineReasonEnum.Normal.getReason() : "+ TerminalOfflineReasonEnum.Normal.getReason());
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "TerminalOfflineReasonEnum.Normal.getReason() : " + TerminalOfflineReasonEnum.Normal.getReason());
+            System.out.println("TerminalOfflineReasonEnum.Normal.getReason() : " + TerminalOfflineReasonEnum.Normal.getReason());
             terminalService.setOnline(status);
-        }
-        else{
+        } else {
             status = TerminalOnlineStatusEnum.OFFLINE.getCode();
             terminalService.setOnline(status);
         }
@@ -364,31 +414,31 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
         }
     }
 
-    private void confProcessSubscribeMsg(SubscribeEvent subscribeEvent){
+    private void confProcessSubscribeMsg(SubscribeEvent subscribeEvent) {
         //判断是什么通道
         String channel = subscribeEvent.getChannel();
         String method = subscribeEvent.getMethod();
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"confProcessSubscribeMsg, method : " + method + ", channel : " + channel);
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "confProcessSubscribeMsg, method : " + method + ", channel : " + channel);
         System.out.println("confProcessSubscribeMsg, method : " + method + ", channel : " + channel);
         String[] parseResult = channel.split("/");
         String confId = parseResult[2];
         if (parseResult.length == 3) {
             //会议信息订阅
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"get conf info subscribe message, channel :" + channel);
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "get conf info subscribe message, channel :" + channel);
             System.out.println("get conf info subscribe message, channel :" + channel);
             if (method.equals(SubscribeMethodEnum.DELETE.getName())) {
-                System.out.println("remove confInfo confiD : " + confId + "groupId : " + confInterfaceService.getConfGroupMap().get(confId));
+                System.out.println("remove confInfo confId : " + confId + "groupId : " + confInterfaceService.getConfGroupMap().get(confId));
                 String groupID = confInterfaceService.getConfGroupMap().get(confId);
                 GroupConfInfo groupConfInfo = confInterfaceService.getGroupConfInfoMap().get(groupID);
                 confInterfaceService.delGroupConfInfo(groupConfInfo);
-            }else{
+                TerminalManageService.publishStatus(groupID, groupID, TerminalOnlineStatusEnum.OFFLINE.getCode());
+            } else {
                 String groupID = UUID.randomUUID().toString().replaceAll("\\-", "");
-                GroupConfInfo groupConfInfo = new GroupConfInfo(groupID,confId);
+                GroupConfInfo groupConfInfo = new GroupConfInfo(groupID, confId);
                 groupConfInfo.setCreatedConf("mcu");
                 confInterfaceService.addGroupConfInfo(groupConfInfo);
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"get conf info subscribe message add ConfId : " + confId + "groupId : " + groupID);
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "get conf info subscribe message add ConfId : " + confId + "groupId : " + groupID);
                 System.out.println("get conf info subscribe message add ConfId : " + confId + "groupId : " + groupID);
-
 
             }
 
@@ -399,7 +449,7 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
         //判断是什么通道
         String channel = subscribeEvent.getChannel();
         String method = subscribeEvent.getMethod();
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"processSubscribeMsg, method : " + method + ", channel : " + channel);
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processSubscribeMsg, method : " + method + ", channel : " + channel);
         System.out.println("processSubscribeMsg, method : " + method + ", channel : " + channel);
         String[] parseResult = channel.split("/");
 
@@ -409,24 +459,43 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
             if (channel.contains("cascades")) {
                 //todo:通道列表,获取通道列表信息，并推送给调度服务
                 if (method.equals(SubscribeMethodEnum.DELETE.getName())) {
-                    String confId = parseResult[2];
                     String mtId = parseResult[6];
                     ConcurrentHashMap<String, String> mtIdMap = groupConfInfo.getMtIdMap();
-                    if(mtIdMap == null || mtIdMap.isEmpty() || !mtIdMap.containsKey(mtId)){
-                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"cascades DELETE mtIdMap is null or empty or !mtIdMap.containsKey(mtId) mtId :" +mtId);
-                        System.out.println("cascades DELETE mtIdMap is null or empty or !mtIdMap.containsKey(mtId) mtId :" +mtId);
-                    }else{
-                        String E164 = mtIdMap.get(mtId);
-                        TerminalService member = groupConfInfo.getMember(E164);
-                        if(member == null){
-                            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"cascades delete member is null  ******* ");
-                            System.out.println("cascades delete member is null  ******* ");
-                        }else {
-                            groupConfInfo.delMember(member);
-                        }
-                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"cascades DELETE mtId : " + mtId +", E164 : " +E164);
-                        System.out.println("cascades DELETE mtId : " + mtId + ", E164 : " +E164);
+                    if (mtIdMap == null || mtIdMap.isEmpty() || !mtIdMap.containsKey(mtId)) {
+                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "cascades DELETE mtIdMap is null or empty or !mtIdMap.containsKey(mtId) mtId :" + mtId);
+                        System.out.println("cascades DELETE mtIdMap is null or empty or !mtIdMap.containsKey(mtId) mtId :" + mtId);
+                        return;
                     }
+                    String E164 = mtIdMap.get(mtId);
+                    TerminalService broadcastVmtService = groupConfInfo.getBroadcastVmtService();
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"mtIdMap E164 : " +E164);
+                    System.out.println("mtIdMap E164 : " +E164);
+                    TerminalService member = groupConfInfo.getMember(E164);
+                    if (member == null) {
+                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "cascades delete member is null  ******* ");
+                        System.out.println("cascades delete member is null  ******* ");
+                        return;
+                    }
+                    groupConfInfo.delMember(member);
+                    if (broadcastVmtService == null) {
+                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "broadcastVmtService is null ******");
+                        System.out.println("broadcastVmtService is null ******");
+                    } else {
+                        if(broadcastVmtService.getE164().equals(E164)) {
+                            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "set setBroadcastVmtService is null : " + broadcastVmtService.getE164());
+                            System.out.println("set setBroadcastVmtService is null : " + broadcastVmtService.getE164());
+                            groupConfInfo.setBroadcast();
+                            groupConfInfo.setDelay(0);
+                            groupConfInfo.setBroadcastType(0);
+                            groupConfInfo.getUsedVmtMembers().remove(E164);
+                            terminalMediaSourceService.delBroadcastSrcInfo(groupConfInfo.getGroupId());
+                        }
+                    }
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "MT leave confinterface publishStatus E164 : " + E164 + ", groupConfInfo.getGroupId()" + groupConfInfo.getGroupId());
+                    System.out.println("MT leave confinterface publishStatus E164 : " + E164 + ", groupConfInfo.getGroupId()" + groupConfInfo.getGroupId());
+                    TerminalManageService.publishStatus(E164, groupConfInfo.getGroupId(), TerminalOnlineStatusEnum.LEAVECONFERENCE.getCode());
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "cascades DELETE mtId : " + mtId + ", E164 : " + E164);
+                    System.out.println("cascades DELETE mtId : " + mtId + ", E164 : " + E164);
 
                     return;
                 }
@@ -444,11 +513,16 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
             }
         } else if (channel.contains("speaker")) {
             //发言人相关通道
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"get speaker subscribe message, channel :" + channel);
+            if (groupConfInfo.getBroadcastType() != 0) {
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "set speak groupConfInfo.getBroadcastType() : " + groupConfInfo.getBroadcastType());
+                System.out.println("set speak groupConfInfo.getBroadcastType() : " + groupConfInfo.getBroadcastType());
+                groupConfInfo.setBroadcastType(0);
+            }
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "get speaker subscribe message, channel :" + channel);
             System.out.println("get speaker subscribe message, channel :" + channel);
         } else if (parseResult.length == 3) {
             //会议信息订阅
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"get conf info subscribe message, channel :" + channel);
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "get conf info subscribe message, channel :" + channel);
             System.out.println("get conf info subscribe message, channel :" + channel);
             if (!method.equals(SubscribeMethodEnum.DELETE.getName())) {
                 return;
@@ -457,17 +531,18 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
             //处理会议被删除的情况
             processConfDeleted(groupConfInfo);
         }
+
     }
 
     private void processConfDeleted(GroupConfInfo groupConfInfo) {
         String groupId = groupConfInfo.getGroupId();
         String confId = groupConfInfo.getConfId();
 
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"processConfDeleted, groupId:" + groupId + ", confId:" + confId);
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processConfDeleted, groupId:" + groupId + ", confId:" + confId);
         System.out.println("processConfDeleted, groupId:" + groupId + ", confId:" + confId);
 
-        if(groupConfInfo.getCreatedConf().equals("confinterface")) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"confinterface is confinterface create not endConference");
+        if (groupConfInfo.getCreatedConf().equals("confinterface")) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "confinterface is confinterface create not endConference");
             System.out.println("confinterface is mcu create not endConference");
             mcuRestClientService.endConference(confId, false);
         }
@@ -485,12 +560,12 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
         //如果是广播请求，则执行获取发言人以校验是否设置成功
         BroadcastSrcMediaInfo broadcastSrcMediaInfo = new BroadcastSrcMediaInfo();
         TerminalService broadcastTerminalService = groupConfInfo.getBroadcastVmtService();
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"processBroadcastRequest, groupId:" + broadcastTerminalService.getGroupId() + ", broadcast mtId:" + broadcastTerminalService.getMtId());
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processBroadcastRequest, groupId:" + broadcastTerminalService.getGroupId() + ", broadcast mtId:" + broadcastTerminalService.getMtId());
         System.out.println("processBroadcastRequest, groupId:" + broadcastTerminalService.getGroupId() + ", broadcast mtId:" + broadcastTerminalService.getMtId());
 
         boolean isTerminal = broadCastRequest.getBroadCastParam().isTerminalType();
         String broadcastMtId = broadcastTerminalService.getMtId();
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"processBroadcastRequest, isTerminal : " + isTerminal + ", channel:" + subscribeEvent.getChannel());
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processBroadcastRequest, isTerminal : " + isTerminal + ", channel:" + subscribeEvent.getChannel());
         System.out.println("processBroadcastRequest, isTerminal : " + isTerminal + ", channel:" + subscribeEvent.getChannel());
         if (isTerminal) {
             String speaker = broadCastRequest.getBroadCastParam().getMtE164();
@@ -511,7 +586,7 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
             broadCastRequest.setReverseResources(TerminalMediaResource.convertToMediaResource(broadcastTerminalService.getReverseChannel(), "all"));
             broadCastRequest.makeSuccessResponseMsg();
         } else {
-            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"50009 :　set speaker failed!");
+            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50009 :　set speaker failed!");
             broadCastRequest.makeErrorResponseMsg(ConfInterfaceResult.SET_SPEAKER.getCode(), HttpStatus.OK, ConfInterfaceResult.SET_SPEAKER.getMessage());
         }
 
@@ -520,18 +595,18 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
     }
 
     private void processDiscussionFail(JoinDiscussionGroupRequest joinDiscussionGroupRequest) {
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"processDiscussionFail................");
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processDiscussionFail................");
         System.out.println("processDiscussionFail................");
         if (joinDiscussionGroupRequest.getWaitMsg().isEmpty()) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"processDiscussionFail, all messages have been dealed!");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processDiscussionFail, all messages have been dealed!");
             System.out.println("processDiscussionFail, all messages have been dealed!");
-            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"50005 : inspection terminal failed!");
+            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50005 : inspection terminal failed!");
             joinDiscussionGroupRequest.makeErrorResponseMsg(ConfInterfaceResult.INSPECTION.getCode(), HttpStatus.OK, ConfInterfaceResult.INSPECTION.getMessage());
         }
     }
 
     private void processDiscussionOk(JoinDiscussionGroupRequest joinDiscussionGroupRequest, GroupConfInfo groupConfInfo, TerminalService dstVmtTerminal, TerminalService mtTerminal) {
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"processDiscussionOk.................");
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processDiscussionOk.................");
         System.out.println("processDiscussionOk.................");
         String mtE164 = mtTerminal.getE164();
         TerminalService inspectedByMtVmtService = groupConfInfo.getSrcInspectionTerminal(mtTerminal);
@@ -559,7 +634,7 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
                 inspectionVideoOrAudioMode = InspectionModeEnum.VIDEO;
 
             if (dstTerminal.getInspectStatus(inspectionVideoOrAudioMode.getCode()) == InspectionStatusEnum.OK.getCode()) {
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"terminal[" + dstTerminal.getE164() + "] " + inspectionFailMode.getName() + " inspection failed, " + inspectionVideoOrAudioMode.getName() + " inspection ok, cancel " + inspectionVideoOrAudioMode.getName() + " inspection!");
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "terminal[" + dstTerminal.getE164() + "] " + inspectionFailMode.getName() + " inspection failed, " + inspectionVideoOrAudioMode.getName() + " inspection ok, cancel " + inspectionVideoOrAudioMode.getName() + " inspection!");
                 System.out.println("terminal[" + dstTerminal.getE164() + "] " + inspectionFailMode.getName() + " inspection failed, " + inspectionVideoOrAudioMode.getName() + " inspection ok, cancel " + inspectionVideoOrAudioMode.getName() + " inspection!");
                 mcuRestClientService.cancelInspection(confId, inspectionVideoOrAudioMode.getName(), dstTerminal.getMtId());
             } else if (dstTerminal.getInspectStatus(inspectionVideoOrAudioMode.getCode()) == InspectionStatusEnum.FAIL.getCode()) {
@@ -583,7 +658,7 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
         TerminalService dstTerminal = groupConfInfo.getDstInspectionTerminal(dstMtId);
         TerminalService srcTerminal = groupConfInfo.getSrcInspectionTerminal(dstTerminal);
 
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"processInspectionFail, terminal[" + dstTerminal.getE164() + "] inspect terminal[" + srcTerminal.getE164() + "] failed, mode:" + mode);
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processInspectionFail, terminal[" + dstTerminal.getE164() + "] inspect terminal[" + srcTerminal.getE164() + "] failed, mode:" + mode);
         System.out.println("processInspectionFail, terminal[" + dstTerminal.getE164() + "] inspect terminal[" + srcTerminal.getE164() + "] failed, mode:" + mode);
 
         String confId = groupConfInfo.getConfId();
@@ -609,7 +684,7 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
                 //srcTerminal为虚拟终端，则dstTerminal为会议终端，此时需要获取选看该会议终端的虚拟终端，并进行取消选看
                 cancelDstService = groupConfInfo.getDstInspectionVmtTerminal(dstTerminal);
                 isStopInspection = ((JoinDiscussionGroupRequest) requestMsg).isStopInspection(dstTerminal.getE164());
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"processInspectionFail, bDiscussion, isStopInspection:" + isStopInspection + ", mtE164:" + dstTerminal.getE164());
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processInspectionFail, bDiscussion, isStopInspection:" + isStopInspection + ", mtE164:" + dstTerminal.getE164());
                 System.out.println("processInspectionFail, bDiscussion, isStopInspection:" + isStopInspection + ", mtE164:" + dstTerminal.getE164());
             }
 
@@ -619,13 +694,13 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
             if (isStopInspection) {
                 String cancelInspectionDstMtId = cancelDstService.getMtId();
                 if (srcInspectAudioStatus == InspectionStatusEnum.OK.getCode()) {
-                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"processInspectionFail, terminal[" + cancelDstService.getE164() + "] inspect terminal[" + cancelDstService.getInspectionParam().getMtE164() + "] audio ok, need cancel inspection!");
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processInspectionFail, terminal[" + cancelDstService.getE164() + "] inspect terminal[" + cancelDstService.getInspectionParam().getMtE164() + "] audio ok, need cancel inspection!");
                     System.out.println("processInspectionFail, terminal[" + cancelDstService.getE164() + "] inspect terminal[" + cancelDstService.getInspectionParam().getMtE164() + "] audio ok, need cancel inspection!");
                     mcuRestClientService.cancelInspection(confId, InspectionModeEnum.AUDIO.getName(), cancelInspectionDstMtId);
                 }
 
                 if (srcInspectVideoStatus == InspectionStatusEnum.OK.getCode()) {
-                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"processInspectionFail, terminal[" + cancelDstService.getE164() + "] inspect terminal[" + cancelDstService.getInspectionParam().getMtE164() + "] video ok, need cancel inspection!");
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processInspectionFail, terminal[" + cancelDstService.getE164() + "] inspect terminal[" + cancelDstService.getInspectionParam().getMtE164() + "] video ok, need cancel inspection!");
                     System.out.println("processInspectionFail, terminal[" + cancelDstService.getE164() + "] inspect terminal[" + cancelDstService.getInspectionParam().getMtE164() + "] video ok, need cancel inspection!");
                     mcuRestClientService.cancelInspection(confId, InspectionModeEnum.VIDEO.getName(), cancelInspectionDstMtId);
                 }
@@ -650,7 +725,7 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
         //如果其他三个方向的订阅消息还有未收到的，等到收到后再处理
         int unknownStatus = InspectionStatusEnum.UNKNOWN.getCode();
         if (requestMsg instanceof JoinDiscussionGroupRequest) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"processInspectionFail, start deal discussionGroupRequest, dstInspectAudioStatus:" + dstTerminal.getInspectAudioStatus() + ", dstInspectVideoStatus:" + dstTerminal.getInspectVideoStatus() +
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processInspectionFail, start deal discussionGroupRequest, dstInspectAudioStatus:" + dstTerminal.getInspectAudioStatus() + ", dstInspectVideoStatus:" + dstTerminal.getInspectVideoStatus() +
                     ", srcInspectAudioStatus:" + srcInspectAudioStatus + ", srcInspectVideoStatus:" + srcInspectVideoStatus);
             System.out.println("processInspectionFail, start deal discussionGroupRequest, dstInspectAudioStatus:" + dstTerminal.getInspectAudioStatus() + ", dstInspectVideoStatus:" + dstTerminal.getInspectVideoStatus() +
                     ", srcInspectAudioStatus:" + srcInspectAudioStatus + ", srcInspectVideoStatus:" + srcInspectVideoStatus);
@@ -661,10 +736,10 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
                 processDiscussionFail(joinDiscussionGroupRequest);
             }
         } else if (requestMsg instanceof InspectionRequest) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"processInspectionFail, start deal inspectionRequest!!!");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processInspectionFail, start deal inspectionRequest!!!");
             System.out.println("processInspectionFail, start deal inspectionRequest!!!");
             InspectionRequest inspectionRequest = (InspectionRequest) requestMsg;
-            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"50005 : inspection terminal failed!");
+            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50005 : inspection terminal failed!");
             inspectionRequest.makeErrorResponseMsg(ConfInterfaceResult.INSPECTION.getCode(), HttpStatus.OK, ConfInterfaceResult.INSPECTION.getMessage());
         }
     }
@@ -672,7 +747,7 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
     private void processInspectionOkStatus(InspectionModeEnum inspectionOkMode, GroupConfInfo groupConfInfo, boolean bDiscussion, TerminalService srcTerminal, TerminalService dstTerminal) {
         //视频
         String dstInspectMode = dstTerminal.getInspectionParam().getMode();
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"processInspectionOkStatus, InspectOkMode:" + inspectionOkMode.getName() + ", InspectionMode:" + dstInspectMode);
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processInspectionOkStatus, InspectOkMode:" + inspectionOkMode.getName() + ", InspectionMode:" + dstInspectMode);
         System.out.println("processInspectionOkStatus, InspectOkMode:" + inspectionOkMode.getName() + ", InspectionMode:" + dstInspectMode);
         dstTerminal.setInspectStatus(inspectionOkMode.getCode(), InspectionStatusEnum.OK.getCode());
         if (dstInspectMode.equals(inspectionOkMode.getName())) {
@@ -695,16 +770,16 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
                     cancelInspection = true;
                 }
             } else {
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"processInspectionOkStatus, not discussion .....");
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processInspectionOkStatus, not discussion .....");
                 System.out.println("processInspectionOkStatus, not discussion .....");
                 if (dstTerminal.existInspectFail()) {
-                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"processInspectionOkStatus, not discussion, exist inspect failed");
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processInspectionOkStatus, not discussion, exist inspect failed");
                     System.out.println("processInspectionOkStatus, not discussion, exist inspect failed");
                     cancelInspection = true;
                 }
             }
 
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"processInspectionOkStatus, all mode, cancelInspection:" + cancelInspection);
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processInspectionOkStatus, all mode, cancelInspection:" + cancelInspection);
             System.out.println("processInspectionOkStatus, all mode, cancelInspection:" + cancelInspection);
             if (cancelInspection) {
                 mcuRestClientService.cancelInspection(groupConfInfo.getConfId(), inspectionOkMode.getName(), dstTerminal.getMtId());
@@ -713,17 +788,17 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
 
             if (inspectionOkMode == InspectionModeEnum.VIDEO && InspectionStatusEnum.OK.getCode() == dstTerminal.getInspectAudioStatus()
                     || inspectionOkMode == InspectionModeEnum.AUDIO && InspectionStatusEnum.OK.getCode() == dstTerminal.getInspectVideoStatus()) {
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"processInspectionOkStatus, video and audio inspection Ok! terminal:" + dstTerminal.getE164());
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processInspectionOkStatus, video and audio inspection Ok! terminal:" + dstTerminal.getE164());
                 System.out.println("processInspectionOkStatus, video and audio inspection Ok! terminal:" + dstTerminal.getE164());
                 dstTerminal.setInspectionStatus(InspectionStatusEnum.OK);
             }
         } else {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE," processInspectionOkStatus : invalid inpsection mode!!");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, " processInspectionOkStatus : invalid inpsection mode!!");
             System.out.println(" processInspectionOkStatus : invalid inpsection mode!!");
         }
 
         if (dstTerminal.isInspection()) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"processInspectionOkStatus, set src been inspected!!! srcE164:" + srcTerminal.getE164());
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processInspectionOkStatus, set src been inspected!!! srcE164:" + srcTerminal.getE164());
             System.out.println("processInspectionOkStatus, set src been inspected!!! srcE164:" + srcTerminal.getE164());
             srcTerminal.setInspectedStatus(InspectionStatusEnum.OK);
             if (null == srcTerminal.getInspectedParam(dstTerminal.getE164())) {
@@ -744,17 +819,17 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
         String[] parseResult = subscribeEvent.getChannel().split("/");
         int mode = Integer.valueOf(parseResult[5]);
         String dstMtId = parseResult[4];
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"processInspectionOK, channel:" + subscribeEvent.getChannel() + ", mtId:" + dstMtId + ", mode:" + mode);
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processInspectionOK, channel:" + subscribeEvent.getChannel() + ", mtId:" + dstMtId + ", mode:" + mode);
         System.out.println("processInspectionOK, channel:" + subscribeEvent.getChannel() + ", mtId:" + dstMtId + ", mode:" + mode);
         TerminalService dstTerminal = groupConfInfo.getDstInspectionTerminal(dstMtId);
         TerminalService srcTerminal = groupConfInfo.getSrcInspectionTerminal(dstTerminal);
         String confId = groupConfInfo.getConfId();
 
         if (null == srcTerminal) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"processInspectionOK, null == srcTerminal!");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processInspectionOK, null == srcTerminal!");
             System.out.println("processInspectionOK, null == srcTerminal!");
         } else {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"processInspectionOK, terminal[" + dstTerminal.getE164() + "] inspect terminal[" + srcTerminal.getE164() + "] ok, mode:" + mode);
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processInspectionOK, terminal[" + dstTerminal.getE164() + "] inspect terminal[" + srcTerminal.getE164() + "] ok, mode:" + mode);
             System.out.println("processInspectionOK, terminal[" + dstTerminal.getE164() + "] inspect terminal[" + srcTerminal.getE164() + "] ok, mode:" + mode);
         }
 
@@ -767,24 +842,28 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
         }
 
         if (null == requestMsg) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"processInspectionOK, null == requestMsg");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processInspectionOK, null == requestMsg");
             System.out.println("processInspectionOK, null == requestMsg");
             return;
         }
 
         if (requestMsg instanceof InspectionRequest) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"processInspectionOK, start deal inspectionRequest, dstTerminal[" + dstTerminal.getE164() + "] isInspection : " + dstTerminal.isInspection());
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processInspectionOK, start deal inspectionRequest, dstTerminal[" + dstTerminal.getE164() + "] isInspection : " + dstTerminal.isInspection());
             System.out.println("processInspectionOK, start deal inspectionRequest, dstTerminal[" + dstTerminal.getE164() + "] isInspection : " + dstTerminal.isInspection());
             InspectionRequest inspectionRequest = (InspectionRequest) requestMsg;
             InspectionParam inspectionParam = inspectionRequest.getInspectionParam();
             if (dstTerminal.isInspection()) {
                 if (dstTerminal.isVmt()) {
-                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"processInspectionOK, dst is vmt, set reverse channel!");
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processInspectionOK, dst is vmt, set reverse channel!");
                     System.out.println("processInspectionOK, dst is vmt, set reverse channel!");
                     List<DetailMediaResouce> reverseDetailResource = dstTerminal.getReverseChannel();
+                    if (groupConfInfo.getCreatedConf().equals("mcu")) {
+                        groupConfInfo.useVmtMember(dstTerminal);
+                    }
                     inspectionRequest.makeSuccessResponseMsg(TerminalMediaResource.convertToMediaResource(reverseDetailResource, inspectionParam.getMode()));
+
                 } else if (srcTerminal.isVmt()) {
-                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"processInspectionOK, src is vmt, set forward channel!");
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processInspectionOK, src is vmt, set forward channel!");
                     System.out.println("processInspectionOK, src is vmt, set forward channel!");
                     List<DetailMediaResouce> forwardDetailResource = srcTerminal.getForwardChannel();
                     inspectionRequest.makeSuccessResponseMsg(TerminalMediaResource.convertToMediaResource(forwardDetailResource, inspectionParam.getMode()));
@@ -809,7 +888,7 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
         }
 
         InspectionStatusEnum mtInspectedStatus = mtService.getInspectedParam(inspectMtVmtService.getE164()).getStatus();
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"processInspectionOK, discussionGroupRequest, mtTerminal[e164:" + mtService.getE164() + ",inspection:" + mtService.isInspection() + ",inspected:" + mtInspectedStatus.getName() + "]");
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processInspectionOK, discussionGroupRequest, mtTerminal[e164:" + mtService.getE164() + ",inspection:" + mtService.isInspection() + ",inspected:" + mtInspectedStatus.getName() + "]");
         System.out.println("processInspectionOK, discussionGroupRequest, mtTerminal[e164:" + mtService.getE164() + ",inspection:" + mtService.isInspection() + ",inspected:" + mtInspectedStatus.getName() + "]");
         JoinDiscussionGroupRequest joinDiscussionGroupRequest = (JoinDiscussionGroupRequest) requestMsg;
         if (mtService.isInspection() && mtInspectedStatus == InspectionStatusEnum.OK) {
@@ -817,9 +896,9 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
             return;
         }
 
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"processInspectionOK, discussionGroupRequest, mtInspectStatus[v:" + mtService.getInspectVideoStatus() + ", a:" + mtService.getInspectAudioStatus() + "]");
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processInspectionOK, discussionGroupRequest, mtInspectStatus[v:" + mtService.getInspectVideoStatus() + ", a:" + mtService.getInspectAudioStatus() + "]");
         System.out.println("processInspectionOK, discussionGroupRequest, mtInspectStatus[v:" + mtService.getInspectVideoStatus() + ", a:" + mtService.getInspectAudioStatus() + "]");
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"dstVmtInspectStatus[v:" + inspectMtVmtService.getInspectVideoStatus() + ", a:" + inspectMtVmtService.getInspectAudioStatus() + "]");
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "dstVmtInspectStatus[v:" + inspectMtVmtService.getInspectVideoStatus() + ", a:" + inspectMtVmtService.getInspectAudioStatus() + "]");
         System.out.println("dstVmtInspectStatus[v:" + inspectMtVmtService.getInspectVideoStatus() + ", a:" + inspectMtVmtService.getInspectAudioStatus() + "]");
         //如果其他三个方向都已经收到更新消息，且存在失败，则在此回应消息
         int unknownStatus = InspectionStatusEnum.UNKNOWN.getCode();
@@ -840,22 +919,22 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
             return;
         }
 
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"processJoinDiscussionRequest, channel:" + subscribeEvent.getChannel() + ", method:" + subscribeEvent.getMethod());
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processJoinDiscussionRequest, channel:" + subscribeEvent.getChannel() + ", method:" + subscribeEvent.getMethod());
         System.out.println("processJoinDiscussionRequest, channel:" + subscribeEvent.getChannel() + ", method:" + subscribeEvent.getMethod());
         joinDiscussionGroupRequest.removeMsg(subscribeEvent.getChannel());
         groupConfInfo.delWaitDealTask(subscribeEvent.getChannel());
 
         if (subscribeEvent.getChannel().contains("mts")) {
             //说明是终端列表通道
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"processJoinDiscussionRequest, terminal status channel!!!");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processJoinDiscussionRequest, terminal status channel!!!");
             System.out.println("processJoinDiscussionRequest, terminal status channel!!!");
             if (subscribeEvent.getMethod().equals(SubscribeMethodEnum.NOTIFY.getName())) {
                 //设备加入会议失败 /confs/{conf_id}/mts
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"processJoinDiscussionRequest, add mt into conf failed, errcode : " + subscribeEvent.getErrorCode());
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processJoinDiscussionRequest, add mt into conf failed, errcode : " + subscribeEvent.getErrorCode());
                 System.out.println("processJoinDiscussionRequest, add mt into conf failed, errcode : " + subscribeEvent.getErrorCode());
                 if (joinDiscussionGroupRequest.getWaitMsg().isEmpty()) {
                     McuStatus mcuStatus = McuStatus.resolve(subscribeEvent.getErrorCode());
-                    LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"50001 : add terminal into conference failed!");
+                    LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50001 : add terminal into conference failed!");
                     joinDiscussionGroupRequest.makeErrorResponseMsg(ConfInterfaceResult.ADD_TERMINAL_INTO_CONFERENCE.getCode(), HttpStatus.OK, mcuStatus.getDescription());
                 }
                 return;
@@ -891,11 +970,11 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
             }
 
             TerminalService mtService = groupConfInfo.getMtMember(mtE164);
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"processJoinDiscussionRequest, start discussion, mt:" + mtService.getE164() + ", vmt:" + vmtE164);
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processJoinDiscussionRequest, start discussion, mt:" + mtService.getE164() + ", vmt:" + vmtE164);
             System.out.println("processJoinDiscussionRequest, start discussion, mt:" + mtService.getE164() + ", vmt:" + vmtE164);
             McuStatus mcuStatus = confInterfaceService.startInspectionForDiscusion(groupConfInfo, mtService, vmtService, bMutualInspection, joinDiscussionGroupRequest);
             if (mcuStatus.getValue() > 0 && joinDiscussionGroupRequest.getWaitMsg().isEmpty()) {
-                LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"50005 : inspection terminal failed!");
+                LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50005 : inspection terminal failed!");
                 joinDiscussionGroupRequest.makeErrorResponseMsg(ConfInterfaceResult.INSPECTION.getCode(), HttpStatus.OK, mcuStatus.getDescription());
             }
             return;
@@ -924,10 +1003,10 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
 
         String inspectMode = inspectionSrcParam.getMode();
         if (null != srcTerminal) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"processCancelInspection, dstTerminal(E164:" + dstTerminal.getE164() + ", MtId:" + dstMtId + "), srcTerminal(E164:" + srcTerminal.getE164() + ", MtId:" + srcTerminal.getMtId() + "), mode:" + mode + ", inspectMode:" + inspectMode);
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processCancelInspection, dstTerminal(E164:" + dstTerminal.getE164() + ", MtId:" + dstMtId + "), srcTerminal(E164:" + srcTerminal.getE164() + ", MtId:" + srcTerminal.getMtId() + "), mode:" + mode + ", inspectMode:" + inspectMode);
             System.out.println("processCancelInspection, dstTerminal(E164:" + dstTerminal.getE164() + ", MtId:" + dstMtId + "), srcTerminal(E164:" + srcTerminal.getE164() + ", MtId:" + srcTerminal.getMtId() + "), mode:" + mode + ", inspectMode:" + inspectMode);
         } else {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"processCancelInspection, dstTerminal(E164:" + dstTerminal.getE164() + ", MtId:" + dstMtId + "), mode:" + mode + ", inspectMode:" + inspectMode);
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processCancelInspection, dstTerminal(E164:" + dstTerminal.getE164() + ", MtId:" + dstMtId + "), mode:" + mode + ", inspectMode:" + inspectMode);
             System.out.println("processCancelInspection, dstTerminal(E164:" + dstTerminal.getE164() + ", MtId:" + dstMtId + "), mode:" + mode + ", inspectMode:" + inspectMode);
         }
 
@@ -964,7 +1043,7 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
         }
 
         if (bStopInspection) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"processCancelInspection, bStopInspection, terminal(" + dstTerminal.getE164() + ") remove inspection param! srcTerminal:" + srcTerminal.getE164());
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processCancelInspection, bStopInspection, terminal(" + dstTerminal.getE164() + ") remove inspection param! srcTerminal:" + srcTerminal.getE164());
             System.out.println("processCancelInspection, bStopInspection, terminal(" + dstTerminal.getE164() + ") remove inspection param! srcTerminal:" + srcTerminal.getE164());
             terminalMediaSourceService.delGroupInspectionParam(dstTerminal.getE164());
             dstTerminal.setInspectionStatus(InspectionStatusEnum.FAIL);
@@ -973,7 +1052,7 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
             if (dstTerminal.isVmt()
                     && (dstTerminal.getInspentedTerminals() == null || dstTerminal.getInspentedTerminals().isEmpty())) {
                 //如果虚拟终端没有选看终端，且没有被选看，则放回空闲队列
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"processCancelInspection, bStopInspection, dst terminal(" + dstTerminal.getE164() + ") is vmt and need free");
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processCancelInspection, bStopInspection, dst terminal(" + dstTerminal.getE164() + ") is vmt and need free");
                 System.out.println("processCancelInspection, bStopInspection, dst terminal(" + dstTerminal.getE164() + ") is vmt and need free");
 
                 groupConfInfo.freeVmt(dstTerminal.getE164());
@@ -985,7 +1064,7 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
                         && srcTerminal.getInspentedTerminals().isEmpty()
                         && srcTerminal.getInspectionParam() == null) {
                     //如果选看源是虚拟终端且没有选看和被选看，则放回空闲队列
-                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"processCancelInspection, bStopInspection, src terminal(" + srcTerminal.getE164() + ") is vmt and need free");
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processCancelInspection, bStopInspection, src terminal(" + srcTerminal.getE164() + ") is vmt and need free");
                     System.out.println("processCancelInspection, bStopInspection, src terminal(" + srcTerminal.getE164() + ") is vmt and need free");
                     groupConfInfo.freeVmt(srcTerminal.getE164());
                 }
@@ -1013,20 +1092,20 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
 
     private void processInspectionRequest(SubscribeEvent subscribeEvent, GroupConfInfo groupConfInfo, InspectionRequest inspectionRequest) {
         //如果是终端列表通道信息，则在收到该消息后，开始选看
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"processInspectionRequest, channel:" + subscribeEvent.getChannel() + ", method:" + subscribeEvent.getMethod());
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processInspectionRequest, channel:" + subscribeEvent.getChannel() + ", method:" + subscribeEvent.getMethod());
         System.out.println("processInspectionRequest, channel:" + subscribeEvent.getChannel() + ", method:" + subscribeEvent.getMethod());
         inspectionRequest.removeMsg(subscribeEvent.getChannel());
         groupConfInfo.delWaitDealTask(subscribeEvent.getChannel());
 
         if (subscribeEvent.getChannel().contains("mts")) {
             //说明是终端列表通道
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"processInspectionRequest, terminal status channel!!!");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processInspectionRequest, terminal status channel!!!");
             System.out.println("processInspectionRequest, terminal status channel!!!");
             if (subscribeEvent.getMethod().equals(SubscribeMethodEnum.NOTIFY.getName())) {
                 //设备加入会议失败 /confs/{conf_id}/mts
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"processInspectionRequest, add mt into conf failed, errcode : " + subscribeEvent.getErrorCode());
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processInspectionRequest, add mt into conf failed, errcode : " + subscribeEvent.getErrorCode());
                 System.out.println("processInspectionRequest, add mt into conf failed, errcode : " + subscribeEvent.getErrorCode());
-                LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"50001 : add terminal into conference failed!");
+                LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50001 : add terminal into conference failed!");
                 inspectionRequest.makeErrorResponseMsg(ConfInterfaceResult.ADD_TERMINAL_INTO_CONFERENCE.getCode(), HttpStatus.OK, ConfInterfaceResult.ADD_TERMINAL_INTO_CONFERENCE.getMessage());
                 return;
             }
@@ -1041,23 +1120,23 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
                 //说明是监控前端选看会议终端,因此会选择一个虚拟终端入会并选看会议终端,因此此次上线的是目的虚拟终端
                 TerminalService srcTerminal = groupConfInfo.getMtMember(srcE164);
                 if (!srcTerminal.isOnline()) {
-                    LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"50011 : terminal is offline!");
+                    LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50011 : terminal is offline!");
                     inspectionRequest.makeErrorResponseMsg(ConfInterfaceResult.OFFLINE.getCode(), HttpStatus.OK, ConfInterfaceResult.OFFLINE.getMessage());
                     return;
                 }
 
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"processInspectionRequest, dst terminal(" + parseResult[6] + ") is online, start inspection!");
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processInspectionRequest, dst terminal(" + parseResult[6] + ") is online, start inspection!");
                 System.out.println("processInspectionRequest, dst terminal(" + parseResult[6] + ") is online, start inspection!");
                 confInterfaceService.inspectionMt(groupConfInfo, inspectionParam.getMode(), srcTerminal.getMtId(), parseResult[6], inspectionRequest);
             } else if (srcE164.isEmpty()) {
                 //说明是会议终端浏览监控前端,需要选择一个虚拟终端,然后让会议终端选看该虚拟终端,因此此处上线的是源虚拟终端
                 TerminalService dstTerminal = groupConfInfo.getMtMember(dstE164);
                 if (!dstTerminal.isOnline()) {
-                    LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"50011 : terminal is offline!");
+                    LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50011 : terminal is offline!");
                     inspectionRequest.makeErrorResponseMsg(ConfInterfaceResult.OFFLINE.getCode(), HttpStatus.OK, ConfInterfaceResult.OFFLINE.getMessage());
                     return;
                 }
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"processInspectionRequest, src terminal(" + parseResult[6] + ") is online, start inspection!");
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processInspectionRequest, src terminal(" + parseResult[6] + ") is online, start inspection!");
                 System.out.println("processInspectionRequest, src terminal(" + parseResult[6] + ") is online, start inspection!");
                 confInterfaceService.inspectionMt(groupConfInfo, inspectionParam.getMode(), parseResult[6], dstTerminal.getMtId(), inspectionRequest);
             }
@@ -1140,7 +1219,7 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
 
             } while (--tryTimes > 0);
 
-            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"50019 : control dual stream failed!");
+            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50019 : control dual stream failed!");
             startDualStreamRequest.makeErrorResponseMsg(ConfInterfaceResult.CTRL_DUALSTREAM.getCode(), HttpStatus.OK, ConfInterfaceResult.CTRL_DUALSTREAM.getMessage());
         }
     }
@@ -1163,6 +1242,9 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
 
     @Autowired
     private TerminalMediaSourceService terminalMediaSourceService;
+
+    @Autowired
+    private TerminalManageService terminalManageService;
 
     private final org.slf4j.Logger logger = LoggerFactory.getLogger(this.getClass());
 }

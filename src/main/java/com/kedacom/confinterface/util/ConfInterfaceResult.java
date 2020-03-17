@@ -37,7 +37,8 @@ public enum ConfInterfaceResult {
     QUERY_CONFS_CASCADES_INFO_IS_NULL(50028,"query confs cascades info is null"),
     CONF_NOT_EXIT(50029,"confid not exit"),
     QUERY_CONFS_CASCADES_MT_INFO_IS_NULL(50030,"query confs cascades mt info is null"),
-    SEND_SMS_FAILED(50031,"send message failed");
+    SEND_SMS_FAILED(50031,"send message failed"),
+    GET_MT_INFO_FAILED(50032,"get mt info failed");
 
     public int getCode(){
         return code;

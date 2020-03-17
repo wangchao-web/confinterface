@@ -98,6 +98,22 @@ public class ConfMtInfo {
         this.inspection = inspection;
     }
 
+    public int getRcvVolume() {
+        return rcvVolume;
+    }
+
+    public void setRcvVolume(int rcvVolume) {
+        this.rcvVolume = rcvVolume;
+    }
+
+    public int getSndVolume() {
+        return sndVolume;
+    }
+
+    public void setSndVolume(int sndVolume) {
+        this.sndVolume = sndVolume;
+    }
+
     @Override
     public String toString() {
         return new StringBuilder().append("e164:").append(e164)
@@ -110,6 +126,8 @@ public class ConfMtInfo {
                 .append(", silence:").append(silence)
                 .append(", mute:").append(mute)
                 .append(", inspection:").append(inspection)
+                .append(", rcvVolume:").append(rcvVolume)
+                .append(", sndVolume:").append(sndVolume)
                 .toString();
     }
 
@@ -123,4 +141,6 @@ public class ConfMtInfo {
     private int silence ; //是否静音0-否；1-是；
     private int mute; //是否哑音0-否; 1-是；
     private int inspection; //是否在选看0-否; 1-是；
+    private int rcvVolume;  //接收音量
+    private int sndVolume;  //发送音量
 }

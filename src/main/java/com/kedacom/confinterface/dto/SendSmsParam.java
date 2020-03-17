@@ -16,11 +16,11 @@ public class SendSmsParam {
         this.message = message;
     }
 
-    public List<TerminalMtId> getMts() {
+    public List<Terminal> getMts() {
         return mts;
     }
 
-    public void setMts(List<TerminalMtId> mts) {
+    public void setMts(List<Terminal> mts) {
         this.mts = mts;
     }
 
@@ -60,7 +60,7 @@ public class SendSmsParam {
 
     @Valid
     @NotEmpty
-    List<TerminalMtId> mts;
+    List<Terminal> mts;
 
     @Range(min = 0, max = 2)
     private int type ; // 短消息类型 0-自右至左滚动；1-翻页滚动；2-全页滚动；

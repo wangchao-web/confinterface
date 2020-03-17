@@ -2,6 +2,7 @@ package com.kedacom.confinterface.controller;
 
 import com.kedacom.confinterface.LogService.LogOutputTypeEnum;
 import com.kedacom.confinterface.LogService.LogTools;
+import com.kedacom.confinterface.dao.Terminal;
 import com.kedacom.confinterface.dto.*;
 import com.kedacom.confinterface.inner.SubscribeMsgTypeEnum;
 import com.kedacom.confinterface.service.ConfInterfaceInitializingService;
@@ -276,8 +277,8 @@ public class ConfInterfaceController {
         System.out.println("query confs ! time:"+System.currentTimeMillis());
         QueryConfsRequest queryConfsRequest = new QueryConfsRequest();
         confInterfaceService.queryConfs(queryConfsRequest);
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now finished query all vmts, time:"+System.currentTimeMillis());
-        System.out.println("query confs ! time, time:"+System.currentTimeMillis());
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now finished query confs, time:"+System.currentTimeMillis());
+        System.out.println("now finished query confs ! time, time:"+System.currentTimeMillis());
         return queryConfsRequest.getResponseMsg();
     }
 
@@ -317,12 +318,12 @@ public class ConfInterfaceController {
     }
 
 
-    @GetMapping(value = "/confs/mts")
-    public DeferredResult<ResponseEntity<QueryConfMtInfoResponse>> getConfMtInfo(@RequestParam("GroupId") String groupId){
+    @GetMapping(value = "/confs/mt/{mtE164}")
+    public DeferredResult<ResponseEntity<QueryConfMtInfoResponse>> getConfMtInfo(@RequestParam("GroupId") String groupId, @PathVariable String mtE164){
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"get confs mt info ! time:"+System.currentTimeMillis());
         System.out.println("get confs mt info ! time:"+System.currentTimeMillis());
-        GetConfMtRequest getConfMtRequest = new GetConfMtRequest(groupId);
-        //confInterfaceService.queryConfs(queryConfsRequest);
+        GetConfMtRequest getConfMtRequest = new GetConfMtRequest(groupId,mtE164);
+        confInterfaceService.queryConfMtInfo(getConfMtRequest);
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now finished get confs mt info ! time:"+System.currentTimeMillis());
         System.out.println("now finished get confs mt info ! time:"+System.currentTimeMillis());
         return getConfMtRequest.getResponseMsg();

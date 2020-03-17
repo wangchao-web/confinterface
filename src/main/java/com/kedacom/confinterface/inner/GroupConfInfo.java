@@ -71,12 +71,24 @@ public class GroupConfInfo {
             }
 
             if (null == broadcastVmtService) {
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "setBroadcastVmtService broadcastVmtService is null *****  ");
+                System.out.println("setBroadcastVmtService broadcastVmtService is null *****  ");
                 return;
             }
 
             this.broadcastVmtService.setSupportDualStream(true);
             freeVmtMembers.remove(broadcastVmtService.getE164());
+            if (createdConf.equals("mcu")) {
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "setBroadcastVmtService createdConf is mcu : " + broadcastVmtService.getE164());
+                System.out.println("setBroadcastVmtService createdConf is mcu : " + broadcastVmtService.getE164());
+                usedVmtMembers.put(broadcastVmtService.getE164(), broadcastVmtService);
+
+            }
         }
+    }
+
+    public void setBroadcast(){
+        broadcastVmtService = null;
     }
 
     public boolean isTerminalType() {
@@ -106,14 +118,14 @@ public class GroupConfInfo {
         synchronized (this) {
             TerminalService terminalService = mtMembers.get(mtE164);
             if (null == terminalService) {
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"terminalService is null delMtMember : " + mtE164);
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "terminalService is null delMtMember : " + mtE164);
                 System.out.println("terminalService is null delMtMember : " + mtE164);
                 return null;
             }
             String mtId = terminalService.getMtId();
             if (null != mtId) {
                 mtIdMap.remove(terminalService.getMtId());
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"remove mtIdMap  mtId : " + mtId);
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "remove mtIdMap  mtId : " + mtId);
                 System.out.println("remove mtIdMap  mtId : " + mtId);
             }
             return mtMembers.remove(mtE164);
@@ -207,11 +219,11 @@ public class GroupConfInfo {
 
     public void delMember(TerminalService member) {
         if (member.isVmt()) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"delMember member is Vmt");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "delMember member is Vmt");
             System.out.println("delMember member is Vmt");
             TerminalService removeService = freeVmtMembers.remove(member.getE164());
             if (null == removeService) {
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"delMember removeServicec is null ");
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "delMember removeServicec is null ");
                 System.out.println("delMember removeServicec is null ");
                 usedVmtMembers.remove(member.getE164());
             }
@@ -309,10 +321,25 @@ public class GroupConfInfo {
         usedVmtMembers.put(vmtService.getE164(), vmtService);
     }
 
+    public void useVmtMember(TerminalService vmtService) {
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "usedVmtMembers.put freeVmtMembers.remove : " + vmtService.getE164());
+        System.out.println("usedVmtMembers.put freeVmtMembers.remove : " + vmtService.getE164());
+        usedVmtMembers.put(vmtService.getE164(), vmtService);
+        freeVmtMembers.remove(vmtService.getE164(), vmtService);
+    }
+
+    public void freeVmtMember(TerminalService vmtService) {
+        System.out.println("usedVmtMembers.remove freeVmtMembers.put : " + vmtService.getE164());
+        usedVmtMembers.remove(vmtService.getE164(), vmtService);
+        freeVmtMembers.put(vmtService.getE164(), vmtService);
+    }
+
     public void freeVmt(String vmtE164) {
         synchronized (usedVmtMembers) {
             TerminalService terminalService = usedVmtMembers.get(vmtE164);
             if (null != terminalService) {
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "terminalService not null usedVmtMembers.remove freeVmtMembers.put : " + vmtE164);
+                System.out.println("terminalService not null usedVmtMembers.remove freeVmtMembers.put : " + vmtE164);
                 freeVmtMembers.put(vmtE164, terminalService);
                 usedVmtMembers.remove(vmtE164);
             }
@@ -415,6 +442,7 @@ public class GroupConfInfo {
     public int getFreeVmtMemberNum() {
         return freeVmtMembers.size();
     }
+
     public int getUsedVmtMember() {
         return usedVmtMembers.size();
     }
@@ -460,6 +488,14 @@ public class GroupConfInfo {
         this.mtIdMap = mtIdMap;
     }
 
+    public int getDelay() {
+        return delay;
+    }
+
+    public void setDelay(int delay) {
+        this.delay = delay;
+    }
+
     private String groupId;
     private String confId;
     private int broadcastType;   //0-未知，1-终端，2-其他
@@ -472,4 +508,6 @@ public class GroupConfInfo {
     private ConcurrentHashMap<String, String> mtIdMap;//mtId号为key,e164为value
     private boolean confinterface = false;
     private String createdConf; //用来判断是会议服务自己创建的会议还是mcu创建的会议 confinterface为会议自己创建,mcu为mcu创建的会议
+    private int delay = 0; //用于判断mcu自己创建会议时,第一次设置广播源时,等待虚拟终端先呼叫起来 0,初始值,1在设置广播员是设置,2在虚拟终端入会时设置
+
 }

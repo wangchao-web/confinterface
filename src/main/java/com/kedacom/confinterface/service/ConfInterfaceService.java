@@ -359,7 +359,7 @@ public class ConfInterfaceService {
             return;
         }
 
-        TerminalService broadcastVmtService;
+
         if (groupConfInfo.getCreatedConf().equals("mcu")) {
             String confId = groupConfInfo.getConfId();
             if (confId.isEmpty()) {
@@ -369,15 +369,32 @@ public class ConfInterfaceService {
                 return;
             }
             int joinConfVmtNum = 0;
+            int vmtNum = groupConfInfo.getVmtMemberNum();
+            int mtNum = groupConfInfo.getMtMemberNum();
+            int usedVmtMember = groupConfInfo.getUsedVmtMember();
+            int freeVmtMemberNum = groupConfInfo.getFreeVmtMemberNum();
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "broadCastRequest, vmtNum:" + vmtNum + ", mtNum:" + mtNum + ", freeVmtMemberNum : " + freeVmtMemberNum + ", usedVmtMember : " + usedVmtMember);
+            System.out.println("broadCastRequest, vmtNum:" + vmtNum + ", mtNum:" + mtNum + ", freeVmtMemberNum : " + freeVmtMemberNum + ", usedVmtMember : " + usedVmtMember);
+
             TerminalService broadcastVmtService1 = groupConfInfo.getBroadcastVmtService();
             if (broadcastVmtService1 == null) {
-                joinConfVmtNum = 1;
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "broadCastRequest dstVmtService is null ********");
+                System.out.println("broadCastRequest dstVmtService is null ********");
+                if (freeVmtMemberNum == 0) {
+                    joinConfVmtNum = 1;
+                } else {
+                    joinConfVmtNum = 0;
+                }
+                if(joinConfVmtNum ==0){
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "broadCastRequest  setBroadcastVmtService joinConfVmtNum : " + joinConfVmtNum);
+                    System.out.println("broadCastRequest setBroadcastVmtService joinConfVmtNum : " + joinConfVmtNum);
+                    groupConfInfo.setBroadcastVmtService(null);
+                }
             }
 
-            boolean bSetBroadcast = false;
-            /*if (joinConfVmtNum > 0) {
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "broadCastRequest : " + joinConfVmtNum);
-                System.out.println("broadCastRequest : " + joinConfVmtNum);
+            List<Terminal> joinConfVmts = new ArrayList<>();
+            if (joinConfVmtNum > 0) {
+
                 List<TerminalService> terminalServices = terminalManageService.getFreeVmts(joinConfVmtNum);
                 if (null == terminalServices) {
                     //todo:遍历目前所有的group，将空闲的vmt进行退会
@@ -407,15 +424,30 @@ public class ConfInterfaceService {
                     return;
                 }
 
+                groupConfInfo.setBroadcastVmtService(null);
+                groupConfInfo.setDelay(1);
+                while (true){
+                    if (groupConfInfo.getDelay() == 0 ||groupConfInfo.getDelay() ==1){
+                        try {
+                            Thread.sleep(500);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }else{
+                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"groupConfInfo.getDelay() : " +groupConfInfo.getDelay());
+                        System.out.println("groupConfInfo.getDelay() : " +groupConfInfo.getDelay());
+                        break;
+                    }
+                }
+                groupConfInfo.setDelay(0);
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "joinDiscussionGroup vmt join conference OK ********************");
                 System.out.println("joinDiscussionGroup vmt join conference OK ********************");
-            }*/
-
+            }
         }
 
         boolean isTerminal = broadCastRequest.getBroadCastParam().isTerminalType();
         String broadcastE164 = broadCastRequest.getBroadCastParam().getMtE164();
-
+        TerminalService broadcastVmtService = groupConfInfo.getBroadcastVmtService();
         if (groupConfInfo.isConfinterface()) {
             if (!isTerminal || broadcastE164.equals("")) {
                 LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "500012 : confinterface setBroadcastSrc invalid param!");
@@ -423,8 +455,6 @@ public class ConfInterfaceService {
                 return;
             }
         }
-
-        broadcastVmtService = groupConfInfo.getBroadcastVmtService();
 
         if (groupConfInfo.getBroadcastType() != 0) {
             //如果广播类型不为0, 说明之前已经设置过广播
@@ -446,14 +476,32 @@ public class ConfInterfaceService {
             }
         }
 
-        String broadcastMtId;
+        String broadcastMtId ;
         if (!isTerminal) {
             broadcastMtId = broadcastVmtService.getMtId();
         } else {
             TerminalService mtTerminalService = groupConfInfo.getMtMember(broadcastE164);
             broadcastMtId = mtTerminalService.getMtId();
         }
-
+       /*while (true){
+           if (!isTerminal) {
+               broadcastMtId = broadcastVmtService.getMtId();
+           } else {
+               TerminalService mtTerminalService = groupConfInfo.getMtMember(broadcastE164);
+               broadcastMtId = mtTerminalService.getMtId();
+           }
+           if(broadcastMtId != null){
+               LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"broadcastMtId not empty broadcastMtId : " +broadcastMtId);
+               System.out.println("broadcastMtId not empty broadcastMtId : " +broadcastMtId);
+               break;
+           }else{
+               try {
+                   Thread.sleep(500);    //延时0.5秒
+               } catch (InterruptedException e) {
+                   e.printStackTrace();
+               }
+           }
+       }*/
         String channel = getSpeakerChannel(groupConfInfo.getConfId());
         broadCastRequest.addWaitMsg(channel);
         groupConfInfo.addWaitDealTask(channel, broadCastRequest);
@@ -1432,7 +1480,7 @@ public class ConfInterfaceService {
         TerminalService vmtService = terminalManageService.getFreeVmt();
         if (null == vmtService) {
             LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "p2pCall, 50008 : reach max join terminal numbers!");
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "p2pCall, startCallDevice(GroupID:" + groupId + " ,account: " + mtAccount + ") - [YYYY-MM-DDThh:mm:ss.SSSZ] failed Errcode:" + 50008 + "Error: reach max join terminal numbers!");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "p2pCall, startCallDevice(GroupID:" + groupId + " ,account: " + mtAccount + ")  failed Errcode:" + 50008 + "Error: reach max join terminal numbers!");
             p2PCallRequest.makeErrorResponseMsg(ConfInterfaceResult.REACH_MAX_JOIN_MTS.getCode(), HttpStatus.OK, ConfInterfaceResult.REACH_MAX_JOIN_MTS.getMessage());
             return;
         }
@@ -2081,6 +2129,7 @@ public class ConfInterfaceService {
         }
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "confGroupMap : " + confGroupMap);
         System.out.println("confGroupMap : " + confGroupMap);
+        mcuRestClientService.subscribeAllConfInfo();
         if (confGroupMap == null || confGroupMap.isEmpty()) {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "confGroupMap is null or empty  ****************   ");
             System.out.println("confGroupMap is null or empty  ****************   ");
@@ -2091,9 +2140,13 @@ public class ConfInterfaceService {
                 GroupConfInfo groupConfInfo = new GroupConfInfo(groupID, confsDetailRspInfo.getConf_id());
                 groupConfInfo.setCreatedConf("mcu");
                 addGroupConfInfo(groupConfInfo);
-                //mcuRestClientService.subscribeConfInfo(confsDetailRspInfo.getConf_id());
+                //mcuRestClientService.subscribeConfCascadesInfo(confsDetailRspInfo.getConf_id());
+                mcuRestClientService.subscribeInspection(confsDetailRspInfo.getConf_id());
+                mcuRestClientService.subscribeSpeaker(confsDetailRspInfo.getConf_id());
+                mcuRestClientService.subscribeDual(confsDetailRspInfo.getConf_id());
+                mcuRestClientService.subscribeConfMts(confsDetailRspInfo.getConf_id());
             }
-            mcuRestClientService.subscribeAllConfInfo();
+            //mcuRestClientService.subscribeAllConfInfo();
             queryConfsRequest.makeSuccessResponseMsg();
             return;
         }
@@ -2120,10 +2173,14 @@ public class ConfInterfaceService {
             ConfsDetailInfo confsDetailInfo = new ConfsDetailInfo(confsDetailRspInfo.getName(), confsDetailRspInfo.getConf_id(), groupID, confsDetailRspInfo.getConf_level(), confsDetailRspInfo.getStart_time(), confsDetailRspInfo.getEnd_time(), mcuRestConfig.getMcuIp());
             queryConfsRequest.addConfDetailInfos(confsDetailInfo);
             //与终端无关的订阅信息在此全部订阅掉
-            //mcuRestClientService.subscribeConfInfo(confsDetailRspInfo.getConf_id());
+            //mcuRestClientService.subscribeConfCascadesInfo(confsDetailRspInfo.getConf_id());
+            mcuRestClientService.subscribeInspection(confsDetailRspInfo.getConf_id());
+            mcuRestClientService.subscribeSpeaker(confsDetailRspInfo.getConf_id());
+            mcuRestClientService.subscribeDual(confsDetailRspInfo.getConf_id());
+            mcuRestClientService.subscribeConfMts(confsDetailRspInfo.getConf_id());
         }
         queryConfsRequest.makeSuccessResponseMsg();
-        mcuRestClientService.subscribeAllConfInfo();
+
     }
 
 
@@ -2159,7 +2216,7 @@ public class ConfInterfaceService {
 
         ConfsCascadesResponse confsCascadesResponse = mcuRestClientService.queryConfsCascades(confId);
         if (confsCascadesResponse == null) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"confsCascadesResponse is null *********");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "confsCascadesResponse is null *********");
             System.out.println("confsCascadesResponse is null *********");
             queryConfsCascadesRequest.makeErrorResponseMsg(ConfInterfaceResult.QUERY_CONFS_CASCADES_INFO_IS_NULL.getCode(), HttpStatus.OK, ConfInterfaceResult.QUERY_CONFS_CASCADES_INFO_IS_NULL.getMessage());
             return;
@@ -2238,7 +2295,7 @@ public class ConfInterfaceService {
             if (mtIdMap.containsKey(confsDetailRspInfo.getMt_id())) {
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "account : " + account + ", confsDetailRspInfo.getMt_id() : " + confsDetailRspInfo.getMt_id());
                 System.out.println("account : " + account + ", confsDetailRspInfo.getMt_id() : " + confsDetailRspInfo.getMt_id());
-            }else {
+            } else {
                 groupConfInfo.addMtId(confsDetailRspInfo.getMt_id(), account);
                 TerminalService mtMember = groupConfInfo.getMtMember(account);
                 if (mtMember == null) {
@@ -2312,17 +2369,18 @@ public class ConfInterfaceService {
             return;
         }
         List<TerminalIdInfo> smsInfoMts = new ArrayList<>();
-        List<TerminalMtId> mts = sendSmsRequest.getSendSmsParam().getMts();
-        ConcurrentHashMap<String, String> mtIdMap = groupConfInfo.getMtIdMap();
-        for (TerminalMtId mt : mts) {
-            TerminalService member = groupConfInfo.getMember(mt.getAccount());
-            if (mtIdMap.containsValue(mt.getAccount())) {
-                TerminalIdInfo terminalIdInfo = new TerminalIdInfo();
-                terminalIdInfo.setMt_id(member.getMtId());
-                smsInfoMts.add(terminalIdInfo);
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "sendSms mtIdMap E164 or ip : " + mt.getAccount() + ", mtIdMap mt_id : " + mtIdMap.get(member.getMtId()));
-                System.out.println("sendSms mtIdMap E164 or ip : " + mt.getAccount() + ", mtIdMap mt_id : " + mtIdMap.get(member.getMtId()));
+        List<Terminal> mts = sendSmsRequest.getSendSmsParam().getMts();
+        //ConcurrentHashMap<String, String> mtIdMap = groupConfInfo.getMtIdMap();
+        for (Terminal mt : mts) {
+            TerminalService member = groupConfInfo.getMember(mt.getMtE164());
+            if (member == null) {
+                continue;
             }
+            TerminalIdInfo terminalIdInfo = new TerminalIdInfo();
+            terminalIdInfo.setMt_id(member.getMtId());
+            smsInfoMts.add(terminalIdInfo);
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "sendSms mtIdMap E164 or ip : " + mt.getMtE164() + ", member mt_id : " + member.getMtId());
+            System.out.println("sendSms mtIdMap E164 or ip : " + mt.getMtE164() + ", member mt_id : " + member.getMtId());
 
         }
         McuStatus mcuStatus = mcuRestClientService.sendMsm(confId, sendSmsRequest.getSendSmsParam(), smsInfoMts);
@@ -2335,6 +2393,59 @@ public class ConfInterfaceService {
 
     }
 
+
+    @Async("confTaskExecutor")
+    public void queryConfMtInfo(GetConfMtRequest getConfMtRequest){
+        if (!baseSysConfig.isUseMcu()) {
+            getConfMtRequest.makeErrorResponseMsg(ConfInterfaceResult.NOT_SUPPORT_METHOD.getCode(), HttpStatus.OK, ConfInterfaceResult.NOT_SUPPORT_METHOD.getMessage());
+            return;
+        }
+        if (confGroupMap == null || confGroupMap.isEmpty()) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, " getConfMtRequest confGroupMap is null or empty ********");
+            System.out.println("getConfMtRequest confGroupMap is null or empty ********");
+            getConfMtRequest.makeErrorResponseMsg(ConfInterfaceResult.GROUP_NOT_EXIST.getCode(), HttpStatus.OK, ConfInterfaceResult.GROUP_NOT_EXIST.getMessage());
+            return;
+        }
+        String groupId = getConfMtRequest.getGroupId();
+        GroupConfInfo groupConfInfo = groupConfInfoMap.get(groupId);
+        if (null == groupConfInfo) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "getConfMtRequest, not found groupId : " + getConfMtRequest.getGroupId());
+            System.out.println("getConfMtRequest, not found groupId : " + getConfMtRequest.getGroupId());
+            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50002 : group not exist!");
+            getConfMtRequest.makeErrorResponseMsg(ConfInterfaceResult.GROUP_NOT_EXIST.getCode(), HttpStatus.OK, ConfInterfaceResult.GROUP_NOT_EXIST.getMessage());
+            return;
+        }
+        String confId = groupConfInfo.getConfId();
+        if ("".equals(confId)) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, " getConfMtRequest confId is empty confid :　" + confId);
+            System.out.println("getConfMtRequest confId is empty  confid :　" + confId);
+            getConfMtRequest.makeErrorResponseMsg(ConfInterfaceResult.CONF_NOT_EXIT.getCode(), HttpStatus.OK, ConfInterfaceResult.CONF_NOT_EXIT.getMessage());
+            return;
+        }
+        TerminalService member = groupConfInfo.getMember(getConfMtRequest.getMtE164());
+        if (member == null) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "getConfMtRequest member is null  E164 :　" + getConfMtRequest.getMtE164());
+            System.out.println("getConfMtRequest member is null  E164 :　" + getConfMtRequest.getMtE164());
+            getConfMtRequest.makeErrorResponseMsg(ConfInterfaceResult.TERMINAL_NOT_EXIST.getCode(), HttpStatus.OK, ConfInterfaceResult.TERMINAL_NOT_EXIST.getMessage());
+            return;
+        }
+        GetConfMtInfoResponse getConfMtInfoResponse = mcuRestClientService.getConfMtInfo(confId, member.getMtId());
+        if (null == getConfMtInfoResponse) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "getConfMtRequest member is null  E164 :　" + getConfMtRequest.getMtE164());
+            System.out.println("getConfMtRequest member is null  E164 :　" + getConfMtRequest.getMtE164());
+            getConfMtRequest.makeErrorResponseMsg(ConfInterfaceResult.GET_MT_INFO_FAILED.getCode(), HttpStatus.OK, ConfInterfaceResult.GET_MT_INFO_FAILED.getMessage());
+            return;
+        }
+        ConfMtInfo confMtInfo = new ConfMtInfo(getConfMtInfoResponse.getE164(), getConfMtInfoResponse.getIp(), getConfMtInfoResponse.getType(), getConfMtInfoResponse.getOnline(),
+                getConfMtInfoResponse.getAlias(), getConfMtInfoResponse.getBitrate(), getConfMtInfoResponse.getMt_id(), getConfMtInfoResponse.getSilence(),
+                getConfMtInfoResponse.getMute(), getConfMtInfoResponse.getInspection());
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"confMtInfo : "+confMtInfo.toString());
+        confMtInfo.setSndVolume(getConfMtInfoResponse.getSnd_volume());
+        confMtInfo.setRcvVolume(getConfMtInfoResponse.getRcv_volume());
+        System.out.println("confMtInfo : "+confMtInfo.toString());
+        getConfMtRequest.setConfMtInfo(confMtInfo);
+        getConfMtRequest.makeSuccessResponseMsg();
+    }
 
     public Map<String, GroupConfInfo> getGroupConfInfoMap() {
         return groupConfInfoMap;

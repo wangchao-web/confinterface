@@ -2039,7 +2039,9 @@ public abstract class TerminalService {
     protected Boolean isExternalDocking = false;
     protected static StringBuilder scheduleP2PCallURL = null;
     protected static StringBuilder notifyURL = null;
+    //protected Boolean isTerminalRepeat = false; //判断mcu自己创建的会议时,在同一个组里新增终端相同的问题
     public Map<String, MediaResource> dualSource = new HashMap<>();
+
 
     //显控双向选看
     protected Boolean isInspectionAndInspectioned = false;
