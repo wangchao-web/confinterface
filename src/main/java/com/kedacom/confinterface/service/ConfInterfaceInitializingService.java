@@ -124,6 +124,8 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
 
         //启动终端注册Gk
         terminalManageService.StartUp();
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "no groups in db, init OK! current time : " + System.currentTimeMillis());
+        System.out.println("no groups in db, init OK! current time : " + System.currentTimeMillis());
     }
 
     private void createConferenceManage() {
