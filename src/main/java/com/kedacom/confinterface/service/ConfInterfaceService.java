@@ -909,12 +909,6 @@ public class ConfInterfaceService {
                 return;
             }
 
-            if(cameraCtrlParam.getState() ==1){
-                LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "protocol control camera stop success!");
-                cameraCtrlRequest.makeSuccessResponseMsg();
-                return;
-            }
-
             boolean bOK = vmtService.ctrlCamera(cameraCtrlParam.getState(), cameraCtrlParam.getType());
             if (!bOK){
                 LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50007 : protocol control camera failed!");

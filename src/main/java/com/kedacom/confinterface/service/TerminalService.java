@@ -551,6 +551,10 @@ public abstract class TerminalService {
     }
 
     public boolean ctrlCamera(int state, int type){
+        if (state == 1) {
+            return true;
+        }
+
         PTZOperation ptzOperation = new PTZOperation();
         ptzOperation.setCmd(PTZCmdEnum.Invalid);
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"ctrlCamera, type : " + type);
