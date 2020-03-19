@@ -17,6 +17,7 @@ import net.sf.json.JSONObject;
 import net.sf.json.JsonConfig;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.connection.RedisNode;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
@@ -760,9 +761,20 @@ public abstract class TerminalService {
                 remoteParticipantInfo.setParticipantId(ipAndAlias[1]);
             }
 
-            String[] mtAddress = ipAndAlias[0].split(":", 2);
+            String[] mtAddress;
+            String ip;
+            if (!ipAndAlias[0].contains("]")) {
+                //ipv4地址
+                mtAddress = ipAndAlias[0].split(":");
+                ip = mtAddress[0].trim();
+            } else {
+                //ipv6地址
+                mtAddress = ipAndAlias[0].split("]:");
+                ip = mtAddress[0].substring(1);
+            }
+
             NetAddress netAddress = new NetAddress();
-            netAddress.setIP(mtAddress[0]);
+            netAddress.setIP(ip);
 
             if (mtAddress.length == 1) {
                 netAddress.setPort(1720);
