@@ -865,10 +865,6 @@ public class ConfInterfaceService {
 
     @Async("confTaskExecutor")
     public void ctrlCamera(CameraCtrlRequest cameraCtrlRequest) {
-        if (!baseSysConfig.isUseMcu()) {
-            cameraCtrlRequest.makeErrorResponseMsg(ConfInterfaceResult.NOT_SUPPORT_METHOD.getCode(), HttpStatus.OK, ConfInterfaceResult.NOT_SUPPORT_METHOD.getMessage());
-            return;
-        }
 
         String groupId = cameraCtrlRequest.getGroupId();
         CameraCtrlParam cameraCtrlParam = cameraCtrlRequest.getCameraCtrlParam();
@@ -910,6 +906,12 @@ public class ConfInterfaceService {
             if (null == vmtService) {
                 LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "ctrlCamera, p2pCall, has not found vmt by resourceId : " + resourceId);
                 cameraCtrlRequest.makeErrorResponseMsg(ConfInterfaceResult.INVALID_PARAM.getCode(), HttpStatus.OK, ConfInterfaceResult.INVALID_PARAM.getMessage());
+                return;
+            }
+
+            if(cameraCtrlParam.getState() ==1){
+                LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "protocol control camera stop success!");
+                cameraCtrlRequest.makeSuccessResponseMsg();
                 return;
             }
 
@@ -1203,7 +1205,6 @@ public class ConfInterfaceService {
                 p2PCallGroup.addCallMember(mtAccount, vmtService);
             } else {
                 vmtService.delWaitMsg(waitMsg);
-                //vmtService.publishStatus(mtAccount, TerminalOnlineStatusEnum.OFFLINE.getCode());
                 //加上终端呼叫失败的错误码
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "callRemoteCap faileCode" + terminalOfflineReasonEnum.getCode());
                 System.out.println("callRemoteCap faileCode" + terminalOfflineReasonEnum.getCode());

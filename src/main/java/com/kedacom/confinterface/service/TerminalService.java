@@ -553,7 +553,7 @@ public abstract class TerminalService {
     public boolean ctrlCamera(int state, int type){
         PTZOperation ptzOperation = new PTZOperation();
         ptzOperation.setCmd(PTZCmdEnum.Invalid);
-
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"ctrlCamera, type : " + type);
         System.out.println("ctrlCamera, type : " + type);
 
         switch (type){
@@ -604,7 +604,10 @@ public abstract class TerminalService {
         }
 
         boolean bOk = conferenceParticipant.RequestPTZOpr(ptzOperation);
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"first RequestPTZOpr bOk :" +bOk);
+        System.out.println("first RequestPTZOpr bOk :" +bOk);
         if (!bOk) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"ctrlCamera, RequestPTZOpr failed!");
             System.out.println("ctrlCamera, RequestPTZOpr failed!");
             return false;
         }
@@ -612,10 +615,14 @@ public abstract class TerminalService {
         switch (type){
             case 5:
             case 7:
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"type PTZCmdEnum.PanLeft　: " +type);
+                System.out.println("type PTZCmdEnum.PanLeft　: " +type);
                 ptzOperation.setCmd(PTZCmdEnum.PanLeft);
                 break;
             case 6:
             case 8:
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"type PTZCmdEnum.PanRight　: " +type);
+                System.out.println("type PTZCmdEnum.PanRight　: " +type);
                 ptzOperation.setCmd(PTZCmdEnum.PanRight);
                 break;
             default:
@@ -623,7 +630,10 @@ public abstract class TerminalService {
         }
 
         bOk = conferenceParticipant.RequestPTZOpr(ptzOperation);
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"second RequestPTZOpr bOk : " +bOk);
+        System.out.println("second RequestPTZOpr bOk : " +bOk);
         if (!bOk) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"ctrlCamera, 2, RequestPTZOpr failed!");
             System.out.println("ctrlCamera, 2, RequestPTZOpr failed!");
             return false;
         }
