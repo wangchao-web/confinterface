@@ -346,8 +346,14 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"TerminalOfflineReasonEnum.Normal.getReason() : "+ TerminalOfflineReasonEnum.Normal.getReason());
             System.out.println("TerminalOfflineReasonEnum.Normal.getReason() : "+ TerminalOfflineReasonEnum.Normal.getReason());
             terminalService.setOnline(status);
-        }
-        else{
+        } else if (20401 == subscribeEvent.getErrorCode()) {
+            //返回该错误码时，指定终端不可及, 可能不在线
+            status = TerminalOnlineStatusEnum.OFFLINE.getCode();
+            terminalOfflineReasonEnum = TerminalOfflineReasonEnum.Unreachable;
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "TerminalOfflineReasonEnum.Unreachable.getReason() : " + TerminalOfflineReasonEnum.Unreachable.getReason());
+            System.out.println("TerminalOfflineReasonEnum.Unreachable.getReason() : " + TerminalOfflineReasonEnum.Unreachable.getReason());
+            terminalService.setOnline(status);
+        } else{
             status = TerminalOnlineStatusEnum.OFFLINE.getCode();
             terminalService.setOnline(status);
         }

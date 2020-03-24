@@ -828,8 +828,6 @@ public abstract class TerminalService {
             //TerminalOnlineStatusEnum terminalOnlineStatusEnum = TerminalOnlineStatusEnum.ONLINE;
             if (bOK) {
                 remoteMtAccount = account;
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE," CallRemote success terminalOfflineReasonEnum : " + terminalOfflineReasonEnum.getCode() + " : reason :  " + terminalOfflineReasonEnum.getReason());
-                System.out.println(" CallRemote success terminalOfflineReasonEnum : " + terminalOfflineReasonEnum.getCode() + " : reason :  " + terminalOfflineReasonEnum.getReason());
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "account conferenceParticipant.CallRemote success " + account);
                 System.out.println("account conferenceParticipant.CallRemote success " + account);
             } else {
@@ -837,11 +835,6 @@ public abstract class TerminalService {
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"callParameterEx.getErrorReason() " + callParameterEx.getErrorReason().name());
                 System.out.println("callParameterEx.getErrorReason() " + callParameterEx.getErrorReason().name());
                 terminalOfflineReasonEnum = callFailureCode(callParameterEx.getErrorReason());
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"CallRemote failed terminalOnlineStatusEnum " + terminalOfflineReasonEnum.getCode());
-                System.out.println("CallRemote failed terminalOnlineStatusEnum " + terminalOfflineReasonEnum.getCode());
-                LogTools.debug(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "startCallDevice(GroupID:" + groupId + " ,account: " + account + ") - [YYYY-MM-DDThh:mm:ss.SSSZ] failed Errcode:" + 50024 + "p2p call failed!");
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "account conferenceParticipant.CallRemote failed " + account);
-                System.out.println("account conferenceParticipant.CallRemote failed " + account);
             }
             return terminalOfflineReasonEnum;
         }
@@ -1014,9 +1007,24 @@ public abstract class TerminalService {
     protected String constructCreateSdp(MediaDescription mediaDescription) {
         StringBuilder sdp = new StringBuilder();
 
-        sdp.append("c=IN IP4 ");
-        sdp.append("0.0.0.0");
-        sdp.append("\r\n");
+        String rtpProtocolType = getIpProtocolType(mediaDescription.getRtpAddress().getIP());
+        String rtcpProtocolType = getIpProtocolType(mediaDescription.getRtcpAddress().getIP());
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"[constructCreateSdp] rtpProtocolType : "+rtpProtocolType + ",rtcpProtocolType : "+rtcpProtocolType);
+        System.out.println("[constructCreateSdp] rtpProtocolType : "+rtpProtocolType + ",rtcpProtocolType : "+rtcpProtocolType);
+        if (null == rtpProtocolType || null == rtcpProtocolType){
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"[constructCreateSdp] rtpProtocolType or rtcpProtocolType is null!!!!");
+            System.out.println("[constructCreateSdp] rtpProtocolType or rtcpProtocolType is null!!!!");
+            return "";
+        }
+
+        sdp.append("c=IN ");
+        sdp.append(rtpProtocolType);
+        if("IP4".equals(rtpProtocolType)){
+            sdp.append(" 0.0.0.0\r\n");
+        }else{
+            sdp.append(" ::\r\n");
+        }
+
         /*此处暂时将mcu向会议接入微服务打开逻辑通道时使用的媒体参数作为接受媒体信息携带的流媒体
          * todo:等到赵智琛将能力集协商结果提供出来后，此处可以需填写能力集协商内容*/
         if (mediaDescription.getMediaType().equals(MediaTypeEnum.VIDEO.getName())) {
@@ -1154,7 +1162,10 @@ public abstract class TerminalService {
 
         String rtpProtocolType = getIpProtocolType(mediaDescription.getRtpAddress().getIP());
         String rtcpProtocolType = getIpProtocolType(mediaDescription.getRtcpAddress().getIP());
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"rtpProtocolType : "+rtpProtocolType + ",rtcpProtocolType : "+rtcpProtocolType);
+        System.out.println("rtpProtocolType : "+rtpProtocolType + ",rtcpProtocolType : "+rtcpProtocolType);
         if (null == rtpProtocolType || null == rtcpProtocolType){
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"[constructSdp] rtpProtocolType or rtcpProtocolType is null!!!!");
             System.out.println("[constructSdp] rtpProtocolType or rtcpProtocolType is null!!!!");
             return "";
         }
@@ -1838,6 +1849,7 @@ public abstract class TerminalService {
     }
 
     protected static boolean isIPv4(String strIp){
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"[isIPv4] strIp : " + strIp);
         System.out.println("[isIPv4] strIp : " + strIp);
 
         if (!strIp.contains("."))
@@ -1864,7 +1876,12 @@ public abstract class TerminalService {
     }
 
     protected static boolean isIPv6(String strIp) {
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"[isIPv6] strIp : " + strIp);
         System.out.println("[isIPv6] strIp : " + strIp);
+
+        if("::".equals(strIp)){
+            return true;
+        }
 
         if (!strIp.contains(":"))
             return false;
