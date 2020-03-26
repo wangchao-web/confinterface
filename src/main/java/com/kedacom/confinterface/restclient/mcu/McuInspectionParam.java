@@ -31,7 +31,7 @@ public class McuInspectionParam {
         return new StringBuilder().append("src{").append(src).append("},dst{").append(dst).append("},mode:").append(mode).toString();
     }
 
-    private int mode;  // 1:视频, 2:音频
+    private Integer mode;  // 1:视频, 2:音频
     private InspectionSrcInfo src;
     private InspectionDstInfo dst;
 }

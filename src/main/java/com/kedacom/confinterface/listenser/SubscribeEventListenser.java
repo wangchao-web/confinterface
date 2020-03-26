@@ -250,6 +250,19 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
                 groupConfInfo.addMember(terminal);
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processSubscribeMts createTerminal  ,terminal  " + terminal.toString());
                 System.out.println("processSubscribeMts createTerminal  ,terminal  " + terminal.toString());
+                if(getConfMtInfoResponse.getOnline() == 1){
+                    if (!bVmt) {
+                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "createTerminal, terminal(e164:" + terminal.getE164() + ",mtId:" + mtId + ") publishStatus add Mt Online!");
+                        System.out.println("createTerminal, terminal(e164:" + terminal.getE164() + ",mtId:" + mtId + ") publishStatus add Mt Online!");
+                        TerminalManageService.publishStatus(e164, groupConfInfo.getGroupId(), TerminalOnlineStatusEnum.ONLINE.getCode());
+                    }
+                }else{
+                    if (!bVmt) {
+                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "createTerminal, terminal(e164:" + terminal.getE164() + ",mtId:" + mtId + ") publishStatus add Mt Offline !");
+                        System.out.println("createTerminal, terminal(e164:" + terminal.getE164() + ",mtId:" + mtId + ") publishStatus add Mt Offline !");
+                        TerminalManageService.publishStatus(e164, groupConfInfo.getGroupId(), TerminalOnlineStatusEnum.OFFLINE.getCode());
+                    }
+                }
             }
             return;
         } else {
@@ -263,6 +276,11 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
                         System.out.println("processSubscribeMts terminalService account : " + terminalService.getE164() + "Online : " + terminalService.getOnline() + "terminalService mtID : " + terminalService.getMtId() + " , getConfMtInfoResponse mtId : " + getConfMtInfoResponse.getMt_id());
                         terminalService.isOline(getConfMtInfoResponse.getOnline());
                         terminalService.setMtId(getConfMtInfoResponse.getMt_id());
+                        if (!terminalService.isVmt()) {
+                            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "terminal(e164:" + terminalService.getE164() + ",mtId:" + mtId + ") publishStatus add Mt Online!");
+                            System.out.println("terminal(e164:" + terminalService.getE164() + ",mtId:" + mtId + ") publishStatus add Mt Online!");
+                            TerminalManageService.publishStatus(e164, groupConfInfo.getGroupId(), TerminalOnlineStatusEnum.ONLINE.getCode());
+                        }
                     }
                     return;
                 }
@@ -275,6 +293,13 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
         if (terminalService.isOnline()) {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processSubscribeMts, terminal(e164:" + terminalService.getE164() + ",mtId:" + mtId + ") is current online!");
             System.out.println("processSubscribeMts, terminal(e164:" + terminalService.getE164() + ",mtId:" + mtId + ") is current online!");
+            if(getConfMtInfoResponse.getOnline() == 1){
+                if (!terminalService.isVmt()) {
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processSubscribeMts, terminal(e164:" + terminalService.getE164() + ",mtId:" + mtId + ") publishStatus state change!");
+                    System.out.println("processSubscribeMts, terminal(e164:" + terminalService.getE164() + ",mtId:" + mtId + ") publishStatus state change!");
+                    TerminalManageService.publishStatus(e164, groupConfInfo.getGroupId(), TerminalOnlineStatusEnum.STATECHANGE.getCode());
+                }
+            }
             if (getConfMtInfoResponse.getOnline() == 0) {
                 if (!terminalService.isVmt()) {
                     //只上报会议终端的状态
@@ -335,7 +360,7 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
                     System.out.println("terminal is online and not vmt, publishStatus!! e164:" + e164);
                     TerminalManageService.publishStatus(e164, groupConfInfo.getGroupId(), TerminalOnlineStatusEnum.ONLINE.getCode());
                 }
-                //groupConfInfo.addMtId(mtId, terminalService.getE164());
+                groupConfInfo.addMtId(mtId, terminalService.getE164());
                 if (groupConfInfo.getDelay() == 1) {
                     LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "setDelay is 2 ");
                     System.out.println("setDelay is 2 ");
@@ -403,6 +428,13 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
             terminalOfflineReasonEnum = TerminalOfflineReasonEnum.Normal;
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "TerminalOfflineReasonEnum.Normal.getReason() : " + TerminalOfflineReasonEnum.Normal.getReason());
             System.out.println("TerminalOfflineReasonEnum.Normal.getReason() : " + TerminalOfflineReasonEnum.Normal.getReason());
+            terminalService.setOnline(status);
+        }else if (20401 == subscribeEvent.getErrorCode()) {
+            //返回该错误码时，指定终端不可及, 可能不在线
+            status = TerminalOnlineStatusEnum.OFFLINE.getCode();
+            terminalOfflineReasonEnum = TerminalOfflineReasonEnum.Unreachable;
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "TerminalOfflineReasonEnum.Unreachable.getReason() : " + TerminalOfflineReasonEnum.Unreachable.getReason());
+            System.out.println("TerminalOfflineReasonEnum.Unreachable.getReason() : " + TerminalOfflineReasonEnum.Unreachable.getReason());
             terminalService.setOnline(status);
         } else {
             status = TerminalOnlineStatusEnum.OFFLINE.getCode();
@@ -476,6 +508,7 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
                         System.out.println("cascades delete member is null  ******* ");
                         return;
                     }
+                    boolean vmt = member.isVmt();
                     groupConfInfo.delMember(member);
                     if (broadcastVmtService == null) {
                         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "broadcastVmtService is null ******");
@@ -486,14 +519,18 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
                             System.out.println("set setBroadcastVmtService is null : " + broadcastVmtService.getE164());
                             groupConfInfo.setBroadcast();
                             groupConfInfo.setDelay(0);
-                            groupConfInfo.setBroadcastType(0);
+                            groupConfInfo.setBroadcastType(BroadcastTypeEnum.UNKNOWN.getCode());
                             groupConfInfo.getUsedVmtMembers().remove(E164);
                             terminalMediaSourceService.delBroadcastSrcInfo(groupConfInfo.getGroupId());
                         }
                     }
                     LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "MT leave confinterface publishStatus E164 : " + E164 + ", groupConfInfo.getGroupId()" + groupConfInfo.getGroupId());
                     System.out.println("MT leave confinterface publishStatus E164 : " + E164 + ", groupConfInfo.getGroupId()" + groupConfInfo.getGroupId());
-                    TerminalManageService.publishStatus(E164, groupConfInfo.getGroupId(), TerminalOnlineStatusEnum.LEAVECONFERENCE.getCode());
+                    if (!vmt) {
+                        System.out.println("terminal not vmt, publishStatus!! e164:" + E164 +" , vmt : "+ vmt);
+                        TerminalManageService.publishStatus(E164, groupConfInfo.getGroupId(), TerminalOnlineStatusEnum.LEAVECONFERENCE.getCode());
+                    }
+
                     LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "cascades DELETE mtId : " + mtId + ", E164 : " + E164);
                     System.out.println("cascades DELETE mtId : " + mtId + ", E164 : " + E164);
 
@@ -516,7 +553,13 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
             if (groupConfInfo.getBroadcastType() != 0) {
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "set speak groupConfInfo.getBroadcastType() : " + groupConfInfo.getBroadcastType());
                 System.out.println("set speak groupConfInfo.getBroadcastType() : " + groupConfInfo.getBroadcastType());
-                groupConfInfo.setBroadcastType(0);
+                groupConfInfo.setBroadcastType(BroadcastTypeEnum.UNKNOWN.getCode());
+                groupConfInfo.setBroadcastMtE164(null);
+                //更新数据库中的广播源信息
+                BroadcastSrcMediaInfo broadcastSrcMediaInfo = terminalMediaSourceService.getBroadcastSrcInfo(groupConfInfo.getGroupId());
+                broadcastSrcMediaInfo.setType(BroadcastTypeEnum.UNKNOWN.getCode());
+                broadcastSrcMediaInfo.setMtE164(null);
+                terminalMediaSourceService.setBroadcastSrcInfo(groupConfInfo.getGroupId(), broadcastSrcMediaInfo);
             }
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "get speaker subscribe message, channel :" + channel);
             System.out.println("get speaker subscribe message, channel :" + channel);

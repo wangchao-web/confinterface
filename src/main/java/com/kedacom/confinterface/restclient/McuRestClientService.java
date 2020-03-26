@@ -10,7 +10,6 @@ import com.kedacom.confinterface.restclient.mcu.ConfsCascadesMtsRspInfo;
 import com.kedacom.confinterface.service.ConfInterfaceService;
 import com.kedacom.confinterface.service.TerminalManageService;
 import com.kedacom.confinterface.service.TerminalService;
-import com.sun.scenario.effect.impl.sw.sse.SSEBlend_SRC_OUTPeer;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
@@ -794,38 +793,6 @@ public class McuRestClientService {
         return terminalInfoMap;
     }
 
-    public GetConfMtInfoResponse getConfMtInfo(String confId, String mtId) {
-        if (!loginSuccess) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "getCascadesTerminal, has login out!!!");
-            System.out.println("getCascadesTerminal, has login out!!!");
-            return null;
-        }
-
-        //URL为 /api/v1/vc/confs/{conf_id}/mts/{mt_id}
-        StringBuilder url = new StringBuilder();
-        constructUrl(url, "/api/v1/vc/confs/{conf_id}/mts/{mt_id}?account_token={account_token}");
-        Map<String, String> args = new HashMap<>();
-        args.put("conf_id", confId);
-        args.put("mt_id", mtId);
-        args.put("account_token", accountToken);
-
-        GetConfMtInfoResponse getConfMtInfoResponse = restClientService.exchange(url.toString(), HttpMethod.GET, null, urlencodeMediaType, args, GetConfMtInfoResponse.class);
-        if (null == getConfMtInfoResponse) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "getConfMtInfo, null == getCascadesMtResponse");
-            System.out.println("getConfMtInfo, null == getCascadesMtResponse");
-            return null;
-        }
-
-        if (!getConfMtInfoResponse.success()) {
-            int errorCode = getConfMtInfoResponse.getError_code();
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "getConfMtInfo failed! errCode :" + errorCode + ", errmsg:" + McuStatus.resolve(errorCode).getDescription());
-            System.out.println("getConfMtInfo failed! errCode :" + errorCode + ", errmsg:" + McuStatus.resolve(errorCode).getDescription());
-            return null;
-        }
-
-        return getConfMtInfoResponse;
-    }
-
     @Scheduled(initialDelay = heartbeatInterval, fixedRate = heartbeatInterval)
     public void doHearbeat() {
         //每25分钟执行一次心跳检测 /api/v1/system/heartbeat
@@ -1192,6 +1159,71 @@ public class McuRestClientService {
         System.out.println("sendSmsreSponse.getError_code() :" + sendSmsreSponse.getError_code());
         return McuStatus.resolve(sendSmsreSponse.getError_code());
     }
+
+    public GetConfMtInfoResponse getConfMtInfo(String confId, String mtId) {
+        if (!loginSuccess) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "getCascadesTerminal, has login out!!!");
+            System.out.println("getCascadesTerminal, has login out!!!");
+            return null;
+        }
+
+        //URL为 /api/v1/vc/confs/{conf_id}/mts/{mt_id}
+        StringBuilder url = new StringBuilder();
+        constructUrl(url, "/api/v1/vc/confs/{conf_id}/mts/{mt_id}?account_token={account_token}");
+        Map<String, String> args = new HashMap<>();
+        args.put("conf_id", confId);
+        args.put("mt_id", mtId);
+        args.put("account_token", accountToken);
+
+        GetConfMtInfoResponse getConfMtInfoResponse = restClientService.exchange(url.toString(), HttpMethod.GET, null, urlencodeMediaType, args, GetConfMtInfoResponse.class);
+        if (null == getConfMtInfoResponse) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "getConfMtInfo, null == getCascadesMtResponse");
+            System.out.println("getConfMtInfo, null == getCascadesMtResponse");
+            return null;
+        }
+
+        if (!getConfMtInfoResponse.success()) {
+            int errorCode = getConfMtInfoResponse.getError_code();
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "getConfMtInfo failed! errCode :" + errorCode + ", errmsg:" + McuStatus.resolve(errorCode).getDescription());
+            System.out.println("getConfMtInfo failed! errCode :" + errorCode + ", errmsg:" + McuStatus.resolve(errorCode).getDescription());
+            return null;
+        }
+
+        return getConfMtInfoResponse;
+    }
+
+    //获取终端选看列表
+    public ConfInspectionsResponse getConfinspections(String confId) {
+        if (!loginSuccess) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "getConfinspections, has login out!!!");
+            System.out.println("getConfinspections, has login out!!!");
+            return null;
+        }
+
+        ///api/v1/vc/confs/{conf_id}/inspections
+        StringBuilder url = new StringBuilder();
+        constructUrl(url, "/api/v1/vc/confs/{conf_id}/inspections?account_token={account_token}");
+        Map<String, String> args = new HashMap<>();
+        args.put("conf_id", confId);
+        args.put("account_token", accountToken);
+
+        ConfInspectionsResponse confInspectionsResponse = restClientService.exchange(url.toString(), HttpMethod.GET, null, urlencodeMediaType, args, ConfInspectionsResponse.class);
+        if (null == confInspectionsResponse) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "confInspectionsResponse, null == confInspectionsResponse");
+            System.out.println("confInspectionsResponse, null == confInspectionsResponse");
+            return null;
+        }
+
+        if (!confInspectionsResponse.success()) {
+            int errorCode = confInspectionsResponse.getError_code();
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "confInspectionsResponse failed! errCode :" + errorCode + ", errmsg:" + McuStatus.resolve(errorCode).getDescription());
+            System.out.println("confInspectionsResponse failed! errCode :" + errorCode + ", errmsg:" + McuStatus.resolve(errorCode).getDescription());
+            return null;
+        }
+
+        return confInspectionsResponse;
+    }
+
 
     @Autowired
     private RestClientService restClientService;

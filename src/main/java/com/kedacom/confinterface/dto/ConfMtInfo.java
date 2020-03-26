@@ -2,7 +2,7 @@ package com.kedacom.confinterface.dto;
 
 public class ConfMtInfo {
 
-    public ConfMtInfo(String e164, String ip, int type, int online, String alias, int bitrate, String mtId, int silence, int mute, int inspection) {
+    public ConfMtInfo(String e164, String ip, int type, int online, String alias, int bitrate, String mtId, int silence, int mute, int inspection, int mix ,int vmp) {
         this.e164 = e164;
         this.ip = ip;
         this.type = type;
@@ -13,6 +13,8 @@ public class ConfMtInfo {
         this.silence = silence;
         this.mute = mute;
         this.inspection = inspection;
+        this.mix = mix;
+        this.vmp = vmp;
     }
 
     public ConfMtInfo() {
@@ -114,6 +116,30 @@ public class ConfMtInfo {
         this.sndVolume = sndVolume;
     }
 
+    public String getInspectionSrcE164() {
+        return inspectionSrcE164;
+    }
+
+    public void setInspectionSrcE164(String inspectionSrcE164) {
+        this.inspectionSrcE164 = inspectionSrcE164;
+    }
+
+    public int getMix() {
+        return mix;
+    }
+
+    public void setMix(int mix) {
+        this.mix = mix;
+    }
+
+    public int getVmp() {
+        return vmp;
+    }
+
+    public void setVmp(int vmp) {
+        this.vmp = vmp;
+    }
+
     @Override
     public String toString() {
         return new StringBuilder().append("e164:").append(e164)
@@ -125,9 +151,12 @@ public class ConfMtInfo {
                 .append(", mtId:").append(mtId)
                 .append(", silence:").append(silence)
                 .append(", mute:").append(mute)
+                .append(", mix:").append(mix)
+                .append(", vmp:").append(vmp)
                 .append(", inspection:").append(inspection)
                 .append(", rcvVolume:").append(rcvVolume)
                 .append(", sndVolume:").append(sndVolume)
+                .append(", inspectionSrcE164:").append(inspectionSrcE164)
                 .toString();
     }
 
@@ -140,7 +169,12 @@ public class ConfMtInfo {
     private String mtId; //终端号 最大字符长度：48个字节
     private int silence ; //是否静音0-否；1-是；
     private int mute; //是否哑音0-否; 1-是；
+    private int mix;  //是否在混音0-否；1-是
+    private int vmp;  //是否在合成0-否；1-是；
     private int inspection; //是否在选看0-否; 1-是；
+    private String inspectionSrcE164; //选看该终端的E164号
     private int rcvVolume;  //接收音量
     private int sndVolume;  //发送音量
+
+    //private int mode;//选看模式
 }

@@ -385,7 +385,7 @@ public class ConfInterfaceService {
                 } else {
                     joinConfVmtNum = 0;
                 }
-                if(joinConfVmtNum ==0){
+                if (joinConfVmtNum == 0) {
                     LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "broadCastRequest  setBroadcastVmtService joinConfVmtNum : " + joinConfVmtNum);
                     System.out.println("broadCastRequest setBroadcastVmtService joinConfVmtNum : " + joinConfVmtNum);
                     groupConfInfo.setBroadcastVmtService(null);
@@ -426,16 +426,16 @@ public class ConfInterfaceService {
 
                 groupConfInfo.setBroadcastVmtService(null);
                 groupConfInfo.setDelay(1);
-                while (true){
-                    if (groupConfInfo.getDelay() == 0 ||groupConfInfo.getDelay() ==1){
+                while (true) {
+                    if (groupConfInfo.getDelay() == 0 || groupConfInfo.getDelay() == 1) {
                         try {
                             Thread.sleep(500);
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
-                    }else{
-                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"groupConfInfo.getDelay() : " +groupConfInfo.getDelay());
-                        System.out.println("groupConfInfo.getDelay() : " +groupConfInfo.getDelay());
+                    } else {
+                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "groupConfInfo.getDelay() : " + groupConfInfo.getDelay());
+                        System.out.println("groupConfInfo.getDelay() : " + groupConfInfo.getDelay());
                         break;
                     }
                 }
@@ -476,7 +476,7 @@ public class ConfInterfaceService {
             }
         }
 
-        String broadcastMtId ;
+        String broadcastMtId;
         if (!isTerminal) {
             broadcastMtId = broadcastVmtService.getMtId();
         } else {
@@ -1210,7 +1210,6 @@ public class ConfInterfaceService {
                 cameraCtrlRequest.makeErrorResponseMsg(ConfInterfaceResult.INVALID_PARAM.getCode(), HttpStatus.OK, ConfInterfaceResult.INVALID_PARAM.getMessage());
                 return;
             }
-
             boolean bOK = vmtService.ctrlCamera(cameraCtrlParam.getState(), cameraCtrlParam.getType());
             if (!bOK) {
                 LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50007 : protocol control camera failed!");
@@ -2135,7 +2134,7 @@ public class ConfInterfaceService {
             System.out.println("confGroupMap is null or empty  ****************   ");
             for (ConfsDetailRspInfo confsDetailRspInfo : confsDetailRspInfos) {
                 String groupID = UUID.randomUUID().toString().replaceAll("\\-", "");
-                ConfsDetailInfo confsDetailInfo = new ConfsDetailInfo(confsDetailRspInfo.getName(), confsDetailRspInfo.getConf_id(), groupID, confsDetailRspInfo.getConf_level(), confsDetailRspInfo.getStart_time(), confsDetailRspInfo.getEnd_time(), confsDetailRspInfo.getPlatform_id());
+                ConfsDetailInfo confsDetailInfo = new ConfsDetailInfo(confsDetailRspInfo.getName(), confsDetailRspInfo.getConf_id(), groupID, confsDetailRspInfo.getConf_level(), confsDetailRspInfo.getStart_time(), confsDetailRspInfo.getEnd_time(), mcuRestConfig.getMcuIp());
                 queryConfsRequest.addConfDetailInfos(confsDetailInfo);
                 GroupConfInfo groupConfInfo = new GroupConfInfo(groupID, confsDetailRspInfo.getConf_id());
                 groupConfInfo.setCreatedConf("mcu");
@@ -2395,7 +2394,7 @@ public class ConfInterfaceService {
 
 
     @Async("confTaskExecutor")
-    public void queryConfMtInfo(GetConfMtRequest getConfMtRequest){
+    public void queryConfMtInfo(GetConfMtRequest getConfMtRequest) {
         if (!baseSysConfig.isUseMcu()) {
             getConfMtRequest.makeErrorResponseMsg(ConfInterfaceResult.NOT_SUPPORT_METHOD.getCode(), HttpStatus.OK, ConfInterfaceResult.NOT_SUPPORT_METHOD.getMessage());
             return;
@@ -2438,13 +2437,40 @@ public class ConfInterfaceService {
         }
         ConfMtInfo confMtInfo = new ConfMtInfo(getConfMtInfoResponse.getE164(), getConfMtInfoResponse.getIp(), getConfMtInfoResponse.getType(), getConfMtInfoResponse.getOnline(),
                 getConfMtInfoResponse.getAlias(), getConfMtInfoResponse.getBitrate(), getConfMtInfoResponse.getMt_id(), getConfMtInfoResponse.getSilence(),
-                getConfMtInfoResponse.getMute(), getConfMtInfoResponse.getInspection());
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"confMtInfo : "+confMtInfo.toString());
+                getConfMtInfoResponse.getMute(), getConfMtInfoResponse.getInspection(), getConfMtInfoResponse.getMix(),getConfMtInfoResponse.getVmp());
         confMtInfo.setSndVolume(getConfMtInfoResponse.getSnd_volume());
         confMtInfo.setRcvVolume(getConfMtInfoResponse.getRcv_volume());
-        System.out.println("confMtInfo : "+confMtInfo.toString());
+
+        InspectionSrcParam inspectionParam = member.getInspectionParam();
+        if (getConfMtInfoResponse.getInspection() == 1) {
+            if (null == inspectionParam) {
+                ConfInspectionsResponse confinspections = mcuRestClientService.getConfinspections(confId);
+                if (null == confinspections) {
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "confinspections member is null  E164 :　" + getConfMtRequest.getMtE164());
+                    System.out.println("confinspections member is null  E164 :　" + getConfMtRequest.getMtE164());
+                }else{
+                    ArrayList<McuInspectionParam> inspections = confinspections.getInspections();
+                    for(McuInspectionParam inspection :  inspections){
+                        if(member.getMtId().equals(inspection.getDst().getMt_id())){
+                            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE," member MtId  : "+member.getMtId() + "inspection Dst MtId : " +inspection.getDst().getMt_id());
+                            System.out.println(" member MtId  : "+member.getMtId() + "inspection Dst MtId : " +inspection.getDst().getMt_id());
+                            String e164 = groupConfInfo.getE164(inspection.getSrc().getMt_id());
+                            confMtInfo.setInspectionSrcE164(e164);
+                            break;
+                        }
+                    }
+                }
+            } else {
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"inspectionParam is not null E164 : " +inspectionParam.getMtE164() +", mode :"+inspectionParam.getMode());
+                System.out.println("inspectionParam is not null E164 : " +inspectionParam.getMtE164() +", mode :"+inspectionParam.getMode());
+                confMtInfo.setInspectionSrcE164(inspectionParam.getMtE164());
+            }
+        }
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "confMtInfo : " + confMtInfo.toString());
+        System.out.println("confMtInfo : " + confMtInfo.toString());
         getConfMtRequest.setConfMtInfo(confMtInfo);
         getConfMtRequest.makeSuccessResponseMsg();
+
     }
 
     public Map<String, GroupConfInfo> getGroupConfInfoMap() {

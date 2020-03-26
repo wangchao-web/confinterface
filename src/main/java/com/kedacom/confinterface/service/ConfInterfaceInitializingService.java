@@ -504,7 +504,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
     @Autowired(required=false)
     private McuSdkClientService mcuSdkClientService;
 
-    public static final String VERSION = "confinterface-V.1.0.9";
+    public static final String VERSION = "confinterface-V.1.0.10";
 
     //protected final org.slf4j.Logger logger = LoggerFactory.getLogger(this.getClass());
 

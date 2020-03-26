@@ -2,6 +2,8 @@ package com.kedacom.confinterface.restclient.mcu;
 
 public class InspectionDstInfo {
 
+    public InspectionDstInfo(){}
+
     public InspectionDstInfo(String mt_id){
         super();
         this.mt_id = mt_id;
