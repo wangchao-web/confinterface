@@ -417,6 +417,7 @@ public class ConfInterfaceService {
                     System.out.println(" startInspection vmt join conference failed!............");
                     if (joinConfVmtNum > 0) {
                         groupConfInfo.delVmtMembers(joinConfVmts);
+                        terminalManageService.freeVmts(joinConfVmts);
                         joinConfVmts.clear();
                     }
 
@@ -749,9 +750,9 @@ public class ConfInterfaceService {
                     } else {
                         joinConfVmtNum = 0;
                         dstService = groupConfInfo.getFreeVmt();
-                        if (dstService == null) {
-                            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "dstService is null **********************");
-                            System.out.println("dstService is null ********************");
+                        if (dstService == null || !dstService.isOnline()) {
+                            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "dstService is null or offLine**********************");
+                            System.out.println("dstService is null or offLine ********************");
                             joinConfVmtNum = 1;
                         }
                     }
@@ -839,6 +840,7 @@ public class ConfInterfaceService {
                         System.out.println(" startInspection vmt join conference failed!............");
                         if (joinConfVmtNum > 0) {
                             groupConfInfo.delVmtMembers(joinConfVmts);
+                            terminalManageService.freeVmts(joinConfVmts);
                             joinConfVmts.clear();
                         }
 

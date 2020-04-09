@@ -455,9 +455,9 @@ public class GroupConfInfo {
         this.waitDealTask = null;
         this.mtIdMap = null;
         //基于mcu上自己创建的会议删除
-        this.groupId = "";
-        this.confId = "";
-        this.createdConf = "";
+        this.groupId = null;
+        this.confId = null;
+        this.createdConf = null;
     }
 
     public boolean isConfinterface() {
