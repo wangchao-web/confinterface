@@ -70,5 +70,6 @@ public class P2PCallParam {
     @Range(min = 0, max = 1)
     private int dual;
 
+
     private P2PCallMediaCap videoCodec;
 }

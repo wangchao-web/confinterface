@@ -1,4 +1,5 @@
 package com.kedacom.confinterface.service;
+
 import com.kedacom.confadapter.*;
 import com.kedacom.confinterface.LogService.LogOutputTypeEnum;
 import com.kedacom.confinterface.LogService.LogTools;
@@ -8,6 +9,7 @@ import com.kedacom.confinterface.dao.Terminal;
 import com.kedacom.confinterface.dto.*;
 import com.kedacom.confinterface.h323.H323TerminalManageService;
 import com.kedacom.confinterface.inner.*;
+import com.kedacom.confinterface.redis.RedisConfig;
 import com.kedacom.confinterface.restclient.McuRestClientService;
 import com.kedacom.confinterface.restclient.McuSdkClientService;
 import com.kedacom.confinterface.restclient.mcu.*;
@@ -23,6 +25,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Service;
+import redis.clients.jedis.Jedis;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,7 +42,14 @@ import java.util.concurrent.TimeUnit;
 public class ConfInterfaceInitializingService implements CommandLineRunner {
 
     @Override
-    public void run(String... args) throws Exception {
+    public void run(String... args) {
+        Integer redisIsOk = getRedisIsOk();
+        if (redisIsOk == 1) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Read configuration filed faile or connection redis failed ! End the service process !");
+            System.out.println("Read configuration failed  or connection redis failed ! End the service process !");
+            System.exit(0);
+        }
+
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "now in ConfInterfaceInitializingService, protocalType:" + baseSysConfig.getProtocalType());
         System.out.println("now in ConfInterfaceInitializingService, protocalType:" + baseSysConfig.getProtocalType());
 
@@ -49,20 +59,48 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
         initConfAdapter();
         registerVmts();
 
+        //提前处理状态发布
+        TerminalManageService.setPublishService(defaultListableBeanFactory.getBean(ConfInterfacePublishService.class));
+        terminalManageService.setConfInterfaceService(confInterfaceService);
+
         if (baseSysConfig.isUseMcu()) {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "开始登陆mcu");
             System.out.println("开始登陆mcu");
             loginMcuSrv();
         }
 
-        TerminalManageService.setPublishService(defaultListableBeanFactory.getBean(ConfInterfacePublishService.class));
-        terminalManageService.setConfInterfaceService(confInterfaceService);
         Map<String, String> groups = confInterfaceService.getGroups();
         if (null == groups || groups.isEmpty()) {
 
             //启动终端注册Gk
             terminalManageService.StartUp();
+            Map<String, String> mtPublishs = confInterfaceService.getMtPublishs();
+            Map<String, String> publishUrls = confInterfaceService.getPublishUrl();
+            if (publishUrls != null && !publishUrls.isEmpty()) {
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"publishUrls is not null and not empty ******");
+                System.out.println("publishUrls is not null and not empty ******");
+                for (Map.Entry<String, String> publishUrl : publishUrls.entrySet()) {
+                    confInterfacePublishService.addSubscribeMessage(SubscribeMsgTypeEnum.TERMINAL_STATUS.getType(), publishUrl.getKey(), publishUrl.getValue());
+                }
+            }
+            if (null == mtPublishs || mtPublishs.isEmpty()) {
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "mtPublishs is null or empty ******");
+                System.out.println("mtPublishs is null or empty ******");
+            } else {
+                for (Map.Entry<String, String> mtPublish : mtPublishs.entrySet()) {
+                    TerminalStatusNotify terminalStatusNotify = new TerminalStatusNotify();
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "account : " + mtPublish.getKey() + "publishUrl : " + mtPublish.getValue());
+                    System.out.println("account : " + mtPublish.getKey() + "publishUrl : " + mtPublish.getValue());
+                    /*String[] split = mtPublish.getValue().split("/");
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"split[7] : " + split[7] + " ,split[6] "+ split[6] + " , split[0] : " +split[0] + " ,split[1]"+split[1]);
+                    System.out.println("split[7] : " + split[7] + " ,split[6] "+ split[6] + " , split[0] : " +split[0] + " ,split[1]"+split[1]);
+                    confInterfacePublishService.addSubscribeMessage(SubscribeMsgTypeEnum.TERMINAL_STATUS.getType(), split[7], mtPublish.getValue());*/
+                    TerminalStatus terminalStatus = new TerminalStatus(mtPublish.getKey(), "MT", TerminalOnlineStatusEnum.OFFLINE.getCode(), null, null);
+                    terminalStatusNotify.addMtStatus(terminalStatus);
+                    terminalManageService.publishStatus(SubscribeMsgTypeEnum.TERMINAL_STATUS, mtPublish.getValue(), terminalStatusNotify);
 
+                }
+            }
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "no groups in db, init OK! current time : " + System.currentTimeMillis());
             System.out.println("no groups in db, init OK! current time : " + System.currentTimeMillis());
             return;
@@ -102,7 +140,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "groupId(" + groupId + ") has no virtual terminal!!");
                 System.out.println("groupId(" + groupId + ") has no virtual terminal!!");
                 joinConfVmtNum = confMtMembers.size();
-            } else if ("mcu".equals(baseSysConfig.getMcuMode())){
+            } else if ("mcu".equals(baseSysConfig.getMcuMode())) {
                 //订阅设备上线信息
                 mcuRestClientService.subscribeConfMts(confId);
                 loadVmtInfo(groupConfInfo, confVmtMembers);
@@ -177,9 +215,9 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
                         String vmtE164 = GenerateE164Service.generateE164();
                         confInterfaceService.addVmt(vmtE164);
                     }
-                } else if (null != baseSysConfig.getProxyMTs()){
+                } else if (null != baseSysConfig.getProxyMTs()) {
                     ConcurrentHashMap<String, String> proxyMts = baseSysConfig.getMapProxyMTs();
-                    for (Map.Entry<String, String> proxyMt : proxyMts.entrySet()){
+                    for (Map.Entry<String, String> proxyMt : proxyMts.entrySet()) {
                         confInterfaceService.addVmt(proxyMt.getKey());
                     }
                 }
@@ -202,7 +240,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
             for (String vmtE164 : vmtList) {
                 TerminalService vmtService = terminalManageService.createTerminal(vmtE164, true);
 
-                if(null != proxyMts && proxyMts.containsKey(vmtE164)){
+                if (null != proxyMts && proxyMts.containsKey(vmtE164)) {
                     vmtService.setProxyMTE164(proxyMts.get(vmtE164));
                 }
 
@@ -266,8 +304,8 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
         String confId = groupConfInfo.getConfId();
         Map<String, CascadeTerminalInfo> terminalInfoMap = null;
 
-        if (null != mcuRestClientService){
-            terminalInfoMap =  mcuRestClientService.getCascadesTerminal(confId, "0", true);
+        if (null != mcuRestClientService) {
+            terminalInfoMap = mcuRestClientService.getCascadesTerminal(confId, "0", true);
         } else if (null != mcuSdkClientService) {
             //todo:增加 mcuSdkClientService的相关处理
         }
@@ -452,7 +490,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
 
     private static String getMACAddress(InetAddress ia) throws Exception {
         // 获得网络接口对象（即网卡），并得到mac地址，mac地址存在于一个byte数组中。
-        byte [] mac =  NetworkInterface.getByName("eno1").getHardwareAddress();
+        byte[] mac = NetworkInterface.getByName("eno1").getHardwareAddress();
 
         // 下面代码是把mac地址拼装成String
         StringBuffer sb = new StringBuffer();
@@ -465,10 +503,12 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
             String s = Integer.toHexString(mac[i] & 0xFF);
             sb.append(s.length() == 1 ? 0 + s : s);
         }
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "sb.toString().toUpperCase()" + sb.toString().toUpperCase());
         System.out.println("sb.toString().toUpperCase()" + sb.toString().toUpperCase());
         // 把字符串所有小写字母改为大写成为正规的mac地址并返回
         return sb.toString().toUpperCase();
     }
+
     private static void PrintBuildTime() {
         String utcBuildTime = "2020-01-08 14:24:12";
         /*SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -484,6 +524,62 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
         System.out.println("confinterface version " + VERSION);
     }
 
+    /**
+     * 检查redisn能否连接
+     * url 服务器地址
+     * port 端口
+     * password redis的密码
+     *
+     * @return
+     */
+    private Integer getRedisIsOk() {
+        int result = 1;
+        do {
+            if (result == 1) {
+                String url = redisConfig.getHostName();
+                int port = redisConfig.getPort();
+                if (url == null || port == 0) {
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Read configuration failed ,The end of the method");
+                    System.out.println("Read configuration failed ,The end of the method");
+                    return 1;
+                }
+                //连接本地Redis服务
+                for (int i = 0; i < 5; i++) {
+                    try {
+                        Jedis jedis = new Jedis(url, port);
+                        if (redisConfig.getPassword() != null && !redisConfig.getPassword().isEmpty()) {
+                            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "redisConfig.getPassword() : " + redisConfig.getPassword());
+                            System.out.println("redisConfig.getPassword() : " + redisConfig.getPassword());
+                            jedis.auth(redisConfig.getPassword());//密码
+                        }
+                        String ping = jedis.ping();
+                        if (ping.equalsIgnoreCase("PONG")) {
+                            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Connection to redis successful ！" + ping);
+                            System.out.println("Connection to redis successful ！" + ping);
+                            result = 0;
+                            break;
+                        }
+                        jedis.close(); // 释放连接资源
+                    } catch (Exception e) {
+                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Connection to redis failed **********！");
+                        System.out.println("Connection to redis failed **********！");
+                        e.printStackTrace();
+                        try {
+                            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Thread sleep 30 second ！");
+                            System.out.println("Thread sleep 30 second ！");
+                            Thread.sleep(30000);
+                        } catch (InterruptedException e1) {
+                            e1.printStackTrace();
+                        }
+                        result = 1;
+                    }
+                }
+                break;
+            }
+        } while (true);
+        return result;
+    }
+
     @Autowired
     private BaseSysConfig baseSysConfig;
 
@@ -491,9 +587,12 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
     private AppDefaultConfig appDefaultConfig;
 
     @Autowired
+    private RedisConfig redisConfig;
+
+    @Autowired
     private TerminalManageService terminalManageService;
 
-    @Autowired(required=false)
+    @Autowired(required = false)
     private McuRestClientService mcuRestClientService;
 
     @Autowired
@@ -502,10 +601,17 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
     @Autowired
     private DefaultListableBeanFactory defaultListableBeanFactory;
 
-    @Autowired(required=false)
+    @Autowired(required = false)
     private McuSdkClientService mcuSdkClientService;
 
-    public static final String VERSION = "confinterface-V.1.0.10";
+    public static final String VERSION = "confinterface-V.1.0.11";
+
+    @Autowired
+    private TerminalMediaSourceService terminalMediaSourceService;
+
+    @Autowired
+    private ConfInterfacePublishService confInterfacePublishService;
+
 
     //protected final org.slf4j.Logger logger = LoggerFactory.getLogger(this.getClass());
 

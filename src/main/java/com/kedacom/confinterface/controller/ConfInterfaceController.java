@@ -148,6 +148,20 @@ public class ConfInterfaceController {
         }
     }
 
+    @DeleteMapping(value = "/subscription/terminalstatus")
+    public ResponseEntity<BaseResponseMsg> cancelSubscribeTerminalStatus(@RequestParam("GroupId") String groupId, @Valid @RequestBody SubscribeTerminalStatusParam subscribeTerminalStatusParam){
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now in cancelSubscribeTerminalStatus, groupId:"+groupId+", subscribeParam:"+subscribeTerminalStatusParam);
+        System.out.println("now in cancelSubscribeTerminalStatus, groupId:"+groupId+", subscribeParam:"+subscribeTerminalStatusParam);
+        if (null != confInterfacePublishService) {
+            confInterfacePublishService.cancelSubscribeMessage(SubscribeMsgTypeEnum.TERMINAL_STATUS.getType(), groupId, subscribeTerminalStatusParam.getUrl());
+            BaseResponseMsg baseResponseMsg = new BaseResponseMsg(ConfInterfaceResult.OK.getCode(), HttpStatus.OK.value(), ConfInterfaceResult.OK.getMessage());
+            return new ResponseEntity<>(baseResponseMsg, HttpStatus.OK);
+        } else {
+            BaseResponseMsg baseResponseMsg = new BaseResponseMsg(ConfInterfaceResult.NOT_SUPPORT_METHOD.getCode(), HttpStatus.OK.value(), ConfInterfaceResult.NOT_SUPPORT_METHOD.getMessage());
+            return new ResponseEntity<>(baseResponseMsg, HttpStatus.OK);
+        }
+    }
+
     @PostMapping(value = "/iframe")
     public DeferredResult<ResponseEntity<BaseResponseMsg>> sendIFrame(@RequestParam("GroupId") String groupId, @Valid @RequestBody SendIFrameParam sendIFrameParam){
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now in sendIFrame, groupId:"+groupId+", iframeParam:"+sendIFrameParam);

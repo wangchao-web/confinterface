@@ -67,7 +67,7 @@ public class McuRestClientService {
         }
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"mcuRestConfig.getSoftwareKey() : " + mcuRestConfig.getSoftwareKey());
         System.out.println("mcuRestConfig.getSoftwareKey() : " + mcuRestConfig.getSoftwareKey());
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"mcuRestConfig.getSoftwareKey() : " + mcuRestConfig.getSoftwareKey());
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"mcuRestConfig.getSecretKey() : " + mcuRestConfig.getSecretKey());
         System.out.println("mcuRestConfig.getSecretKey() : " + mcuRestConfig.getSecretKey());
 
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"param: " + param.toString());

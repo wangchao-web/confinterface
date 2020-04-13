@@ -5,6 +5,7 @@ import com.kedacom.confinterface.LogService.LogTools;
 import com.kedacom.confinterface.dto.BaseResponseMsg;
 import com.kedacom.confinterface.dto.MediaResource;
 import com.kedacom.confinterface.dto.UnifiedDevicePushTerminalStatus;
+import com.kedacom.confinterface.inner.SubscribeMsgTypeEnum;
 import com.kedacom.confinterface.inner.TerminalOnlineStatusEnum;
 import com.kedacom.confinterface.restclient.RestClientService;
 import com.kedacom.confinterface.syssetting.BaseSysConfig;
@@ -27,7 +28,7 @@ import java.util.concurrent.LinkedBlockingDeque;
 public class UnifiedDevicePushService extends ConfInterfacePublishService{
 
     @Override
-    public void publishStatus(String account, String groupId, int status, List<MediaResource> forwardResources, List<MediaResource> reverseResources) {
+    public void publishStatus(String account, String groupId, int status, List<MediaResource> forwardResources, List<MediaResource> reverseResources,String callMode) {
         publishStatus(account, groupId, status);
     }
 
@@ -43,6 +44,16 @@ public class UnifiedDevicePushService extends ConfInterfacePublishService{
 
     @Override
     public void publishStatus(String account, String groupId, int status, int faileCode) {
+            return;
+    }
+
+    @Override
+    public void publishStatus(SubscribeMsgTypeEnum type, String publishUrl, Object publishMsg) {
+        return;
+    }
+
+    @Override
+    public void cancelSubscribeMessage(int type, String groupId, String url) {
 
     }
 

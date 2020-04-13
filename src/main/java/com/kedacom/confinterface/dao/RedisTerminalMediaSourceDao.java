@@ -19,6 +19,10 @@ public class RedisTerminalMediaSourceDao implements TerminalMediaSourceDao {
     private final String groupVmtMembersPrefix = "groupVmtMembers_";
     private final String groupInspectionPrefix = "groupInspections_";
 
+    private final String confMtListPrefix = "confMtList_";
+
+    private final String publishUrlPrefix = "publishUrl_";
+
     private RedisClient redisClient;
     private String  srvToken;
 
@@ -264,6 +268,9 @@ public class RedisTerminalMediaSourceDao implements TerminalMediaSourceDao {
         return terminalMediaResources;
     }
 
+
+
+
     @Override
     public TerminalMediaResource setTerminalMediaResource(TerminalMediaResource terminalMediaResource) {
         String key = keyGenernate(mediaResourcePrefix, terminalMediaResource.getMtE164());
@@ -330,6 +337,60 @@ public class RedisTerminalMediaSourceDao implements TerminalMediaSourceDao {
         redisClient.delValue(key);
         return broadcastSrcMediaInfo;
     }
+
+    //用于会议服务断开之后服务再启动时给上层业务推送失败的状态
+    @Override
+    public Map<String, String> setMtPublish(String E164, String publishUrl) {
+        String key = keyGenernate(confMtListPrefix, srvToken);
+        redisClient.hashPut(key, E164, publishUrl);
+        return (Map<String, String>)redisClient.hashGet(key);
+    }
+
+    //用于会议服务断开之后服务再启动时给上层业务推送失败的状态
+    @Override
+    public Map<String, String> deleteMtPublish(String E164) {
+        if(null == E164){
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"deleteMtPublish, E164:"+ E164 +" not exist E164 !");
+            System.out.println("deleteMtPublish, E164:"+ E164 +" not exist E164 !");
+            return null;
+        }
+        String key = keyGenernate(confMtListPrefix, srvToken);
+        redisClient.hashRemove(key, E164);
+        return (Map<String, String>)redisClient.hashGet(key);
+    }
+
+    @Override
+    public Map<String, String> getMtPublish() {
+        String key = keyGenernate(confMtListPrefix, srvToken);
+        return (Map<String, String>) redisClient.hashGet(key);
+    }
+
+    //用于保存订阅的路径
+    @Override
+    public Map<String, String> setPublishUrl(String groupId, String publishUrl) {
+        String key = keyGenernate(publishUrlPrefix, srvToken);
+        redisClient.hashPut(key, groupId, publishUrl);
+        return (Map<String, String>)redisClient.hashGet(key);
+    }
+
+    @Override
+    public Map<String, String> deletePublishUrl(String groupId) {
+        if(null == groupId){
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"deletePublishUrl, groupId:"+ groupId +" not exist groupId !");
+            System.out.println("deletePublishUrl, groupId:"+ groupId +" not exist groupId !");
+            return null;
+        }
+        String key = keyGenernate(publishUrlPrefix, srvToken);
+        redisClient.hashRemove(key, groupId);
+        return (Map<String, String>)redisClient.hashGet(key);
+    }
+
+    @Override
+    public Map<String, String> getPublishUrl() {
+        String key = keyGenernate(publishUrlPrefix, srvToken);
+        return (Map<String, String>) redisClient.hashGet(key);
+    }
+
 
     private String keyGenernate(String keyPrefix, String params) {
         StringBuilder keyResult = new StringBuilder(64);

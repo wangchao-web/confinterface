@@ -52,4 +52,16 @@ public interface TerminalMediaSourceDao {
     BroadcastSrcMediaInfo setBroadcastSrcInfo(String groupId, BroadcastSrcMediaInfo broadcastSrcMediaInfo);
 
     BroadcastSrcMediaInfo delBroadcastSrcInfo(String groupId);
+
+    Map<String, String> setMtPublish(String E164, String publishUrl);
+
+    Map<String, String> deleteMtPublish(String E164);
+
+    Map<String, String> getMtPublish();
+
+    Map<String, String> setPublishUrl(String groupId, String publishUrl);
+
+    Map<String, String> deletePublishUrl(String groupId);
+
+    Map<String, String> getPublishUrl();
 }

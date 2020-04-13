@@ -5,6 +5,7 @@ import com.kedacom.confinterface.LogService.LogTools;
 import com.kedacom.confinterface.dao.*;
 import com.kedacom.confinterface.dto.*;
 
+import com.kedacom.confinterface.h323.H323ProtocalConfig;
 import com.kedacom.confinterface.h323.H323TerminalManageService;
 import com.kedacom.confinterface.inner.*;
 import com.kedacom.confinterface.restclient.McuRestClientService;
@@ -96,10 +97,14 @@ public class ConfInterfaceService {
         groupConfInfoMap.put(groupConfInfo.getGroupId(), groupConfInfo);
     }
 
-    public void delGroupConfInfo(GroupConfInfo groupConfInfo) {
-        confGroupMap.remove(groupConfInfo.getConfId());
-        groupConfInfoMap.remove(groupConfInfo.getGroupId());
+    public Map<String, String> getMtPublishs() {
+        return terminalMediaSourceService.getMtPublish();
     }
+
+    public Map<String, String> getPublishUrl() {
+        return terminalMediaSourceService.getPublishUrl();
+    }
+
 
     public GroupConfInfo getGroupConfInfo(String groupId) {
         return groupConfInfoMap.get(groupId);
@@ -113,9 +118,15 @@ public class ConfInterfaceService {
         this.p2pCallGroupMap = p2pCallGroupMap;
     }
 
+    public void delGroupConfInfo(GroupConfInfo groupConfInfo) {
+        confGroupMap.remove(groupConfInfo.getConfId());
+        groupConfInfoMap.remove(groupConfInfo.getGroupId());
+    }
+
     @Async("confTaskExecutor")
     public void joinConference(JoinConferenceRequest joinConferenceRequest) {
         if (!baseSysConfig.isUseMcu()) {
+            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE," 1 : not support this method joinConference !");
             joinConferenceRequest.makeErrorResponseMsg(ConfInterfaceResult.NOT_SUPPORT_METHOD.getCode(), HttpStatus.OK, ConfInterfaceResult.NOT_SUPPORT_METHOD.getMessage());
             return;
         }
@@ -281,6 +292,7 @@ public class ConfInterfaceService {
     @Async("confTaskExecutor")
     public void leftConference(LeftConferenceRequest leftConferenceRequest) {
         if (!baseSysConfig.isUseMcu()) {
+            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE," 1 : not support this method leftConference !");
             leftConferenceRequest.makeErrorResponseMsg(ConfInterfaceResult.NOT_SUPPORT_METHOD.getCode(), HttpStatus.OK, ConfInterfaceResult.NOT_SUPPORT_METHOD.getMessage());
             return;
         }
@@ -342,6 +354,7 @@ public class ConfInterfaceService {
     @Async("confTaskExecutor")
     public void setBroadcastSrc(BroadCastRequest broadCastRequest) {
         if (!baseSysConfig.isUseMcu()) {
+            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE," 1 : not support this method setBroadcastSrc !");
             broadCastRequest.makeErrorResponseMsg(ConfInterfaceResult.NOT_SUPPORT_METHOD.getCode(), HttpStatus.OK, ConfInterfaceResult.NOT_SUPPORT_METHOD.getMessage());
             return;
         }
@@ -415,6 +428,7 @@ public class ConfInterfaceService {
     @Async("confTaskExecutor")
     public void cancelBroadcast(CancelBroadCastRequest cancelBroadCastRequest) {
         if (!baseSysConfig.isUseMcu()) {
+            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE," 1 : not support this method cancelBroadcast !");
             cancelBroadCastRequest.makeErrorResponseMsg(ConfInterfaceResult.NOT_SUPPORT_METHOD.getCode(), HttpStatus.OK, ConfInterfaceResult.NOT_SUPPORT_METHOD.getMessage());
             return;
         }
@@ -447,6 +461,7 @@ public class ConfInterfaceService {
     @Async("confTaskExecutor")
     public void joinDiscussionGroup(JoinDiscussionGroupRequest joinDiscussionGroupRequest) {
         if (!baseSysConfig.isUseMcu()) {
+            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE," 1 : not support this method joinDiscussionGroup !");
             joinDiscussionGroupRequest.makeErrorResponseMsg(ConfInterfaceResult.NOT_SUPPORT_METHOD.getCode(), HttpStatus.OK, ConfInterfaceResult.NOT_SUPPORT_METHOD.getMessage());
             return;
         }
@@ -477,6 +492,7 @@ public class ConfInterfaceService {
     @Async("confTaskExecutor")
     public void leftDiscussionGroup(LeftDiscussionGroupRequest leftDiscussionGroupRequest) {
         if (!baseSysConfig.isUseMcu()) {
+            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE," 1 : not support this method leftDiscussionGroup !");
             leftDiscussionGroupRequest.makeErrorResponseMsg(ConfInterfaceResult.NOT_SUPPORT_METHOD.getCode(), HttpStatus.OK, ConfInterfaceResult.NOT_SUPPORT_METHOD.getMessage());
             return;
         }
@@ -556,6 +572,7 @@ public class ConfInterfaceService {
     @Async("confTaskExecutor")
     public void startInspection(InspectionRequest inspectionRequest) {
         if (!baseSysConfig.isUseMcu()) {
+            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE," 1 : not support this method startInspection !");
             inspectionRequest.makeErrorResponseMsg(ConfInterfaceResult.NOT_SUPPORT_METHOD.getCode(), HttpStatus.OK, ConfInterfaceResult.NOT_SUPPORT_METHOD.getMessage());
             return;
         }
@@ -761,6 +778,7 @@ public class ConfInterfaceService {
     @Async("confTaskExecutor")
     public void cancelInspection(CancelInspectionRequest cancelInspectionRequest) {
         if (!baseSysConfig.isUseMcu()) {
+            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE," 1 : not support this method cancelInspection !");
             cancelInspectionRequest.makeErrorResponseMsg(ConfInterfaceResult.NOT_SUPPORT_METHOD.getCode(), HttpStatus.OK, ConfInterfaceResult.NOT_SUPPORT_METHOD.getMessage());
             return;
         }
@@ -1020,6 +1038,7 @@ public class ConfInterfaceService {
     @Async("confTaskExecutor")
     public void silenceOrMute(CtrlSilenceOrMuteRequest ctrlSilenceOrMuteRequest) {
         if (!baseSysConfig.isUseMcu()) {
+            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE," 1 : not support this method silenceOrMute !");
             ctrlSilenceOrMuteRequest.makeErrorResponseMsg(ConfInterfaceResult.NOT_SUPPORT_METHOD.getCode(), HttpStatus.OK, ConfInterfaceResult.NOT_SUPPORT_METHOD.getMessage());
             return;
         }
@@ -1084,6 +1103,7 @@ public class ConfInterfaceService {
         String groupId = queryDualStreamRequest.getGroupId();
         GroupConfInfo groupConfInfo = groupConfInfoMap.get(groupId);
         if (null == groupConfInfo) {
+            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50002 : group not exist!");
             queryDualStreamRequest.makeErrorResponseMsg(ConfInterfaceResult.GROUP_NOT_EXIST.getCode(), HttpStatus.OK, ConfInterfaceResult.GROUP_NOT_EXIST.getMessage());
             return;
         }
@@ -1151,14 +1171,21 @@ public class ConfInterfaceService {
     public void p2pCall(P2PCallRequest p2PCallRequest, P2PCallParam p2PCallParam) {
         final String groupId = p2PCallRequest.getGroupId();
         String mtAccount = p2PCallParam.getAccount();
+        if(p2PCallParam.getAccountType() ==2 && !h323ProtocalConfig.isUseGK()){
+            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50027 : " + " Unused GK , Use E164 call failed : " + groupId);
+            System.out.println("50027 : " + " Unused GK , Use E164 call failed : " + groupId);
+            p2PCallRequest.makeErrorResponseMsg(ConfInterfaceResult.ACCOUNT_E164_INVALID.getCode(), HttpStatus.OK, ConfInterfaceResult.ACCOUNT_E164_INVALID.getMessage());
+            return;
+        }
 
         P2PCallGroup callGroup = p2pCallGroupMap.get(groupId);
         if (callGroup != null) {
             ConcurrentHashMap<String, TerminalService> callMap = callGroup.getCallMap();
             for (String mtAccounts : callMap.keySet()) {
                 if (mtAccount.equals(mtAccounts)) {
-                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50025 : " + " Error: The terminal has been called in the current group : " + groupId);
-                    p2PCallRequest.makeErrorResponseMsg(ConfInterfaceResult.TERMINALHASBEENCALLED.getCode(), HttpStatus.OK, ConfInterfaceResult.TERMINALHASBEENCALLED.getMessage());
+                    LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50025 : " + " Error: The terminal has been called in the current group : " + groupId);
+                    System.out.println("50025 : " + " Error: The terminal has been called in the current group : " + groupId);
+                    p2PCallRequest.makeErrorResponseMsg(ConfInterfaceResult.TERMINAL_HAS_BEEN_CALLED.getCode(), HttpStatus.OK, ConfInterfaceResult.TERMINAL_HAS_BEEN_CALLED.getMessage());
                     return;
                 }
             }
@@ -1177,8 +1204,8 @@ public class ConfInterfaceService {
         } else {*/
         TerminalService vmtService = terminalManageService.getFreeVmt();
         if (null == vmtService) {
-            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "p2pCall, 50008 : reach max join terminal numbers!");
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "p2pCall, startCallDevice(GroupID:" + groupId + " ,account: " + mtAccount + ") - [YYYY-MM-DDThh:mm:ss.SSSZ] failed Errcode:" + 50008 + "Error: reach max join terminal numbers!");
+            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "p2paCll, 50008 : reach max join terminal numbers!");
+            System.out.println("p2paCll, 50008 : reach max join terminal numbers!");
             p2PCallRequest.makeErrorResponseMsg(ConfInterfaceResult.REACH_MAX_JOIN_MTS.getCode(), HttpStatus.OK, ConfInterfaceResult.REACH_MAX_JOIN_MTS.getMessage());
             return;
         }
@@ -1224,7 +1251,7 @@ public class ConfInterfaceService {
         P2PCallGroup p2PCallGroup = p2pCallGroupMap.get(groupId);
         if (null == p2PCallGroup) {
             System.out.println("cancelP2PCall, 50002 : group not exist!");
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "cancelP2PCall, 50002 : group not exist!");
+            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "cancelP2PCall, 50002 : group not exist!");
             cancelP2PCallRequest.makeErrorResponseMsg(ConfInterfaceResult.GROUP_NOT_EXIST.getCode(), HttpStatus.OK, ConfInterfaceResult.GROUP_NOT_EXIST.getMessage());
             return;
         }
@@ -1233,7 +1260,7 @@ public class ConfInterfaceService {
         TerminalService vmtService = p2PCallGroup.getVmt(account);
         if (null == vmtService) {
             System.out.println("cancelP2PCall, 50015 : terminal not exist in this conference!");
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "cancelP2PCall, 50015 : terminal not exist in this conference!");
+            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "cancelP2PCall, 50015 : terminal not exist in this conference!");
             cancelP2PCallRequest.makeErrorResponseMsg(ConfInterfaceResult.TERMINAL_NOT_EXIST.getCode(), HttpStatus.OK, ConfInterfaceResult.TERMINAL_NOT_EXIST.getMessage());
             return;
         }
@@ -1269,8 +1296,8 @@ public class ConfInterfaceService {
 
         } else {
             LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "cancelP2PCall, 50025 : p2p cancelCallMt failed!");
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "cancelP2PCall, stopCallDevice(GroupID:" + groupId + " ,account: " + cancelP2PCallParam.getAccount() + ") - [YYYY-MM-DDThh:mm:ss.SSSZ] failed Errcode : 50025 , Error: p2p cancelCallMt failed!");
-            cancelP2PCallRequest.makeErrorResponseMsg(ConfInterfaceResult.P2PCANCELCALL.getCode(), HttpStatus.OK, ConfInterfaceResult.P2PCANCELCALL.getMessage());
+            System.out.println("cancelP2PCall, 50025 : p2p cancelCallMt failed!");
+            cancelP2PCallRequest.makeErrorResponseMsg(ConfInterfaceResult.P2P_CANCEL_CALL.getCode(), HttpStatus.OK, ConfInterfaceResult.P2P_CANCEL_CALL.getMessage());
         }
 
     }
@@ -1302,6 +1329,7 @@ public class ConfInterfaceService {
         TerminalService vmtService = p2PCallGroup.getVmt(deviceId);
         if (null == vmtService) {
             LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "statusNotify, not find vmtService, deviceId: " + deviceId);
+            System.out.println("statusNotify, not find vmtService, deviceId: " + deviceId);
             return;
         }
 
@@ -1324,6 +1352,7 @@ public class ConfInterfaceService {
         }
     }
 
+
     public void p2pctrlDualStream(StartDualStreamRequest startDualStreamRequest, String mtE164, boolean b) {
         final String groupId = startDualStreamRequest.getGroupId();
         P2PCallGroup p2PCallGroup = p2pCallGroupMap.get(groupId);
@@ -1332,7 +1361,8 @@ public class ConfInterfaceService {
             startDualStreamRequest.makeErrorResponseMsg(ConfInterfaceResult.GROUP_NOT_EXIST.getCode(), HttpStatus.OK, ConfInterfaceResult.GROUP_NOT_EXIST.getMessage());
             return;
         }
-        System.out.println("mtE164 : " + mtE164);
+        LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"p2pctrlDualStream mtE164 : " + mtE164);
+        System.out.println("p2pctrlDualStream mtE164 : " + mtE164);
         TerminalService vmt = p2PCallGroup.getVmt(mtE164);
         if (null != vmt) {
             ctrlVmtDualStream(vmt, b, startDualStreamRequest);
@@ -1341,7 +1371,7 @@ public class ConfInterfaceService {
             startDualStreamRequest.makeErrorResponseMsg(ConfInterfaceResult.MAINSTREAM_NOT_EXIST.getCode(), HttpStatus.OK, ConfInterfaceResult.MAINSTREAM_NOT_EXIST.getMessage());
         }
     }
-
+    @Async("confTaskExecutor")
     public boolean inspectionMt(GroupConfInfo groupConfInfo, String mode, String srcMtId, String dstMtId, InspectionRequest inspectionRequest) {
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "inspectionMt, mode:" + mode + ", srcMtId:" + srcMtId + ", dstMtId:" + dstMtId);
         System.out.println("inspectionMt, mode:" + mode + ", srcMtId:" + srcMtId + ", dstMtId:" + dstMtId);
@@ -1821,6 +1851,9 @@ public class ConfInterfaceService {
 
     @Autowired
     private BaseSysConfig baseSysConfig;
+
+    @Autowired
+    private H323ProtocalConfig h323ProtocalConfig;
 
     private Map<String, GroupConfInfo> groupConfInfoMap = new ConcurrentHashMap<>();
     private Map<String, String> confGroupMap = new ConcurrentHashMap<>();

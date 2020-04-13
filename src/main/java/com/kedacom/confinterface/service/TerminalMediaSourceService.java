@@ -166,4 +166,35 @@ public class TerminalMediaSourceService {
     public BroadcastSrcMediaInfo delBroadcastSrcInfo(String groupId) {
         return terminalMediaSourceDao.delBroadcastSrcInfo(groupId);
     }
+
+    @CachePut(value = "MtHash", key = "caches[0].name + '_' + #root.target.getSrvToken()")
+    public Map<String, String> setMtPublish(String E164, String publishUrl) {
+        return terminalMediaSourceDao.setMtPublish(E164, publishUrl);
+    }
+
+    @CachePut(value = "MtHash", key = "caches[0].name + '_' + #root.target.getSrvToken()")
+    public Map<String, String> deleteMtPublish(String E164) {
+        return terminalMediaSourceDao.deleteMtPublish(E164);
+    }
+
+    @Cacheable(value = "MtHash", key = "caches[0].name + '_' + #root.target.getSrvToken()")
+    public Map<String, String> getMtPublish() {
+        return terminalMediaSourceDao.getMtPublish();
+    }
+
+
+    @CachePut(value = "publishUrl", key = "caches[0].name + '_' + #root.target.getSrvToken()")
+    public Map<String, String> setPublishUrl(String groupId, String publishUrl) {
+        return terminalMediaSourceDao.setPublishUrl(groupId, publishUrl);
+    }
+
+    @CachePut(value = "publishUrl", key = "caches[0].name + '_' + #root.target.getSrvToken()")
+    public Map<String, String> deletePublishUrl(String groupId) {
+        return terminalMediaSourceDao.deletePublishUrl(groupId);
+    }
+
+    @CachePut(value = "publishUrl", key = "caches[0].name + '_' + #root.target.getSrvToken()")
+    public Map<String, String> getPublishUrl() {
+        return terminalMediaSourceDao.getPublishUrl();
+    }
 }

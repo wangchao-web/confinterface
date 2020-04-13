@@ -51,6 +51,7 @@ class RegisterGkHandler implements Runnable {
         }
     }
 }
+
 public class H323TerminalManageService extends TerminalManageService implements IConferenceEventHandler {
 
     public H323TerminalManageService(H323ProtocalConfig h323ProtocalConfig) {
@@ -163,7 +164,7 @@ public class H323TerminalManageService extends TerminalManageService implements 
             if (null == p2PCallResult) {
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "OnInvited, translateCall, reject invitation!");
                 System.out.println("OnInvited, translateCall fail, reject invitation!");
-                if (terminalService.isDynamicBind()){
+                if (terminalService.isDynamicBind()) {
                     terminalService.unBindProxyMT();
                 }
                 terminalService.getConferenceParticipant().AcceptInvitation(false);
@@ -256,8 +257,8 @@ public class H323TerminalManageService extends TerminalManageService implements 
             return;
         }
 
-        if(terminalService.dualSource.size() > 0){
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"OnKickedOff dualSource.size() : " + terminalService.dualSource.size());
+        if (terminalService.dualSource.size() > 0) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "OnKickedOff dualSource.size() : " + terminalService.dualSource.size());
             System.out.println("OnKickedOff dualSource.size() : " + terminalService.dualSource.size());
             terminalService.dualSource.clear();
         }
@@ -280,7 +281,7 @@ public class H323TerminalManageService extends TerminalManageService implements 
             System.out.println("OnKickedOff, mtAccount " + mtAccount);
             if (null != mtAccount) {
                 p2PCallGroup.removeCallMember(mtAccount);
-                if (p2PCallGroup.getCallMap().isEmpty()){
+                if (p2PCallGroup.getCallMap().isEmpty()) {
                     LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "OnKickedOff, remove p2pCallGroup : " + groupId);
                     p2pCallGroupMap.remove(groupId);
                 }
@@ -311,6 +312,8 @@ public class H323TerminalManageService extends TerminalManageService implements 
             terminalMediaSourceService.delGroupInspectionParam(participantid);
             terminalMediaSourceService.delGroupVmtMember(terminalService.getGroupId(), participantid);
 
+            ////用于会议服务断开之后服务再启动时给上层业务推送失败的状态
+            terminalMediaSourceService.deleteMtPublish(terminalService.getRemoteMtAccount());
             terminalService.leftConference();
         }
     }
@@ -327,11 +330,39 @@ public class H323TerminalManageService extends TerminalManageService implements 
             return;
         }
 
-        Boolean  bOK= terminalService.onOpenLogicalChannel(mediaDescriptions);
+        Boolean bOK = terminalService.onOpenLogicalChannel(mediaDescriptions);
 
         if (!bOK) {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "OnLocalMediaRequested, onOpenLogicalChannel failed! participantid :" + participantid);
             System.out.println("OnLocalMediaRequested, onOpenLogicalChannel failed! participantid :" + participantid);
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "OnLocalMediaRequested Failed to create resource node, cancel terminal call! participantid :" + participantid);
+            System.out.println("OnLocalMediaRequested Failed to create resource node, cancel terminal call! participantid :" + participantid);
+
+            String remoteMtAccount = terminalService.getRemoteMtAccount();
+            String groupId = terminalService.getGroupId();
+            //创建资源节点失败时,取消终端呼叫,并通知上层业务呼叫失败
+
+            P2PCallGroup callGroup = ConfInterfaceService.p2pCallGroupMap.get(groupId);
+            if (callGroup == null) {
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "OnLocalMediaRequested callGroup is null ********");
+                System.out.println("OnLocalMediaRequested callGroup is null ********");
+            } else {
+                TerminalService vmt = callGroup.getVmt(remoteMtAccount);
+                if (vmt != null) {
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"OnLocalMediaRequested vmt is not null ********");
+                    System.out.println("OnLocalMediaRequested vmt is not null ********");
+                    callGroup.removeCallMember(remoteMtAccount);
+                    if (callGroup.getCallMap().isEmpty()) {
+                        ConfInterfaceService.p2pCallGroupMap.remove(groupId);
+                    }
+                    terminalService.cancelCallMt();
+                    terminalService.setGroupId(null);
+                    TerminalManageService.publishStatus(remoteMtAccount, groupId, TerminalOnlineStatusEnum.OFFLINE.getCode(), TerminalOfflineReasonEnum.NmediaResource.getCode());
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "OnLocalMediaRequested removeCallMember! CallMember :" + remoteMtAccount + ", GroupId " + groupId);
+                    System.out.println("OnLocalMediaRequested  removeCallMember! CallMember :" + remoteMtAccount + ", GroupId " + groupId);
+                }
+            }
+
         }
 
         //将虚拟终端的资源更新到数据库中
@@ -420,7 +451,34 @@ public class H323TerminalManageService extends TerminalManageService implements 
 
             DualStreamRequestSuccess(terminalService, mediaDescriptions.get(0).getStreamIndex());
             return;
+        } else {
+            //更新资源节点失败时,取消终端呼叫,并通知上层业务呼叫失败
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "OnRemoteMediaReponsed Failed to update resource node, cancel terminal call status notification! participantid :" + terminalService.getRemoteMtAccount());
+            System.out.println("OnRemoteMediaReponsed Failed to update resource node, cancel terminal call status notification! participantid :" + terminalService.getRemoteMtAccount());
+            String remoteMtAccount = terminalService.getRemoteMtAccount();
+            String groupId = terminalService.getGroupId();
+            P2PCallGroup callGroup = ConfInterfaceService.p2pCallGroupMap.get(groupId);
+            if (callGroup == null) {
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "OnRemoteMediaReponsed callGroup is null *************");
+                System.out.println("OnRemoteMediaReponsed callGroup is null *************");
+            } else {
+                TerminalService vmt = callGroup.getVmt(remoteMtAccount);
+                if (vmt != null) {
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"OnRemoteMediaReponsed vmt is not null **************");
+                    System.out.println("OnRemoteMediaReponsed vmt is not null **************");
+                    callGroup.removeCallMember(remoteMtAccount);
+                    if (callGroup.getCallMap().isEmpty()) {
+                        ConfInterfaceService.p2pCallGroupMap.remove(groupId);
+                    }
+                    terminalService.cancelCallMt();
+                    terminalService.setGroupId(null);
+                    TerminalManageService.publishStatus(remoteMtAccount, groupId, TerminalOnlineStatusEnum.OFFLINE.getCode(), TerminalOfflineReasonEnum.NmediaResource.getCode());
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "OnRemoteMediaReponsed removeCallMember! CallMember :" + remoteMtAccount + ", GroupId " + groupId);
+                    System.out.println("OnRemoteMediaReponsed  removeCallMember! CallMember :" + remoteMtAccount + ", GroupId " + groupId);
+                }
+            }
         }
+
 
         if (mediaDescriptions.get(0).getDual()) {
             DualStreamRequestFail(terminalService);
@@ -449,7 +507,7 @@ public class H323TerminalManageService extends TerminalManageService implements 
         }
 
         for (MediaDescription mediaDescription : mediaDescriptions) {
-            if(!mediaDescription.getDual()) {
+            if (!mediaDescription.getDual()) {
                 for (DetailMediaResouce mediaResouce : mediaResouces) {
                     if (mediaResouce.getStreamIndex() != mediaDescription.getStreamIndex()) {
                         continue;
@@ -459,8 +517,8 @@ public class H323TerminalManageService extends TerminalManageService implements 
                     resourceIds.add(mediaResouce.getId());
                     break;
                 }
-            }else{
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"OnMediaCleaned, dual stream is closed, publish dual status!");
+            } else {
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "OnMediaCleaned, dual stream is closed, publish dual status!");
                 System.out.println("OnMediaCleaned, dual stream is closed, publish dual status!");
                 terminalService.dualPublish();
             }
@@ -619,11 +677,11 @@ public class H323TerminalManageService extends TerminalManageService implements 
                 p2PCallRequest.removeMsg(P2PCallRequest.class.getName());
             }
 
-            if(p2PCallRequest.isSuccessResponseMsg()){
+            if (p2PCallRequest.isSuccessResponseMsg()) {
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "P2PCallRequestSuccess, pubulish terminal status, account:" + p2PCallRequest.getAccount() + ", groupId: " + p2PCallRequest.getGroupId() + ", forwardResources: " + p2PCallRequest.getForwardResources().toString() + ", reverseResources: " + p2PCallRequest.getReverseResources().toString());
                 System.out.println("P2PCallRequestSuccess, pubulish terminal status, account: " + p2PCallRequest.getAccount() + ", groupId : " + p2PCallRequest.getGroupId() + ", forwardResources: " + p2PCallRequest.getForwardResources().toString() + ", reverseResources: " + p2PCallRequest.getReverseResources().toString());
 
-                TerminalManageService.publishStatus(p2PCallRequest.getAccount(), p2PCallRequest.getGroupId(), TerminalOnlineStatusEnum.ONLINE.getCode(), p2PCallRequest.getForwardResources(), p2PCallRequest.getReverseResources());
+                TerminalManageService.publishStatus(p2PCallRequest.getAccount(), p2PCallRequest.getGroupId(), TerminalOnlineStatusEnum.ONLINE.getCode(), p2PCallRequest.getForwardResources(), p2PCallRequest.getReverseResources(),"p2p");
             }
             break;
         }
@@ -643,12 +701,12 @@ public class H323TerminalManageService extends TerminalManageService implements 
         if (0 != p2PCallRequest.getAccount().compareTo(terminalService.getE164())) {
             //如果请求消息中的账号与虚拟终端的账号不一致，说明是实际的点对点请求，
             // 否则则说明是有MT从系统外部主动呼叫虚拟终端
-            p2PCallRequest.makeErrorResponseMsg(ConfInterfaceResult.P2PCALL.getCode(), HttpStatus.OK, ConfInterfaceResult.P2PCALL.getMessage());
+            p2PCallRequest.makeErrorResponseMsg(ConfInterfaceResult.P2P_CALL.getCode(), HttpStatus.OK, ConfInterfaceResult.P2P_CALL.getMessage());
         }
 
         boolean bOk = terminalService.cancelCallMt();
-        if (!bOk){
-            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "P2PCallRequestFail, cancelCallMt fail, vmt: " + terminalService.getE164() + ", account: "+ p2PCallRequest.getAccount());
+        if (!bOk) {
+            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "P2PCallRequestFail, cancelCallMt fail, vmt: " + terminalService.getE164() + ", account: " + p2PCallRequest.getAccount());
         }
     }
 

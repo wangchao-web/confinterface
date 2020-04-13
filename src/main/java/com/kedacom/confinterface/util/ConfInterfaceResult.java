@@ -28,9 +28,11 @@ public enum ConfInterfaceResult {
     EXIST_DUALSTREAM(50022, "exist dual stream!"),
     MAINSTREAM_NOT_EXIST(50026,"mainstream doesn't exist"),
     CLOSE_CHANNEL(50023, "close logical channel failed!"),
-    P2PCALL(50024, "p2p call failed!"),
-    P2PCANCELCALL(50025, "p2p cancelCallMt failed!"),
-    TERMINALHASBEENCALLED(50026,"The terminal has been called");
+    P2P_CALL(50024, "p2p call failed!"),
+    P2P_CANCEL_CALL(50025, "p2p cancelCallMt failed!"),
+    TERMINAL_HAS_BEEN_CALLED(50026,"The terminal has been called"),
+    ACCOUNT_E164_INVALID(50027, "Unused GK , Use E164 call failed");
+
 
     public int getCode(){
         return code;

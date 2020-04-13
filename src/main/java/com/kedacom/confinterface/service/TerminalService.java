@@ -462,6 +462,8 @@ public abstract class TerminalService {
         supportDualStream.set(false);
         inspectionParam = null;
         inspentedTerminals = null;
+        //1月14
+        remoteMtAccount = null;
     }
 
     public abstract boolean onOpenLogicalChannel(Vector<MediaDescription> mediaDescriptions);
@@ -820,12 +822,11 @@ public abstract class TerminalService {
                 callParameterEx.setCodec(mediaCodec);
                 bOK = conferenceParticipant.CallRemote(remoteParticipantInfo,callParameterEx);
             }
-            //boolean bOK = conferenceParticipant.CallRemote(remoteParticipantInfo);
 
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, e164 + " : vmtE164 conferenceParticipant.CallRemote : " + account);
             System.out.println(e164 + " : vmtE164 conferenceParticipant.CallRemote : " + account);
             TerminalOfflineReasonEnum terminalOfflineReasonEnum = TerminalOfflineReasonEnum.OK;
-            //TerminalOnlineStatusEnum terminalOnlineStatusEnum = TerminalOnlineStatusEnum.ONLINE;
+
             if (bOK) {
                 remoteMtAccount = account;
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "account conferenceParticipant.CallRemote success " + account);
@@ -903,8 +904,10 @@ public abstract class TerminalService {
                 terminalManageService.freeVmt(e164);
                 clearExchange();
                 terminalMediaSourceService.delTerminalMediaResource(e164);
+                terminalMediaSourceService.deleteMtPublish(remoteMtAccount);
                 groupId = null;
                 confId = null;
+                remoteMtAccount = null;
                 setDualStream(false);
 
                 if (dynamicBind == 1){
@@ -1561,7 +1564,7 @@ public abstract class TerminalService {
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "addMediaResource, publish dual status , dualAccount:  " + dualAccount + ", groupId : " + groupId + ", reverseResources" + reverseResources.toString());
                 System.out.println("addMediaResource, publish dual status, dualAccount: " + dualAccount + ", groupId : " + groupId + ", reverseResources" + reverseResources.toString());
 
-                TerminalManageService.publishStatus(dualAccount, groupId, TerminalOnlineStatusEnum.DUALSTREAM.getCode(), null, reverseResources);
+                TerminalManageService.publishStatus(dualAccount, groupId, TerminalOnlineStatusEnum.DUALSTREAM.getCode(), null, reverseResources,"p2pDual");
             }
         }
 
@@ -1584,7 +1587,7 @@ public abstract class TerminalService {
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, " dualAddMediaResource, publish dual status, dualAccount: " + dualAccount + ",terminalService.getGroupId() : " + groupId + ", reverseResources" + reverseResources.toString());
         System.out.println(" dualAddMediaResource, publish dual status, dualAccount: " + dualAccount + ",terminalService.getGroupId() : " + groupId + ", reverseResources" + reverseResources.toString());
 
-        TerminalManageService.publishStatus(dualAccount, groupId, TerminalOnlineStatusEnum.DUALSTREAM.getCode(), null, reverseResources);
+        TerminalManageService.publishStatus(dualAccount, groupId, TerminalOnlineStatusEnum.DUALSTREAM.getCode(), null, reverseResources,"p2pDual");
     }
 
     public void dualPublish() {
