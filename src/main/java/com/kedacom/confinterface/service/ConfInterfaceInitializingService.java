@@ -510,7 +510,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
     }
 
     private static void PrintBuildTime() {
-        String utcBuildTime = "2020-01-08 14:24:12";
+        String utcBuildTime = "2020-04-13 11:08:12";
         /*SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
         try {
@@ -520,7 +520,9 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
         }
         sdf.setTimeZone(TimeZone.getDefault());*/
 
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"confinterface Compile time:" + utcBuildTime);
         System.out.println("confinterface Compile time:" + utcBuildTime);
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"confinterface version " + VERSION);
         System.out.println("confinterface version " + VERSION);
     }
 

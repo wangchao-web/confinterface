@@ -31,8 +31,9 @@ public enum ConfInterfaceResult {
     P2P_CALL(50024, "p2p call failed!"),
     P2P_CANCEL_CALL(50025, "p2p cancelCallMt failed!"),
     TERMINAL_HAS_BEEN_CALLED(50026,"The terminal has been called"),
-    ACCOUNT_E164_INVALID(50027, "Unused GK , Use E164 call failed");
-
+    ACCOUNT_E164_INVALID(50027, "Unused GK , Use E164 call failed"),
+    CONF_NOT_EXIT(50029,"confid not exit"),
+    SEND_SMS_FAILED(50031,"send message failed");
 
     public int getCode(){
         return code;

@@ -560,6 +560,53 @@ public class H323TerminalManageService extends TerminalManageService implements 
         resourceIds.clear();
     }
 
+    @Override
+    public void OnKeyFrameRequested(String participantid, int index) {
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "OnKeyFrameRequested, terminal: " + participantid + " is on key frameRequest, threadName: " + Thread.currentThread().getName());
+        System.out.println("OnKeyFrameRequested, terminal: " + participantid + " is on key frameRequest  conference,threadName:" + Thread.currentThread().getName());
+        H323TerminalService terminalService = (H323TerminalService) usedVmtServiceMap.get(participantid);
+        if (null == terminalService) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "OnKeyFrameRequested, not found terminal! participantid: " + participantid);
+            System.out.println("OnKeyFrameRequested, not found terminal!");
+            return;
+        }
+
+        TerminalMediaResource terminalMediaResource = terminalMediaSourceService.getTerminalMediaResource(participantid);
+        if(terminalMediaResource == null){
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "OnKeyFrameRequested, terminalMediaResource is null *******!");
+            System.out.println("OnKeyFrameRequested, terminalMediaResource is null *******!");
+            return;
+        }
+        List<DetailMediaResouce> DetailMediaResouceForwardResources = terminalService.getForwardChannel();
+        List<MediaResource> forwardResources = terminalMediaResource.getForwardResources();
+        if(forwardResources == null || forwardResources.isEmpty()){
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "OnKeyFrameRequested, get forwardResources is null or empty *******!");
+            System.out.println("OnKeyFrameRequested, get forwardResources is null or empty *******!");
+            return;
+        }
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"forwardResources size : " + forwardResources.size());
+        System.out.println("forwardResources size : " + forwardResources.size());
+        String  resourceId = "";
+        if(forwardResources.size() == 2){
+            for(MediaResource forwardResource : forwardResources){
+                if(forwardResource.getType().equals("video")){
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"forwardResource type is video resourceId is : " + forwardResource.toString());
+                    System.out.println("forwardResource type is video resourceId is : " + forwardResource.toString() );
+                    resourceId = forwardResource.getId();
+                }
+            }
+        }else{
+            for(DetailMediaResouce detailMediaResouce : DetailMediaResouceForwardResources){
+                if(detailMediaResouce.getType().equals("video") && detailMediaResouce.getStreamIndex() == index){
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"forwardResource type is video resourceId is : " + detailMediaResouce.getId() + ", StreamIndex : " + index + ", detailMediaResouce : " +detailMediaResouce.toString());
+                    System.out.println("forwardResource type is video resourceId is : " + detailMediaResouce.getId() + ", StreamIndex : " +index + ", detailMediaResouce : " +detailMediaResouce.toString());
+                    resourceId = detailMediaResouce.getId();
+                }
+            }
+        }
+        terminalService.keyframe(resourceId);
+    }
+
     private void ResumeDualStream(H323TerminalService terminalService) {
         //如果主流全部开启，判断是否需要恢复辅流
         if (terminalService.getResumeDualStream().compareAndSet(true, false)) {

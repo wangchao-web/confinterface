@@ -7,6 +7,9 @@ public class TerminalId {
         this.mt_id = mt_id;
     }
 
+    public TerminalId() {
+    }
+
     public void setMt_id(String mt_id) {
         this.mt_id = mt_id;
     }

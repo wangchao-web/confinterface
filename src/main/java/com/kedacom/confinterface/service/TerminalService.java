@@ -647,6 +647,31 @@ public abstract class TerminalService {
         return true;
     }
 
+    //发送短消息
+    public boolean sendSms(String message, int RollNum, int rollSpeed){
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"message : " + message + ", RollNum : "+ RollNum+ ", rollSpeed : "+ rollSpeed);
+        System.out.println("message : " + message + ", RollNum : "+ RollNum + ", rollSpeed : "+ rollSpeed);
+        TextMsgReq textMsgReq = new TextMsgReq();
+        textMsgReq.setText(message);
+        textMsgReq.setTimes(RollNum);
+        switch (rollSpeed) {
+            case 1:
+                //慢速
+                textMsgReq.setSpeed(TextMsgRollSpeedEnum.Slower);
+            case 2:
+                //中速
+                textMsgReq.setSpeed(TextMsgRollSpeedEnum.Common);
+            case 3:
+                //快速
+                textMsgReq.setSpeed(TextMsgRollSpeedEnum.Faster);
+            default:
+                //自定义速度
+                textMsgReq.setSpeed(TextMsgRollSpeedEnum.InvalidSpeed);
+        }
+        boolean bOk = conferenceParticipant.PostTextMsg(textMsgReq);
+        return bOk;
+    }
+
     public void clearExchange() {
         List<DetailMediaResouce> forwardMediaResouces = forwardChannel;
         List<DetailMediaResouce> reverseMediaResouces = reverseChannel;
@@ -694,6 +719,33 @@ public abstract class TerminalService {
             reverseChannel.clear();
             reverseChannel = null;
         }
+    }
+
+    public boolean keyframe(String resourceId){
+        if (null == resourceId || resourceId.isEmpty()) {
+            return true;
+        }
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"keyframe resourceId : " + resourceId);
+        System.out.println("keyframe resourceId : " + resourceId);
+        StringBuilder url = new StringBuilder();
+        constructUrl(url, "/services/media/v1/live?DeviceID=XXX&Action=keyframe");
+        Map<String, String> args = new HashMap<>();
+        args.put("DeviceID", resourceId);
+        ResponseEntity<BaseResponseMsg>  keyFrame= restClientService.exchangeJson(url.toString(), HttpMethod.POST, null, args, BaseResponseMsg.class);
+        if (null == keyFrame) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "keyFrame, failed! null == removeResponse");
+            System.out.println("keyFrame, failed! null == removeResponse");
+        } else if (!keyFrame.getStatusCode().is2xxSuccessful()) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "keyFrame, failed! status:" + keyFrame.getStatusCodeValue());
+            System.out.println("keyFrame, failed! status:" + keyFrame.getStatusCodeValue());
+        } else if (keyFrame.getBody().getCode() != 0) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "keyFrame, failed! errmsg:" + keyFrame.getBody().getMessage());
+            System.out.println("keyFrame, failed! errmsg:" + keyFrame.getBody().getMessage());
+        } else {
+            return true;
+        }
+
+        return false;
     }
 
     public boolean removeExchange(List<String> resourceIds) {

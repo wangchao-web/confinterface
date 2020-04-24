@@ -57,12 +57,12 @@ public class  SchedulePublishService extends ConfInterfacePublishService{
         String accountType = "MT";
 
         if (account.equals(groupId)) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"publishStatus, type: Conference!");
-            System.out.println("publishStatus, type: Conference!");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"publishStatus, type : Conference!");
+            System.out.println("publishStatus, type : Conference!");
             account = "Conference";
         } else if (status == TerminalOnlineStatusEnum.DUALSTREAM.getCode()) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"publishStatus, type: Dual!");
-            System.out.println("publishStatus, type: Dual!");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"publishStatus, type : Dual!");
+            System.out.println("publishStatus, type : Dual!");
             accountType = "Dual";
         }
 
@@ -98,6 +98,7 @@ public class  SchedulePublishService extends ConfInterfacePublishService{
     @Async("confTaskExecutor")
     public void cancelSubscribeMessage(int type, String groupId, String url) {
         synchronized (this) {
+
             Map<String, String> groupUrl = subscribeMsgs.get(type);
             if (null == groupUrl) {
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"cancelSubscribeMessage groupUrl is null ******");
@@ -119,11 +120,11 @@ public class  SchedulePublishService extends ConfInterfacePublishService{
 
     private void publishMessage(SubscribeMsgTypeEnum type, String groupId, Object publishMsg) {
         Map<String, String> groupUrls = subscribeMsgs.get(type.getType());
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"type : "+ type + " ,groupId : " +groupId + ",publishMsg : "+publishMsg.toString());
-        System.out.println("type : "+ type + " ,groupId : " +groupId + ",publishMsg : "+publishMsg.toString());
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"type : "+ type + " , groupId : " +groupId + ", publishMsg : "+publishMsg.toString());
+        System.out.println("type : "+ type + " , groupId : " +groupId + ", publishMsg : "+publishMsg.toString());
         if (null == groupUrls) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"publishMessage, has no client subscribe message, type :"+type.getType()+", name:"+type.getName());
-            System.out.println("publishMessage, has no client subscribe message, type :"+type.getType()+", name:"+type.getName());
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"publishMessage, has no client subscribe message, type : "+type.getType()+", name : "+type.getName());
+            System.out.println("publishMessage, has no client subscribe message, type : "+type.getType()+", name : "+type.getName());
             return;
         }
 
@@ -134,16 +135,16 @@ public class  SchedulePublishService extends ConfInterfacePublishService{
             return;
         }
 
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"publishMessage, groupId:"+groupId);
-        System.out.println("publishMessage, groupId:"+groupId);
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"publishMessage, groupId : "+groupId);
+        System.out.println("publishMessage, groupId : "+groupId);
         ResponseEntity<BaseResponseMsg> publishResponse = restClientService.exchangeJson(publishUrl, HttpMethod.POST, publishMsg, null, BaseResponseMsg.class);
         if (publishResponse.getStatusCode().is2xxSuccessful() && publishResponse.getBody().getCode() == 0) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "publishMessage OK! type:" + type.getName() + ", publishUrl:" + publishUrl);
-            System.out.println("publishMessage OK! type:" + type.getName() + ", publishUrl:" + publishUrl);
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "publishMessage OK! type : " + type.getName() + ", publishUrl : " + publishUrl);
+            System.out.println("publishMessage OK! type : " + type.getName() + ", publishUrl : " + publishUrl);
             TerminalStatusNotify terminalStatusNotify1 = (TerminalStatusNotify) publishMsg;
             if (terminalStatusNotify1.getMtStatusNotify().get(0).getStatus() == 1 && terminalStatusNotify1.getMtStatusNotify().get(0).getCallMode().equals("p2p")) {
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"terminalStatusNotify1  DeviceId" + terminalStatusNotify1.getMtStatusNotify().get(0).getDeviceId() + ", terminalStatusNotify1 Status :" + terminalStatusNotify1.getMtStatusNotify().get(0).getStatus() +", terminalStatusNotify1 callMode : "+terminalStatusNotify1.getMtStatusNotify().get(0).getCallMode());
-                System.out.println("terminalStatusNotify1  DeviceId" + terminalStatusNotify1.getMtStatusNotify().get(0).getDeviceId() + ", terminalStatusNotify1 Status :" + terminalStatusNotify1.getMtStatusNotify().get(0).getStatus() +", terminalStatusNotify1 callMode : "+terminalStatusNotify1.getMtStatusNotify().get(0).getCallMode());
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"terminalStatusNotify1  DeviceId : " + terminalStatusNotify1.getMtStatusNotify().get(0).getDeviceId() + ", terminalStatusNotify1 Status :" + terminalStatusNotify1.getMtStatusNotify().get(0).getStatus() +", terminalStatusNotify1 callMode : "+terminalStatusNotify1.getMtStatusNotify().get(0).getCallMode());
+                System.out.println("terminalStatusNotify1  DeviceId : " + terminalStatusNotify1.getMtStatusNotify().get(0).getDeviceId() + ", terminalStatusNotify1 Status :" + terminalStatusNotify1.getMtStatusNotify().get(0).getStatus() +", terminalStatusNotify1 callMode : "+terminalStatusNotify1.getMtStatusNotify().get(0).getCallMode());
                 terminalMediaSourceService.setMtPublish(terminalStatusNotify1.getMtStatusNotify().get(0).getDeviceId(), publishUrl);
             }
             return;
@@ -160,11 +161,11 @@ public class  SchedulePublishService extends ConfInterfacePublishService{
         }
 
         if (!publishResponse.getStatusCode().is2xxSuccessful()){
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"publishMessage failed! , type:"+type.getName()+", publishUrl : "+publishUrl);
-            System.out.println("publishMessage failed! , type:"+type.getName()+", publishUrl : "+publishUrl);
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"publishMessage failed! , type : "+type.getName()+", publishUrl : "+publishUrl);
+            System.out.println("publishMessage failed! , type : "+type.getName()+", publishUrl : "+publishUrl);
         } else if (publishResponse.getBody().getCode() != 0){
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"publishMessage failed! , type:"+type.getName()+", publishUrl:"+publishUrl+", errmsg:"+publishResponse.getBody().getMessage());
-            System.out.println("publishMessage failed! , type:"+type.getName()+", publishUrl:"+publishUrl+", errmsg:"+publishResponse.getBody().getMessage());
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"publishMessage failed! , type : "+type.getName()+", publishUrl : "+publishUrl+", errmsg : "+publishResponse.getBody().getMessage());
+            System.out.println("publishMessage failed! , type : "+type.getName()+", publishUrl : "+publishUrl+", errmsg : "+publishResponse.getBody().getMessage());
         }
     }
 

@@ -284,6 +284,17 @@ public class ConfInterfaceController {
         return new ResponseEntity<>(baseResponseMsg, HttpStatus.OK);
     }
 
+    @PostMapping(value = "/sms")
+    public DeferredResult<ResponseEntity<SendSmsResponse>> sendSms(@RequestParam("GroupId") String groupId, @Valid @RequestBody SendSmsParam sendSmsParam){
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now in sendSms, groupId : " + groupId + "sendSmsParam.toString() : " +sendSmsParam.toString() + ", time : " + System.currentTimeMillis());
+        System.out.println("now in sendSms, groupId : " + groupId + "sendSmsParam.toString() : " +sendSmsParam.toString() + ", time : " + System.currentTimeMillis());
+        SendSmsRequest sendSmsRequest = new SendSmsRequest(groupId, sendSmsParam);
+        confInterfaceService.sendSms(sendSmsRequest);
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now finished sendSms, time : " + System.currentTimeMillis());
+        System.out.println("now finished sendSms, time : " + System.currentTimeMillis());
+        return sendSmsRequest.getResponseMsg();
+
+    }
     @ExceptionHandler
     @ResponseBody
     public ResponseEntity<BaseResponseMsg> handleArgumentNotValidException(MethodArgumentNotValidException exception) {

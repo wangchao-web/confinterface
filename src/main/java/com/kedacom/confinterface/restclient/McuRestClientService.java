@@ -169,6 +169,7 @@ public class McuRestClientService {
         createConferenceParam.setCall_interval(mcuRestConfig.getCallInterval());
         createConferenceParam.setEncrypted_type(mcuRestConfig.getEncryptedType());
         createConferenceParam.setEncrypted_key(mcuRestConfig.getEncryptedKey());
+        createConferenceParam.setConf_type(mcuRestConfig.getConfType());
         createConferenceParam.setVideo_formats(mcuRestConfig.getVideoFormat());
         createConferenceParam.setAudio_formats(mcuRestConfig.getAudioFormat());
 
@@ -813,6 +814,41 @@ public class McuRestClientService {
 
         return getConfMtInfoResponse;
     }
+
+    //发送短消息
+    public McuStatus sendMsm(String confId, SendSmsParam sendSmsParam, List<TerminalId> smsInfoMts) {
+        if (!loginSuccess) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "[sendMsm] has login out!!!");
+            System.out.println("[sendMsm] has login out!!!");
+            return null;
+        }
+
+        StringBuilder url = new StringBuilder();
+        constructUrl(url, "/api/v1/vc/confs/{conf_id}/sms");
+        Map<String, String> args = new HashMap<>();
+        args.put("conf_id", confId);
+
+        SendSmsInfo sendSmsInfo = new SendSmsInfo(sendSmsParam.getMessage(), sendSmsParam.getType(), sendSmsParam.getRollNum(), sendSmsParam.getRollSpeed());
+        sendSmsInfo.setMts(smsInfoMts);
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Mcu sendSmsInfo : " + sendSmsInfo.toString());
+        System.out.println("Mcu sendSmsInfo : " + sendSmsInfo.toString());
+        McuPostMsg mcuPostMsg = new McuPostMsg(accountToken);
+        mcuPostMsg.setParams(sendSmsInfo);
+        McuBaseResponse sendSmsResponse = restClientService.exchange(url.toString(), HttpMethod.POST, mcuPostMsg.getMsg(), urlencodeMediaType, args, McuBaseResponse.class);
+
+        if (null == sendSmsResponse) {
+            return McuStatus.Unknown;
+        }
+
+        if (sendSmsResponse.success()) {
+            return McuStatus.OK;
+        }
+
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "sendSmsreSponse.getError_code() :" + sendSmsResponse.getError_code());
+        System.out.println("sendSmsreSponse.getError_code() :" + sendSmsResponse.getError_code());
+        return McuStatus.resolve(sendSmsResponse.getError_code());
+    }
+
 
     @Scheduled(initialDelay = heartbeatInterval, fixedRate = heartbeatInterval)
     public void doHearbeat() {

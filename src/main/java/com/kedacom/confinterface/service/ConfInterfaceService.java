@@ -126,7 +126,7 @@ public class ConfInterfaceService {
     @Async("confTaskExecutor")
     public void joinConference(JoinConferenceRequest joinConferenceRequest) {
         if (!baseSysConfig.isUseMcu()) {
-            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE," 1 : not support this method joinConference !");
+            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, " 1 : not support this method joinConference !");
             joinConferenceRequest.makeErrorResponseMsg(ConfInterfaceResult.NOT_SUPPORT_METHOD.getCode(), HttpStatus.OK, ConfInterfaceResult.NOT_SUPPORT_METHOD.getMessage());
             return;
         }
@@ -292,7 +292,7 @@ public class ConfInterfaceService {
     @Async("confTaskExecutor")
     public void leftConference(LeftConferenceRequest leftConferenceRequest) {
         if (!baseSysConfig.isUseMcu()) {
-            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE," 1 : not support this method leftConference !");
+            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, " 1 : not support this method leftConference !");
             leftConferenceRequest.makeErrorResponseMsg(ConfInterfaceResult.NOT_SUPPORT_METHOD.getCode(), HttpStatus.OK, ConfInterfaceResult.NOT_SUPPORT_METHOD.getMessage());
             return;
         }
@@ -354,7 +354,7 @@ public class ConfInterfaceService {
     @Async("confTaskExecutor")
     public void setBroadcastSrc(BroadCastRequest broadCastRequest) {
         if (!baseSysConfig.isUseMcu()) {
-            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE," 1 : not support this method setBroadcastSrc !");
+            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, " 1 : not support this method setBroadcastSrc !");
             broadCastRequest.makeErrorResponseMsg(ConfInterfaceResult.NOT_SUPPORT_METHOD.getCode(), HttpStatus.OK, ConfInterfaceResult.NOT_SUPPORT_METHOD.getMessage());
             return;
         }
@@ -428,7 +428,7 @@ public class ConfInterfaceService {
     @Async("confTaskExecutor")
     public void cancelBroadcast(CancelBroadCastRequest cancelBroadCastRequest) {
         if (!baseSysConfig.isUseMcu()) {
-            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE," 1 : not support this method cancelBroadcast !");
+            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, " 1 : not support this method cancelBroadcast !");
             cancelBroadCastRequest.makeErrorResponseMsg(ConfInterfaceResult.NOT_SUPPORT_METHOD.getCode(), HttpStatus.OK, ConfInterfaceResult.NOT_SUPPORT_METHOD.getMessage());
             return;
         }
@@ -461,7 +461,7 @@ public class ConfInterfaceService {
     @Async("confTaskExecutor")
     public void joinDiscussionGroup(JoinDiscussionGroupRequest joinDiscussionGroupRequest) {
         if (!baseSysConfig.isUseMcu()) {
-            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE," 1 : not support this method joinDiscussionGroup !");
+            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, " 1 : not support this method joinDiscussionGroup !");
             joinDiscussionGroupRequest.makeErrorResponseMsg(ConfInterfaceResult.NOT_SUPPORT_METHOD.getCode(), HttpStatus.OK, ConfInterfaceResult.NOT_SUPPORT_METHOD.getMessage());
             return;
         }
@@ -492,7 +492,7 @@ public class ConfInterfaceService {
     @Async("confTaskExecutor")
     public void leftDiscussionGroup(LeftDiscussionGroupRequest leftDiscussionGroupRequest) {
         if (!baseSysConfig.isUseMcu()) {
-            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE," 1 : not support this method leftDiscussionGroup !");
+            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, " 1 : not support this method leftDiscussionGroup !");
             leftDiscussionGroupRequest.makeErrorResponseMsg(ConfInterfaceResult.NOT_SUPPORT_METHOD.getCode(), HttpStatus.OK, ConfInterfaceResult.NOT_SUPPORT_METHOD.getMessage());
             return;
         }
@@ -572,7 +572,7 @@ public class ConfInterfaceService {
     @Async("confTaskExecutor")
     public void startInspection(InspectionRequest inspectionRequest) {
         if (!baseSysConfig.isUseMcu()) {
-            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE," 1 : not support this method startInspection !");
+            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, " 1 : not support this method startInspection !");
             inspectionRequest.makeErrorResponseMsg(ConfInterfaceResult.NOT_SUPPORT_METHOD.getCode(), HttpStatus.OK, ConfInterfaceResult.NOT_SUPPORT_METHOD.getMessage());
             return;
         }
@@ -778,7 +778,7 @@ public class ConfInterfaceService {
     @Async("confTaskExecutor")
     public void cancelInspection(CancelInspectionRequest cancelInspectionRequest) {
         if (!baseSysConfig.isUseMcu()) {
-            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE," 1 : not support this method cancelInspection !");
+            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, " 1 : not support this method cancelInspection !");
             cancelInspectionRequest.makeErrorResponseMsg(ConfInterfaceResult.NOT_SUPPORT_METHOD.getCode(), HttpStatus.OK, ConfInterfaceResult.NOT_SUPPORT_METHOD.getMessage());
             return;
         }
@@ -883,7 +883,6 @@ public class ConfInterfaceService {
 
     @Async("confTaskExecutor")
     public void ctrlCamera(CameraCtrlRequest cameraCtrlRequest) {
-
         String groupId = cameraCtrlRequest.getGroupId();
         CameraCtrlParam cameraCtrlParam = cameraCtrlRequest.getCameraCtrlParam();
         String resourceId = cameraCtrlParam.getResourceId();
@@ -928,7 +927,7 @@ public class ConfInterfaceService {
             }
 
             boolean bOK = vmtService.ctrlCamera(cameraCtrlParam.getState(), cameraCtrlParam.getType());
-            if (!bOK){
+            if (!bOK) {
                 LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50007 : protocol control camera failed!");
                 cameraCtrlRequest.makeErrorResponseMsg(ConfInterfaceResult.CONTROL_CAMERA.getCode(), HttpStatus.OK, ConfInterfaceResult.CONTROL_CAMERA.getMessage());
                 return;
@@ -1038,7 +1037,7 @@ public class ConfInterfaceService {
     @Async("confTaskExecutor")
     public void silenceOrMute(CtrlSilenceOrMuteRequest ctrlSilenceOrMuteRequest) {
         if (!baseSysConfig.isUseMcu()) {
-            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE," 1 : not support this method silenceOrMute !");
+            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, " 1 : not support this method silenceOrMute !");
             ctrlSilenceOrMuteRequest.makeErrorResponseMsg(ConfInterfaceResult.NOT_SUPPORT_METHOD.getCode(), HttpStatus.OK, ConfInterfaceResult.NOT_SUPPORT_METHOD.getMessage());
             return;
         }
@@ -1171,7 +1170,7 @@ public class ConfInterfaceService {
     public void p2pCall(P2PCallRequest p2PCallRequest, P2PCallParam p2PCallParam) {
         final String groupId = p2PCallRequest.getGroupId();
         String mtAccount = p2PCallParam.getAccount();
-        if(p2PCallParam.getAccountType() ==2 && !h323ProtocalConfig.isUseGK()){
+        if (p2PCallParam.getAccountType() == 2 && !h323ProtocalConfig.isUseGK()) {
             LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50027 : " + " Unused GK , Use E164 call failed : " + groupId);
             System.out.println("50027 : " + " Unused GK , Use E164 call failed : " + groupId);
             p2PCallRequest.makeErrorResponseMsg(ConfInterfaceResult.ACCOUNT_E164_INVALID.getCode(), HttpStatus.OK, ConfInterfaceResult.ACCOUNT_E164_INVALID.getMessage());
@@ -1227,8 +1226,8 @@ public class ConfInterfaceService {
             } else {
                 vmtService.delWaitMsg(waitMsg);
                 //加上终端呼叫失败的错误码
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "callRemoteCap faileCode" + terminalOfflineReasonEnum.getCode());
-                System.out.println("callRemoteCap faileCode" + terminalOfflineReasonEnum.getCode());
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "mtAccount : " + mtAccount + ", callRemoteCap faileCode : " + terminalOfflineReasonEnum.getCode());
+                System.out.println("mtAccount : " + mtAccount + ", callRemoteCap faileCode : " + terminalOfflineReasonEnum.getCode());
                 TerminalManageService.publishStatus(mtAccount, groupId, TerminalOnlineStatusEnum.OFFLINE.getCode(), terminalOfflineReasonEnum.getCode());
                 //vmtService.publishStatus(mtAccount, TerminalOnlineStatusEnum.OFFLINE.getCode(),callRemoteCap.getTerminalOnlineStatusEnum().getCode());
                 terminalManageService.freeVmt(vmtService.getE164());
@@ -1291,9 +1290,7 @@ public class ConfInterfaceService {
             if (p2PCallGroup.getCallMap().isEmpty()) {
                 p2pCallGroupMap.remove(groupId);
             }
-
             //cancelP2PCallRequest.makeSuccessResponseMsg();
-
         } else {
             LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "cancelP2PCall, 50025 : p2p cancelCallMt failed!");
             System.out.println("cancelP2PCall, 50025 : p2p cancelCallMt failed!");
@@ -1361,7 +1358,7 @@ public class ConfInterfaceService {
             startDualStreamRequest.makeErrorResponseMsg(ConfInterfaceResult.GROUP_NOT_EXIST.getCode(), HttpStatus.OK, ConfInterfaceResult.GROUP_NOT_EXIST.getMessage());
             return;
         }
-        LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"p2pctrlDualStream mtE164 : " + mtE164);
+        LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "p2pctrlDualStream mtE164 : " + mtE164);
         System.out.println("p2pctrlDualStream mtE164 : " + mtE164);
         TerminalService vmt = p2PCallGroup.getVmt(mtE164);
         if (null != vmt) {
@@ -1371,6 +1368,7 @@ public class ConfInterfaceService {
             startDualStreamRequest.makeErrorResponseMsg(ConfInterfaceResult.MAINSTREAM_NOT_EXIST.getCode(), HttpStatus.OK, ConfInterfaceResult.MAINSTREAM_NOT_EXIST.getMessage());
         }
     }
+
     @Async("confTaskExecutor")
     public boolean inspectionMt(GroupConfInfo groupConfInfo, String mode, String srcMtId, String dstMtId, InspectionRequest inspectionRequest) {
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "inspectionMt, mode:" + mode + ", srcMtId:" + srcMtId + ", dstMtId:" + dstMtId);
@@ -1822,6 +1820,73 @@ public class ConfInterfaceService {
                 LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50023 : close logical channel failed!");
                 ctrlDualStreamRequest.makeErrorResponseMsg(ConfInterfaceResult.CLOSE_CHANNEL.getCode(), HttpStatus.OK, ConfInterfaceResult.CLOSE_CHANNEL.getMessage());
             }
+        }
+    }
+
+    @Async("confTaskExecutor")
+    public void sendSms(SendSmsRequest sendSmsRequest) {
+        String groupId = sendSmsRequest.getGroupId();
+        GroupConfInfo groupConfInfo = groupConfInfoMap.get(groupId);
+        List<Terminal> mts = sendSmsRequest.getSendSmsParam().getMts();
+        if (null != groupConfInfo) {
+            String confId = groupConfInfo.getConfId();
+            if ("".equals(confId)) {
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, " sendSms confId is empty confid :　" + confId);
+                System.out.println("sendSms confId is empty  confid :　" + confId);
+                sendSmsRequest.makeErrorResponseMsg(ConfInterfaceResult.CONF_NOT_EXIT.getCode(), HttpStatus.OK, ConfInterfaceResult.CONF_NOT_EXIT.getMessage());
+                return;
+            }
+            List<TerminalId> smsInfoMts = new ArrayList<>();
+            for (Terminal mt : mts) {
+                TerminalService member = groupConfInfo.getMember(mt.getMtE164());
+                if (member == null) {
+                    continue;
+                }
+                TerminalId terminalId = new TerminalId(member.getMtId());
+                smsInfoMts.add(terminalId);
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "sendSms mtIdMap E164 or ip : " + mt.getMtE164() + ", member mt_id : " + member.getMtId());
+                System.out.println("sendSms mtIdMap E164 or ip : " + mt.getMtE164() + ", member mt_id : " + member.getMtId());
+
+            }
+            McuStatus mcuStatus = mcuRestClientService.sendMsm(confId, sendSmsRequest.getSendSmsParam(), smsInfoMts);
+            if (mcuStatus.getValue() == 0) {
+                sendSmsRequest.makeSuccessResponseMsg();
+            } else {
+                LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50031 send message failed! " + mcuStatus.getDescription());
+                sendSmsRequest.makeErrorResponseMsg(ConfInterfaceResult.SEND_SMS_FAILED.getCode(), HttpStatus.OK, mcuStatus.getDescription());
+            }
+        } else {
+            //如果点对点呼叫，则通过H323协议栈进行控制
+            P2PCallGroup p2PCallGroup = p2pCallGroupMap.get(groupId);
+            if (null == p2PCallGroup) {
+                LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "sendSms 50002 : P2P group not exist!");
+                sendSmsRequest.makeErrorResponseMsg(ConfInterfaceResult.GROUP_NOT_EXIST.getCode(), HttpStatus.OK, ConfInterfaceResult.GROUP_NOT_EXIST.getMessage());
+                return;
+            }
+            boolean bOk = false;
+            for (Terminal mt : mts) {
+                TerminalService vmt = p2PCallGroup.getVmt(mt.getMtE164());
+                if (vmt == null) {
+                    LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"sendSms vmt is null **********");
+                    System.out.println("sendSms vmt is null **********");
+                    continue;
+                }
+                boolean boo = vmt.sendSms(sendSmsRequest.getSendSmsParam().getMessage(),sendSmsRequest.getSendSmsParam().getRollNum(),sendSmsRequest.getSendSmsParam().getRollSpeed());
+                if(boo){
+                    Terminal terminal = new Terminal(mt.getMtE164());
+                    sendSmsRequest.addMtE164(terminal);
+                }
+                bOk |= boo;
+                LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"mt : " + mt.getMtE164() + ", vmtAccount : " + vmt.getE164()  + ", sendSms bOK : " +bOk +", b : " +boo);
+                System.out.println("mt : " + mt.getMtE164() + ", vmtAccount : " + vmt.getE164()  + ", sendSms bOK : " +bOk +", b : " +boo);
+            }
+            if (!bOk) {
+                //如果失败，则表明发送短消息均失败,直接回复失败
+                LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50031 send message failed!!");
+                sendSmsRequest.makeErrorResponseMsg(ConfInterfaceResult.SEND_SMS_FAILED.getCode(), HttpStatus.OK, ConfInterfaceResult.INSPECTION.getMessage());
+                return;
+            }
+            sendSmsRequest.makeSuccessResponseMsg();
         }
     }
 
