@@ -91,6 +91,7 @@ public class H323ProtocalConfig {
     @Autowired
     protected BaseSysConfig baseSysConfig;
 
+
     private boolean useGK = true;
     private String gkIp = "172.16.119.66";
     private int gkRasPort = 1719;

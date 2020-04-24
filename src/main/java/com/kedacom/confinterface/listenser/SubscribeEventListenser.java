@@ -456,24 +456,25 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
         String confId = parseResult[2];
         if (parseResult.length == 3) {
             //会议信息订阅
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "get conf info subscribe message, channel :" + channel);
-            System.out.println("get conf info subscribe message, channel :" + channel);
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "confProcessSubscribeMsg get conf info subscribe message, channel :" + channel);
+            System.out.println("confProcessSubscribeMsg get conf info subscribe message, channel :" + channel);
             if (method.equals(SubscribeMethodEnum.DELETE.getName())) {
-                System.out.println("remove confInfo confId : " + confId + "groupId : " + confInterfaceService.getConfGroupMap().get(confId));
+                /*System.out.println("remove confInfo confId : " + confId + "groupId : " + confInterfaceService.getConfGroupMap().get(confId));
                 String groupID = confInterfaceService.getConfGroupMap().get(confId);
                 GroupConfInfo groupConfInfo = confInterfaceService.getGroupConfInfoMap().get(groupID);
                 confInterfaceService.delGroupConfInfo(groupConfInfo);
-                TerminalManageService.publishStatus(groupID, groupID, TerminalOnlineStatusEnum.OFFLINE.getCode());
+                groupConfInfo.cancelGroup();
+                TerminalManageService.publishStatus(groupID, groupID, TerminalOnlineStatusEnum.OFFLINE.getCode());*/
             } else {
                 String groupID = UUID.randomUUID().toString().replaceAll("\\-", "");
                 GroupConfInfo groupConfInfo = new GroupConfInfo(groupID, confId);
                 groupConfInfo.setCreatedConf("mcu");
                 confInterfaceService.addGroupConfInfo(groupConfInfo);
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "get conf info subscribe message add ConfId : " + confId + "groupId : " + groupID);
-                System.out.println("get conf info subscribe message add ConfId : " + confId + "groupId : " + groupID);
+                TerminalManageService.publishStatus(groupID, groupID, TerminalOnlineStatusEnum.ONLINE.getCode());
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "get conf info subscribe message add ConfId and publishStatus confinterface create : " + confId + "groupId : " + groupID);
+                System.out.println("get conf info subscribe message add ConfId and publishStatus confinterface create : " + confId + "groupId : " + groupID);
 
             }
-
         }
     }
 
@@ -565,8 +566,8 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
             System.out.println("get speaker subscribe message, channel :" + channel);
         } else if (parseResult.length == 3) {
             //会议信息订阅
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "get conf info subscribe message, channel :" + channel);
-            System.out.println("get conf info subscribe message, channel :" + channel);
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processSubscribeMsg get conf info subscribe message, channel :" + channel);
+            System.out.println("processSubscribeMsg get conf info subscribe message, channel :" + channel);
             if (!method.equals(SubscribeMethodEnum.DELETE.getName())) {
                 return;
             }

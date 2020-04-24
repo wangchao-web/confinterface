@@ -129,6 +129,11 @@ public class H323TerminalManageService extends TerminalManageService implements 
     @Override
     @Async("confTaskExecutor")
     public void OnInvited(String participantid, ConferenceInfo conferenceInfo) {
+        if(!protocalConfig.getBaseSysConfig().getCalled()){
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "OnInvited, participantid called is false ********** " + ", threadName:" + Thread.currentThread().getName());
+            System.out.println("OnInvited, participantid called is false ********** " + ", threadName:" + Thread.currentThread().getName());
+            return;
+        }
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "OnInvited, participantid : " + participantid + ", confId : " + conferenceInfo.getId() + ", threadName:" + Thread.currentThread().getName());
         System.out.println("OnInvited, participantid : " + participantid + ", confId : " + conferenceInfo.getId() + ", threadName:" + Thread.currentThread().getName());
         TerminalService terminalService = usedVmtServiceMap.get(participantid);
@@ -500,6 +505,11 @@ public class H323TerminalManageService extends TerminalManageService implements 
         }
 
         resourceIds.clear();
+    }
+
+    @Override
+    public void OnKeyFrameRequested(String s, int i) {
+
     }
 
     private void ResumeDualStream(H323TerminalService terminalService) {

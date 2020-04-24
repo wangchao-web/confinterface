@@ -46,11 +46,11 @@ public class SendSmsInfo {
         this.roll_speed = roll_speed;
     }
 
-    public List<TerminalIdInfo> getMts() {
+    public List<TerminalId> getMts() {
         return mts;
     }
 
-    public void setMts(List<TerminalIdInfo> mts) {
+    public void setMts(List<TerminalId> mts) {
         this.mts = mts;
     }
 
@@ -68,5 +68,5 @@ public class SendSmsInfo {
     private int type;         //短消息类型0-自右至左滚动；1-翻页滚动；2-全页滚动；
     private int roll_num;    //滚动次数 1-255 新版本终端255为无限轮询
     private int roll_speed;   //滚动速度1-慢速；2-中速；3-快速；
-    private List<TerminalIdInfo> mts;
+    private List<TerminalId> mts;
 }

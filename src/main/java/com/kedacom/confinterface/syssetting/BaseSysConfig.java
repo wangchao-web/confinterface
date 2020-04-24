@@ -267,6 +267,14 @@ public class BaseSysConfig {
         this.mcuMode = mcuMode;
     }
 
+    public Boolean getCalled() {
+        return isCalled;
+    }
+
+    public void setCalled(Boolean called) {
+        isCalled = called;
+    }
+
     private String mcuMode = "mcu";
     private String localIp = "172.16.64.25";
     private String mediaSrvIp = "172.16.64.25";
@@ -309,4 +317,6 @@ public class BaseSysConfig {
 
     private List<VideoCap> videoCapList;
     private List<AudioCap> audioCapList;
+
+    private Boolean isCalled = false;  //是否被叫
 }

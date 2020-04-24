@@ -1504,8 +1504,8 @@ public class ConfInterfaceService {
                 vmtService.delWaitMsg(waitMsg);
                 //vmtService.publishStatus(mtAccount, TerminalOnlineStatusEnum.OFFLINE.getCode());
                 //加上终端呼叫失败的错误码
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "callRemoteCap faileCode" + terminalOfflineReasonEnum.getCode());
-                System.out.println("callRemoteCap faileCode" + terminalOfflineReasonEnum.getCode());
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "mtAccount : " + mtAccount + ", callRemoteCap faileCode : " + terminalOfflineReasonEnum.getCode());
+                System.out.println("mtAccount : " + mtAccount + ", callRemoteCap faileCode : " + terminalOfflineReasonEnum.getCode());
                 TerminalManageService.publishStatus(mtAccount, groupId, TerminalOnlineStatusEnum.OFFLINE.getCode(), terminalOfflineReasonEnum.getCode());
                 //vmtService.publishStatus(mtAccount, TerminalOnlineStatusEnum.OFFLINE.getCode(),callRemoteCap.getTerminalOnlineStatusEnum().getCode());
                 terminalManageService.freeVmt(vmtService.getE164());
@@ -1964,7 +1964,7 @@ public class ConfInterfaceService {
         if (mcuStatus.getValue() > 0) {
             return false;
         }
-        //vmtServiceForSrc.setInspectionAndInspectioned(true);
+
         return true;
     }
 
@@ -2130,7 +2130,6 @@ public class ConfInterfaceService {
         }
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "confGroupMap : " + confGroupMap);
         System.out.println("confGroupMap : " + confGroupMap);
-        mcuRestClientService.subscribeAllConfInfo();
         if (confGroupMap == null || confGroupMap.isEmpty()) {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "confGroupMap is null or empty  ****************   ");
             System.out.println("confGroupMap is null or empty  ****************   ");
@@ -2369,7 +2368,7 @@ public class ConfInterfaceService {
             sendSmsRequest.makeErrorResponseMsg(ConfInterfaceResult.CONF_NOT_EXIT.getCode(), HttpStatus.OK, ConfInterfaceResult.CONF_NOT_EXIT.getMessage());
             return;
         }
-        List<TerminalIdInfo> smsInfoMts = new ArrayList<>();
+        List<TerminalId> smsInfoMts = new ArrayList<>();
         List<Terminal> mts = sendSmsRequest.getSendSmsParam().getMts();
         //ConcurrentHashMap<String, String> mtIdMap = groupConfInfo.getMtIdMap();
         for (Terminal mt : mts) {
@@ -2377,9 +2376,8 @@ public class ConfInterfaceService {
             if (member == null) {
                 continue;
             }
-            TerminalIdInfo terminalIdInfo = new TerminalIdInfo();
-            terminalIdInfo.setMt_id(member.getMtId());
-            smsInfoMts.add(terminalIdInfo);
+            TerminalId terminalId = new TerminalId(member.getMtId());
+            smsInfoMts.add(terminalId);
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "sendSms mtIdMap E164 or ip : " + mt.getMtE164() + ", member mt_id : " + member.getMtId());
             System.out.println("sendSms mtIdMap E164 or ip : " + mt.getMtE164() + ", member mt_id : " + member.getMtId());
 
@@ -2388,12 +2386,11 @@ public class ConfInterfaceService {
         if (mcuStatus.getValue() == 0) {
             sendSmsRequest.makeSuccessResponseMsg();
         } else {
-            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50030 send message failed! " + mcuStatus.getDescription());
+            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50031 send message failed! " + mcuStatus.getDescription());
             sendSmsRequest.makeErrorResponseMsg(ConfInterfaceResult.SEND_SMS_FAILED.getCode(), HttpStatus.OK, mcuStatus.getDescription());
         }
 
     }
-
 
     @Async("confTaskExecutor")
     public void queryConfMtInfo(GetConfMtRequest getConfMtRequest) {
@@ -2439,7 +2436,7 @@ public class ConfInterfaceService {
         }
         ConfMtInfo confMtInfo = new ConfMtInfo(getConfMtInfoResponse.getE164(), getConfMtInfoResponse.getIp(), getConfMtInfoResponse.getType(), getConfMtInfoResponse.getOnline(),
                 getConfMtInfoResponse.getAlias(), getConfMtInfoResponse.getBitrate(), getConfMtInfoResponse.getMt_id(), getConfMtInfoResponse.getSilence(),
-                getConfMtInfoResponse.getMute(), getConfMtInfoResponse.getInspection(), getConfMtInfoResponse.getMix(),getConfMtInfoResponse.getVmp());
+                getConfMtInfoResponse.getMute(), getConfMtInfoResponse.getInspection(), getConfMtInfoResponse.getMix(), getConfMtInfoResponse.getVmp());
         confMtInfo.setSndVolume(getConfMtInfoResponse.getSnd_volume());
         confMtInfo.setRcvVolume(getConfMtInfoResponse.getRcv_volume());
 
@@ -2450,12 +2447,12 @@ public class ConfInterfaceService {
                 if (null == confinspections) {
                     LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "confinspections member is null  E164 :　" + getConfMtRequest.getMtE164());
                     System.out.println("confinspections member is null  E164 :　" + getConfMtRequest.getMtE164());
-                }else{
+                } else {
                     ArrayList<McuInspectionParam> inspections = confinspections.getInspections();
-                    for(McuInspectionParam inspection :  inspections){
-                        if(member.getMtId().equals(inspection.getDst().getMt_id())){
-                            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE," member MtId  : "+member.getMtId() + "inspection Dst MtId : " +inspection.getDst().getMt_id());
-                            System.out.println(" member MtId  : "+member.getMtId() + "inspection Dst MtId : " +inspection.getDst().getMt_id());
+                    for (McuInspectionParam inspection : inspections) {
+                        if (member.getMtId().equals(inspection.getDst().getMt_id())) {
+                            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, " member MtId  : " + member.getMtId() + "inspection Dst MtId : " + inspection.getDst().getMt_id());
+                            System.out.println(" member MtId  : " + member.getMtId() + "inspection Dst MtId : " + inspection.getDst().getMt_id());
                             String e164 = groupConfInfo.getE164(inspection.getSrc().getMt_id());
                             confMtInfo.setInspectionSrcE164(e164);
                             break;
@@ -2463,8 +2460,8 @@ public class ConfInterfaceService {
                     }
                 }
             } else {
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"inspectionParam is not null E164 : " +inspectionParam.getMtE164() +", mode :"+inspectionParam.getMode());
-                System.out.println("inspectionParam is not null E164 : " +inspectionParam.getMtE164() +", mode :"+inspectionParam.getMode());
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "inspectionParam is not null E164 : " + inspectionParam.getMtE164() + ", mode :" + inspectionParam.getMode());
+                System.out.println("inspectionParam is not null E164 : " + inspectionParam.getMtE164() + ", mode :" + inspectionParam.getMode());
                 confMtInfo.setInspectionSrcE164(inspectionParam.getMtE164());
             }
         }
@@ -2474,6 +2471,504 @@ public class ConfInterfaceService {
         getConfMtRequest.makeSuccessResponseMsg();
 
     }
+
+    @Async("confTaskExecutor")
+    public void vmps(StartVmpsRequest startVmpsRequest, String vmps) {
+        if (!baseSysConfig.isUseMcu()) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Vmps function is not use mcu");
+            System.out.println("Vmps function  is not use mcu");
+            startVmpsRequest.makeErrorResponseMsg(ConfInterfaceResult.NOT_SUPPORT_METHOD.getCode(), HttpStatus.OK, ConfInterfaceResult.NOT_SUPPORT_METHOD.getMessage());
+            return;
+        }
+
+        String groupId = startVmpsRequest.getGroupId();
+        GroupConfInfo groupConfInfo = groupConfInfoMap.get(groupId);
+        if (null == groupConfInfo) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Vmps function , not found groupId : " + startVmpsRequest.getGroupId());
+            System.out.println("Vmps function , not found groupId : " + startVmpsRequest.getGroupId());
+            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50002 : group not exist!");
+            startVmpsRequest.makeErrorResponseMsg(ConfInterfaceResult.GROUP_NOT_EXIST.getCode(), HttpStatus.OK, ConfInterfaceResult.GROUP_NOT_EXIST.getMessage());
+            return;
+        }
+        String confId = groupConfInfo.getConfId();
+        if ("".equals(confId)) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, " Vmps function confId is empty confid :　" + confId);
+            System.out.println("Vmps function confId is empty  confid :　" + confId);
+            startVmpsRequest.makeErrorResponseMsg(ConfInterfaceResult.CONF_NOT_EXIT.getCode(), HttpStatus.OK, ConfInterfaceResult.CONF_NOT_EXIT.getMessage());
+            return;
+        }
+        VmpsParam vmpsParam = startVmpsRequest.getVmpsParam();
+
+        McuVmpsParam mcuVmpsParam = new McuVmpsParam(vmpsParam.getMode(), vmpsParam.getLayout(), vmpsParam.getBroadcast(), vmpsParam.getVoiceHint(), vmpsParam.getShowMtName());
+        ArrayList<McuVmpsMembersInfo> mcuVmpsMembersInfos = new ArrayList<>();
+        MtNameStyle mtNameStyle = vmpsParam.getMtNameStyle();
+        McuMtNamStyle mcuMtNamStyle;
+        if (mtNameStyle == null) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Vmps function mtNameStyle is null ******");
+            System.out.println("Vmps function mtNameStyle is null ******");
+            mcuMtNamStyle = new McuMtNamStyle();
+        } else {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Vmps function mtNameStyle is not null mtNameStyle : " + mtNameStyle.toString());
+            System.out.println("Vmps function mtNameStyle is not null mtNameStyle : " + mtNameStyle.toString());
+            mcuMtNamStyle = new McuMtNamStyle(vmpsParam.getMtNameStyle().getFontSize(), vmpsParam.getMtNameStyle().getFontColor(), vmpsParam.getMtNameStyle().getPosition());
+        }
+        mcuVmpsParam.setMt_name_style(mcuMtNamStyle);
+
+        if (vmpsParam.getMode() == 1) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Vmps function mode : " + vmpsParam.getMode());
+            System.out.println("Vmps function mode : " + vmpsParam.getMode());
+            ArrayList<VmpsMembersInfo> members = vmpsParam.getMembers();
+            for (VmpsMembersInfo vmpsMembersInfo : members) {
+                McuVmpsMembersInfo mcuVmpsMembersInfo = new McuVmpsMembersInfo(vmpsMembersInfo.getChnIdx(), vmpsMembersInfo.getMemberType());
+                if (vmpsMembersInfo.getMemberType() == 1) {
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Vmps function MemberType : " + vmpsMembersInfo.getMemberType());
+                    System.out.println("Vmps function MemberType : " + vmpsMembersInfo.getMemberType());
+                    TerminalService terminalService = groupConfInfo.getMtMember(vmpsMembersInfo.getMtE164());
+                    if (terminalService != null) {
+                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Vmps function mt_id : " + terminalService.getMtId());
+                        System.out.println("Vmps function mt_id : " + terminalService.getMtId());
+                        mcuVmpsMembersInfo.setMt_id(terminalService.getMtId());
+                    }
+                }
+                if (vmpsMembersInfo.getMemberType() == 6) {
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Vmps function MemberType : " + vmpsMembersInfo.getMemberType());
+                    System.out.println("Vmps function MemberType : " + vmpsMembersInfo.getMemberType());
+                    SingleChannelPollInfo poll = vmpsMembersInfo.getPoll();
+                    MCuSingChannelPollInfo mcuPoll = new MCuSingChannelPollInfo(poll.getNum(), poll.getKeepTime());
+                    List<TerminalId> mcuTerminlId = new ArrayList<>();
+                    List<Terminal> terminals = poll.getMembers();
+                    for (Terminal terminal : terminals) {
+                        TerminalService mt = groupConfInfo.getMtMember(terminal.getMtE164());
+                        if (null != mt) {
+                            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Vmps function mcuTerminalId : " + mt.getMtId());
+                            System.out.println("Vmps function mcuTerminalId : " + mt.getMtId());
+                            TerminalId terminalId = new TerminalId(mt.getMtId());
+                            mcuTerminlId.add(terminalId);
+                        }
+                    }
+                    mcuPoll.setMembers(mcuTerminlId);
+                    mcuVmpsMembersInfo.setPoll(mcuPoll);
+                }
+                mcuVmpsMembersInfos.add(mcuVmpsMembersInfo);
+            }
+            mcuVmpsParam.setMembers(mcuVmpsMembersInfos);
+        }
+        if (vmpsParam.getMode() == 2) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Vmps function mode : " + vmpsParam.getMode());
+            System.out.println("Vmps function mode : " + vmpsParam.getMode());
+            mcuVmpsParam.setMembers(mcuVmpsMembersInfos);
+        }
+        if (vmpsParam.getMode() == 3 || vmpsParam.getMode() == 4) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Vmps function mode : " + vmpsParam.getMode() + ", poll : " + vmpsParam.getPoll().toString());
+            System.out.println("Vmps function mode : " + vmpsParam.getMode() + ", poll : " + vmpsParam.getPoll().toString());
+            MCuSingChannelPollInfo mCuSingChannelPollInfo = new MCuSingChannelPollInfo(vmpsParam.getPoll().getNum(), vmpsParam.getPoll().getKeepTime());
+            List<TerminalId> terminalIds = new ArrayList<>();
+            if (vmpsParam.getMode() == 4) {
+                List<Terminal> members = vmpsParam.getPoll().getMembers();
+                for (Terminal member : members) {
+                    TerminalService mtService = groupConfInfo.getMtMember(member.getMtE164());
+                    if (null != mtService) {
+                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Vmps function terminalId : " + mtService.getMtId());
+                        System.out.println("Vmps function  terminalId: " + mtService.getMtId());
+                        TerminalId terminalId = new TerminalId(mtService.getMtId());
+                        terminalIds.add(terminalId);
+                    }
+                }
+            }
+            mcuVmpsParam.setMembers(mcuVmpsMembersInfos);
+            mCuSingChannelPollInfo.setMembers(terminalIds);
+            mcuVmpsParam.setPoll(mCuSingChannelPollInfo);
+        }
+        McuStatus mcuStatus;
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "vmps : " + vmps);
+        System.out.println("vmps : " + vmps);
+        if (vmps.equals("start")) {
+            mcuStatus = mcuRestClientService.startVmps(confId, mcuVmpsParam);
+        } else {
+            mcuStatus = mcuRestClientService.updateVmps(confId, mcuVmpsParam);
+        }
+        if (mcuStatus.getValue() == 0) {
+            startVmpsRequest.makeSuccessResponseMsg();
+        } else {
+            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50033 start vmps! " + mcuStatus.getDescription());
+            startVmpsRequest.makeErrorResponseMsg(ConfInterfaceResult.START_VMPS.getCode(), HttpStatus.OK, mcuStatus.getDescription());
+        }
+
+    }
+
+    @Async("confTaskExecutor")
+    public void endVmps(DeleteVmpsRequest deleteVmpsRequest) {
+        if (!baseSysConfig.isUseMcu()) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "end Vmps function is not use mcu");
+            System.out.println("end Vmps function  is not use mcu");
+            deleteVmpsRequest.makeErrorResponseMsg(ConfInterfaceResult.NOT_SUPPORT_METHOD.getCode(), HttpStatus.OK, ConfInterfaceResult.NOT_SUPPORT_METHOD.getMessage());
+            return;
+        }
+
+        String groupId = deleteVmpsRequest.getGroupId();
+        GroupConfInfo groupConfInfo = groupConfInfoMap.get(groupId);
+        if (null == groupConfInfo) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "end Vmps , not found groupId : " + deleteVmpsRequest.getGroupId());
+            System.out.println("end Vmps , not found groupId : " + deleteVmpsRequest.getGroupId());
+            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50002 : group not exist!");
+            deleteVmpsRequest.makeErrorResponseMsg(ConfInterfaceResult.GROUP_NOT_EXIST.getCode(), HttpStatus.OK, ConfInterfaceResult.GROUP_NOT_EXIST.getMessage());
+            return;
+        }
+        String confId = groupConfInfo.getConfId();
+        if ("".equals(confId)) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, " end Vmps function confId is empty confid :　" + confId);
+            System.out.println("end Vmps function confId is empty  confid :　" + confId);
+            deleteVmpsRequest.makeErrorResponseMsg(ConfInterfaceResult.CONF_NOT_EXIT.getCode(), HttpStatus.OK, ConfInterfaceResult.CONF_NOT_EXIT.getMessage());
+            return;
+        }
+
+        McuStatus mcuStatus = mcuRestClientService.endVmps(confId);
+
+        if (mcuStatus.getValue() == 0) {
+            deleteVmpsRequest.makeSuccessResponseMsg();
+        } else {
+            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50034 end vmps failed! " + mcuStatus.getDescription());
+            deleteVmpsRequest.makeErrorResponseMsg(ConfInterfaceResult.END_VMPS.getCode(), HttpStatus.OK, mcuStatus.getDescription());
+        }
+
+    }
+
+    @Async("confTaskExecutor")
+    public void getVmpsInfo(GetVmpsRequest getVmpsRequest) {
+        if (!baseSysConfig.isUseMcu()) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "get Vmps info is not use mcu");
+            System.out.println("get Vmps info  is not use mcu");
+            getVmpsRequest.makeErrorResponseMsg(ConfInterfaceResult.NOT_SUPPORT_METHOD.getCode(), HttpStatus.OK, ConfInterfaceResult.NOT_SUPPORT_METHOD.getMessage());
+            return;
+        }
+
+        String groupId = getVmpsRequest.getGroupId();
+        GroupConfInfo groupConfInfo = groupConfInfoMap.get(groupId);
+        if (null == groupConfInfo) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "get Vmps info, not found groupId : " + getVmpsRequest.getGroupId());
+            System.out.println("get Vmps info , not found groupId : " + getVmpsRequest.getGroupId());
+            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50002 : group not exist!");
+            getVmpsRequest.makeErrorResponseMsg(ConfInterfaceResult.GROUP_NOT_EXIST.getCode(), HttpStatus.OK, ConfInterfaceResult.GROUP_NOT_EXIST.getMessage());
+            return;
+        }
+        String confId = groupConfInfo.getConfId();
+        if ("".equals(confId)) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, " get Vmps info confId is empty confid :　" + confId);
+            System.out.println("get Vmps info confId is empty  confid :　" + confId);
+            getVmpsRequest.makeErrorResponseMsg(ConfInterfaceResult.CONF_NOT_EXIT.getCode(), HttpStatus.OK, ConfInterfaceResult.CONF_NOT_EXIT.getMessage());
+            return;
+        }
+
+        McuGetVmpsInfoResponse mcuGetVmpsInfoResponse = mcuRestClientService.getVmpsInfo(confId);
+
+        if (null == mcuGetVmpsInfoResponse) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "mcuGetVmpsInfoResponse  is null ");
+            System.out.println("mcuGetVmpsInfoResponse  is null");
+            getVmpsRequest.makeErrorResponseMsg(ConfInterfaceResult.GET_MT_INFO_FAILED.getCode(), HttpStatus.OK, ConfInterfaceResult.GET_MT_INFO_FAILED.getMessage());
+            return;
+        }
+
+        ConcurrentHashMap<String, String> mtIdMap = groupConfInfo.getMtIdMap();
+        if (mtIdMap == null || mtIdMap.isEmpty()) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "get vmps info mtIdMap is null or empty ");
+            System.out.println("get vmps info mtIdMap is null or empty ");
+            getVmpsRequest.makeErrorResponseMsg(ConfInterfaceResult.GET_MT_INFO_FAILED.getCode(), HttpStatus.OK, ConfInterfaceResult.GET_MT_INFO_FAILED.getMessage());
+            return;
+        }
+
+        ArrayList<VmpsMembersInfo> vmpsMembersInfos = new ArrayList<>();
+
+        if (mcuGetVmpsInfoResponse.getMode() == 1 || mcuGetVmpsInfoResponse.getMode() == 2) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Vmps function mode : " + mcuGetVmpsInfoResponse.getMode());
+            System.out.println("get vmps info function mode : " + mcuGetVmpsInfoResponse.getMode());
+            ArrayList<McuVmpsMembersInfo> mcuVmpsMembersInfos = mcuGetVmpsInfoResponse.getMembers();
+            for (McuVmpsMembersInfo McuVmpsMembersInfo : mcuVmpsMembersInfos) {
+                VmpsMembersInfo vmpsMembersInfo = new VmpsMembersInfo(McuVmpsMembersInfo.getChn_idx(), McuVmpsMembersInfo.getMember_type());
+                if (McuVmpsMembersInfo.getMember_type() == 1) {
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "get Vmps info function MemberType : " + McuVmpsMembersInfo.getMember_type());
+                    System.out.println("get Vmps info function MemberType : " + McuVmpsMembersInfo.getMember_type());
+                    String E164 = mtIdMap.get(McuVmpsMembersInfo.getMt_id());
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "get vmps info mt_id : " + McuVmpsMembersInfo.getMt_id() + "E164 : " + E164);
+                    System.out.println("get vmps info mt_id : " + McuVmpsMembersInfo.getMt_id() + "E164 : " + E164);
+                    if (E164.isEmpty()) {
+                        continue;
+                    }
+                    vmpsMembersInfo.setMtE164(E164);
+                }
+                if (McuVmpsMembersInfo.getMember_type() == 6) {
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "get Vmps info function MemberType : " + McuVmpsMembersInfo.getMember_type());
+                    System.out.println("get Vmps info function MemberType : " + McuVmpsMembersInfo.getMember_type());
+                    MCuSingChannelPollInfo poll = McuVmpsMembersInfo.getPoll();
+                    SingleChannelPollInfo singleChannelPollInfo = new SingleChannelPollInfo(poll.getNum(), poll.getKeep_time());
+                    List<Terminal> mts = new ArrayList<>();
+                    List<TerminalId> terminalIds = poll.getMembers();
+
+                    for (TerminalId terminalId : terminalIds) {
+                        String E164 = mtIdMap.get(terminalId.getMt_id());
+                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "get vmps info mt_id : " + terminalId.getMt_id() + "E164 : " + E164);
+                        System.out.println("get vmps info mt_id : " + terminalId.getMt_id() + "E164 : " + E164);
+                        if (E164.isEmpty()) {
+                            continue;
+                        }
+                        Terminal terminal = new Terminal(E164);
+                        mts.add(terminal);
+                    }
+                    singleChannelPollInfo.setMembers(mts);
+                    vmpsMembersInfo.setPoll(singleChannelPollInfo);
+                }
+                vmpsMembersInfos.add(vmpsMembersInfo);
+            }
+            getVmpsRequest.setMembers(vmpsMembersInfos);
+        }
+
+        /*if (mcuGetVmpsInfoResponse.getMode() == 2) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "get Vmps info function mode : " + mcuGetVmpsInfoResponse.getMode());
+            System.out.println("get Vmps info function mode : " + mcuGetVmpsInfoResponse.getMode());
+            getVmpsRequest.setMembers(vmpsMembersInfos);
+        }*/
+        if (mcuGetVmpsInfoResponse.getMode() == 3 || mcuGetVmpsInfoResponse.getMode() == 4) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "get vmps info mode : " + mcuGetVmpsInfoResponse.getMode());
+            System.out.println("get vmps info mode : " + mcuGetVmpsInfoResponse.getMode());
+            SingleChannelPollInfo singleChannelPollInfo = new SingleChannelPollInfo(mcuGetVmpsInfoResponse.getPoll().getNum(), mcuGetVmpsInfoResponse.getPoll().getKeep_time());
+            List<Terminal> terminals = new ArrayList<>();
+            if (mcuGetVmpsInfoResponse.getMode() == 4) {
+                List<TerminalId> members = mcuGetVmpsInfoResponse.getPoll().getMembers();
+                for (TerminalId terminalId : members) {
+                    String E164 = mtIdMap.get(terminalId.getMt_id());
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "get vmps info mt_id : " + terminalId.getMt_id() + "E164 : " + E164);
+                    System.out.println("get vmps info mt_id : " + terminalId.getMt_id() + "E164 : " + E164);
+                    if (E164.isEmpty()) {
+                        continue;
+                    }
+                    Terminal terminal = new Terminal(E164);
+                    terminals.add(terminal);
+                }
+                singleChannelPollInfo.setMembers(terminals);
+            }
+            getVmpsRequest.setPoll(singleChannelPollInfo);
+        }
+
+        McuMtNamStyle mt_name_style = mcuGetVmpsInfoResponse.getMt_name_style();
+        MtNameStyle mtNameStyle = new MtNameStyle(mt_name_style.getFont_size(), mt_name_style.getFont_color(), mt_name_style.getPosition());
+
+        getVmpsRequest.getVmpsInfo(mcuGetVmpsInfoResponse.getMode(), mcuGetVmpsInfoResponse.getLayout(),
+                mcuGetVmpsInfoResponse.getBroadcast(), mcuGetVmpsInfoResponse.getVoice_hint(), mcuGetVmpsInfoResponse.getShow_mt_name(), mtNameStyle);
+
+        getVmpsRequest.makeSuccessResponseMsg();
+    }
+
+    @Async("confTaskExecutor")
+    public void startMixs(StartMixRequest startMixRequest) {
+        if (!baseSysConfig.isUseMcu()) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "srart mix function is not use mcu");
+            System.out.println("start mix function  is not use mcu");
+            startMixRequest.makeErrorResponseMsg(ConfInterfaceResult.NOT_SUPPORT_METHOD.getCode(), HttpStatus.OK, ConfInterfaceResult.NOT_SUPPORT_METHOD.getMessage());
+            return;
+        }
+
+        String groupId = startMixRequest.getGroupId();
+        GroupConfInfo groupConfInfo = groupConfInfoMap.get(groupId);
+        if (null == groupConfInfo) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "srart mix , not found groupId : " + groupId);
+            System.out.println("srart mix , not found groupId : " + groupId);
+            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50002 : group not exist!");
+            startMixRequest.makeErrorResponseMsg(ConfInterfaceResult.GROUP_NOT_EXIST.getCode(), HttpStatus.OK, ConfInterfaceResult.GROUP_NOT_EXIST.getMessage());
+            return;
+        }
+        String confId = groupConfInfo.getConfId();
+        if ("".equals(confId)) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, " srart mix function confId is empty confid :　" + confId);
+            System.out.println("srart mix function confId is empty  confid :　" + confId);
+            startMixRequest.makeErrorResponseMsg(ConfInterfaceResult.CONF_NOT_EXIT.getCode(), HttpStatus.OK, ConfInterfaceResult.CONF_NOT_EXIT.getMessage());
+            return;
+        }
+        MixsParam mixsParam = startMixRequest.getMixsParam();
+        McuStartMixparam mcuStartMixparam = new McuStartMixparam();
+        List<Terminal> members = mixsParam.getMembers();
+        ArrayList<TerminalId> terminalIds = new ArrayList<>();
+
+        if (mixsParam.getMode() == 2) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "start Mixs mode : " + mixsParam.getMode());
+            System.out.println("start Mixs mode : " + mixsParam.getMode());
+            for (Terminal terminal : members) {
+                TerminalService mtService = groupConfInfo.getMtMember(terminal.getMtE164());
+                if (null != mtService) {
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "start mix function terminalId : " + mtService.getMtId());
+                    System.out.println("start mix function  terminalId: " + mtService.getMtId());
+                    TerminalId terminalId = new TerminalId(mtService.getMtId());
+                    terminalIds.add(terminalId);
+                }
+            }
+        }
+        mcuStartMixparam.setMode(mixsParam.getMode());
+        mcuStartMixparam.setMembers(terminalIds);
+
+        McuStatus mcuStatus = mcuRestClientService.startMix(confId, mcuStartMixparam);
+
+        if (mcuStatus.getValue() == 0) {
+            startMixRequest.makeSuccessResponseMsg();
+        } else {
+            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50035 start mix failed! " + mcuStatus.getDescription());
+            startMixRequest.makeErrorResponseMsg(ConfInterfaceResult.START_MIXS.getCode(), HttpStatus.OK, mcuStatus.getDescription());
+        }
+
+    }
+
+    //结束混音
+    @Async("confTaskExecutor")
+    public void endMixs(EndMixRequest endMixRequest) {
+        if (!baseSysConfig.isUseMcu()) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "end Mix function is not use mcu");
+            System.out.println(" end Mixs function  is not use mcu");
+            endMixRequest.makeErrorResponseMsg(ConfInterfaceResult.NOT_SUPPORT_METHOD.getCode(), HttpStatus.OK, ConfInterfaceResult.NOT_SUPPORT_METHOD.getMessage());
+            return;
+        }
+
+        String groupId = endMixRequest.getGroupId();
+        GroupConfInfo groupConfInfo = groupConfInfoMap.get(groupId);
+        if (null == groupConfInfo) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, " end Mixs , not found groupId : " + groupId);
+            System.out.println(" end Mixs  , not found groupId : " + groupId);
+            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50002 : group not exist!");
+            endMixRequest.makeErrorResponseMsg(ConfInterfaceResult.GROUP_NOT_EXIST.getCode(), HttpStatus.OK, ConfInterfaceResult.GROUP_NOT_EXIST.getMessage());
+            return;
+        }
+        String confId = groupConfInfo.getConfId();
+        if ("".equals(confId)) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, " end Mixs function confId is empty confid :　" + confId);
+            System.out.println(" end Mixs function confId is empty  confid :　" + confId);
+            endMixRequest.makeErrorResponseMsg(ConfInterfaceResult.CONF_NOT_EXIT.getCode(), HttpStatus.OK, ConfInterfaceResult.CONF_NOT_EXIT.getMessage());
+            return;
+        }
+
+        McuStatus mcuStatus = mcuRestClientService.endMixs(confId);
+
+        if (mcuStatus.getValue() == 0) {
+            endMixRequest.makeSuccessResponseMsg();
+        } else {
+            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50037 end mixs failed ! " + mcuStatus.getDescription());
+            endMixRequest.makeErrorResponseMsg(ConfInterfaceResult.END_MIXS.getCode(), HttpStatus.OK, mcuStatus.getDescription());
+        }
+
+    }
+
+    //添加混音成员或者删除混音成员(true为添加,false添加)
+    @Async("confTaskExecutor")
+    public void mixMembers(MixMembersRequest mixMembersRequest, Boolean mode) {
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "operation mix Members mode : " + mode);
+        System.out.println("operation mix Members mode : " + mode);
+        if (!baseSysConfig.isUseMcu()) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "mix Members function is not use mcu");
+            System.out.println(" mix Members function  is not use mcu");
+            mixMembersRequest.makeErrorResponseMsg(ConfInterfaceResult.NOT_SUPPORT_METHOD.getCode(), HttpStatus.OK, ConfInterfaceResult.NOT_SUPPORT_METHOD.getMessage());
+            return;
+        }
+
+        String groupId = mixMembersRequest.getGroupId();
+        GroupConfInfo groupConfInfo = groupConfInfoMap.get(groupId);
+        if (null == groupConfInfo) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, " mix Members , not found groupId : " + groupId);
+            System.out.println(" mix Members , not found groupId : " + groupId);
+            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50002 : group not exist!");
+            mixMembersRequest.makeErrorResponseMsg(ConfInterfaceResult.GROUP_NOT_EXIST.getCode(), HttpStatus.OK, ConfInterfaceResult.GROUP_NOT_EXIST.getMessage());
+            return;
+        }
+        String confId = groupConfInfo.getConfId();
+        if ("".equals(confId)) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, " mix Members function confId is empty confid :　" + confId);
+            System.out.println("mix Members function confId is empty  confid :　" + confId);
+            mixMembersRequest.makeErrorResponseMsg(ConfInterfaceResult.CONF_NOT_EXIT.getCode(), HttpStatus.OK, ConfInterfaceResult.CONF_NOT_EXIT.getMessage());
+            return;
+        }
+        MixMembers mixMembers = mixMembersRequest.getMixMembers();
+        McuMixMembers mcuMixMembers = new McuMixMembers();
+        List<Terminal> members = mixMembers.getMembers();
+        ArrayList<TerminalId> terminalIds = new ArrayList<>();
+        for (Terminal terminal : members) {
+            TerminalService mtService = groupConfInfo.getMtMember(terminal.getMtE164());
+            if (null != mtService) {
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "mix Members function terminalId : " + mtService.getMtId());
+                System.out.println("mix Members function  terminalId: " + mtService.getMtId());
+                TerminalId terminalId = new TerminalId(mtService.getMtId());
+                terminalIds.add(terminalId);
+            }
+        }
+        mcuMixMembers.setMembers(terminalIds);
+        McuStatus mcuStatus;
+        if (mode) {
+            mcuStatus = mcuRestClientService.addMixMembers(confId, mcuMixMembers);
+        } else {
+            mcuStatus = mcuRestClientService.deleteMixMembers(confId, mcuMixMembers);
+        }
+
+        if (mcuStatus.getValue() == 0) {
+            mixMembersRequest.makeSuccessResponseMsg();
+        } else {
+            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50036 operate mixs members failed ! " + mcuStatus.getDescription());
+            mixMembersRequest.makeErrorResponseMsg(ConfInterfaceResult.OPERATE_MIXS_MEMBERS_FAILED.getCode(), HttpStatus.OK, mcuStatus.getDescription());
+        }
+
+    }
+
+    //得到混音信息
+    @Async("confTaskExecutor")
+    public void getMixsInfo(GetMixsInfosRequest getMixsInfosRequest) {
+        if (!baseSysConfig.isUseMcu()) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "get Mixs info is not use mcu");
+            System.out.println(" get Mixs info  is not use mcu");
+            getMixsInfosRequest.makeErrorResponseMsg(ConfInterfaceResult.NOT_SUPPORT_METHOD.getCode(), HttpStatus.OK, ConfInterfaceResult.NOT_SUPPORT_METHOD.getMessage());
+            return;
+        }
+
+        String groupId = getMixsInfosRequest.getGroupId();
+        GroupConfInfo groupConfInfo = groupConfInfoMap.get(groupId);
+        if (null == groupConfInfo) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, " get Mixs info, not found groupId : " + groupId);
+            System.out.println(" get Mixs info , not found groupId : " + groupId);
+            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50002 : group not exist!");
+            getMixsInfosRequest.makeErrorResponseMsg(ConfInterfaceResult.GROUP_NOT_EXIST.getCode(), HttpStatus.OK, ConfInterfaceResult.GROUP_NOT_EXIST.getMessage());
+            return;
+        }
+        String confId = groupConfInfo.getConfId();
+        if ("".equals(confId)) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, " get Mixs info confId is empty confid :　" + confId);
+            System.out.println(" get Mixs info confId is empty  confid :　" + confId);
+            getMixsInfosRequest.makeErrorResponseMsg(ConfInterfaceResult.CONF_NOT_EXIT.getCode(), HttpStatus.OK, ConfInterfaceResult.CONF_NOT_EXIT.getMessage());
+            return;
+        }
+
+        McuMixsInfoResponse mcuMixsInfoResponse = mcuRestClientService.getMixsInfo(confId);
+
+        if (null == mcuMixsInfoResponse) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "mcuMixsInfoResponse  is null ");
+            System.out.println("mcuMixsInfoResponse  is null");
+            getMixsInfosRequest.makeErrorResponseMsg(ConfInterfaceResult.GET_MT_INFO_FAILED.getCode(), HttpStatus.OK, ConfInterfaceResult.GET_MT_INFO_FAILED.getMessage());
+            return;
+        }
+        List<TerminalId> members = mcuMixsInfoResponse.getMembers();
+        ArrayList<Terminal> terminals = new ArrayList<>();
+        ConcurrentHashMap<String, String> mtIdMap = groupConfInfo.getMtIdMap();
+        if (mtIdMap == null || mtIdMap.isEmpty()) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "getMixsInfo DELETE mtIdMap is null or empty ");
+            System.out.println("getMixsInfo  mtIdMap is null or empty ");
+            getMixsInfosRequest.makeErrorResponseMsg(ConfInterfaceResult.GET_MT_INFO_FAILED.getCode(), HttpStatus.OK, ConfInterfaceResult.GET_MT_INFO_FAILED.getMessage());
+            return;
+        }
+        for (TerminalId terminalId : members) {
+            String E164 = mtIdMap.get(terminalId.getMt_id());
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "getMixsInfo mt_id : " + terminalId.getMt_id() + "E164 : " + E164);
+            System.out.println("getMixsInfo mt_id : " + terminalId.getMt_id() + "E164 : " + E164);
+            if (E164.isEmpty()) {
+                continue;
+            }
+            Terminal terminal = new Terminal(E164);
+            terminals.add(terminal);
+        }
+        getMixsInfosRequest.setMode(mcuMixsInfoResponse.getMode());
+        getMixsInfosRequest.setMembers(terminals);
+        getMixsInfosRequest.makeSuccessResponseMsg();
+    }
+
 
     public Map<String, GroupConfInfo> getGroupConfInfoMap() {
         return groupConfInfoMap;

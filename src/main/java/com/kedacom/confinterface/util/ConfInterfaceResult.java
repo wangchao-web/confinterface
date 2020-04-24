@@ -38,7 +38,12 @@ public enum ConfInterfaceResult {
     CONF_NOT_EXIT(50029,"confid not exit"),
     QUERY_CONFS_CASCADES_MT_INFO_IS_NULL(50030,"query confs cascades mt info is null"),
     SEND_SMS_FAILED(50031,"send message failed"),
-    GET_MT_INFO_FAILED(50032,"get mt info failed");
+    GET_MT_INFO_FAILED(50032,"get mt info failed"),
+    START_VMPS(50033,"start vmps failed"),
+    END_VMPS(50034,"end vmps failed!"),
+    START_MIXS(50035,"start mixs failed !"),
+    OPERATE_MIXS_MEMBERS_FAILED(50036,"operate mixs members failed !"),
+    END_MIXS(50037,"end mixs failed !");
 
     public int getCode(){
         return code;

@@ -77,7 +77,7 @@ public class RestClientService {
             HttpHeaders httpHeaders = new HttpHeaders();
             httpHeaders.setContentType(MediaType.APPLICATION_JSON_UTF8);
             httpHeaders.add("Accept", MediaType.APPLICATION_JSON_UTF8.toString());
-
+            //httpHeaders.setConnection("Close");
             HttpEntity httpEntity = new HttpEntity(param, httpHeaders);
             if (null != args) {
                 return restTemplate.exchange(url, method, httpEntity, returnType, args);

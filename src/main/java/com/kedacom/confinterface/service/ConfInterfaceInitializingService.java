@@ -40,8 +40,8 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "now in ConfInterfaceInitializingService, protocalType:" + baseSysConfig.getProtocalType());
-        System.out.println("now in ConfInterfaceInitializingService, protocalType:" + baseSysConfig.getProtocalType());
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "now in ConfInterfaceInitializingService, protocalType: " + baseSysConfig.getProtocalType());
+        System.out.println("now in ConfInterfaceInitializingService, protocalType: " + baseSysConfig.getProtocalType());
 
         PrintBuildTime();
         createConferenceManage();
@@ -49,20 +49,20 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
         initConfAdapter();
         registerVmts();
 
-        if (baseSysConfig.isUseMcu()) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "开始登陆mcu");
-            System.out.println("开始登陆mcu");
-            loginMcuSrv();
-        }
-
         TerminalManageService.setPublishService(defaultListableBeanFactory.getBean(ConfInterfacePublishService.class));
         terminalManageService.setConfInterfaceService(confInterfaceService);
+        if (baseSysConfig.isUseMcu()) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, " loginMcuSrv *************** ");
+            System.out.println(" loginMcuSrv ***************");
+            loginMcuSrv();
+            //订阅mcu上所有会议信息
+            mcuRestClientService.subscribeAllConfInfo();
+        }
+
         Map<String, String> groups = confInterfaceService.getGroups();
         if (null == groups || groups.isEmpty()) {
-
             //启动终端注册Gk
             terminalManageService.StartUp();
-
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "no groups in db, init OK! current time : " + System.currentTimeMillis());
             System.out.println("no groups in db, init OK! current time : " + System.currentTimeMillis());
             return;
@@ -125,6 +125,8 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
 
         //启动终端注册Gk
         terminalManageService.StartUp();
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "no groups in db, init OK! current time : " + System.currentTimeMillis());
+        System.out.println("no groups in db, init OK! current time : " + System.currentTimeMillis());
     }
 
     private void createConferenceManage() {

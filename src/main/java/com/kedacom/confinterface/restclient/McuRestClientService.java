@@ -170,6 +170,7 @@ public class McuRestClientService {
         createConferenceParam.setCall_interval(mcuRestConfig.getCallInterval());
         createConferenceParam.setEncrypted_type(mcuRestConfig.getEncryptedType());
         createConferenceParam.setEncrypted_key(mcuRestConfig.getEncryptedKey());
+        createConferenceParam.setConf_type(mcuRestConfig.getConfType());
         createConferenceParam.setVideo_formats(mcuRestConfig.getVideoFormat());
         createConferenceParam.setAudio_formats(mcuRestConfig.getAudioFormat());
 
@@ -219,15 +220,33 @@ public class McuRestClientService {
             if (null == response)
                 return McuStatus.Unknown;
         } else {
-            List<String> channels = confSubcribeChannelMap.get(confId);
-            if (null != channels) {
-                for (String channel : channels) {
+            synchronized (this) {
+                List<String> channels = confSubcribeChannelMap.get(confId);
+                if (channels == null || channels.isEmpty()) {
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "channels is null or isEmpty");
+                    System.out.println("channels is null or isEmpty");
+                    return McuStatus.OK;
+                }
+           /* Iterator<String> iterator = channels.iterator();
+            while (iterator.hasNext()) {
+                String channel = iterator.next();
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"channel : " + channel);
+                System.out.println("channel : " + channel);
+                synchronized (this){
                     mcuSubscribeClientService.unsubscribe(channel);
                 }
+                iterator.remove();
+            }*/
+                if (null != channels) {
+                    for (String channel : channels) {
+                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "channel : " + channel);
+                        System.out.println("channel : " + channel);
+                        mcuSubscribeClientService.unsubscribe(channel);
+                    }
+                }
+                channels.clear();
+                confSubcribeChannelMap.remove(confId);
             }
-
-            channels.clear();
-            confSubcribeChannelMap.remove(confId);
         }
 
         if (null == response)
@@ -1127,7 +1146,7 @@ public class McuRestClientService {
         return null;
     }
 
-    public McuStatus sendMsm(String confId, SendSmsParam sendSmsParam, List<TerminalIdInfo> smsInfoMts) {
+    public McuStatus sendMsm(String confId, SendSmsParam sendSmsParam, List<TerminalId> smsInfoMts) {
         if (!loginSuccess) {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "[sendMsm] has login out!!!");
             System.out.println("[sendMsm] has login out!!!");
@@ -1145,19 +1164,19 @@ public class McuRestClientService {
         System.out.println("Mcu sendSmsInfo : " + sendSmsInfo.toString());
         McuPostMsg mcuPostMsg = new McuPostMsg(accountToken);
         mcuPostMsg.setParams(sendSmsInfo);
-        McuBaseResponse sendSmsreSponse = restClientService.exchange(url.toString(), HttpMethod.POST, mcuPostMsg.getMsg(), urlencodeMediaType, args, McuBaseResponse.class);
+        McuBaseResponse sendSmsResponse = restClientService.exchange(url.toString(), HttpMethod.POST, mcuPostMsg.getMsg(), urlencodeMediaType, args, McuBaseResponse.class);
 
-        if (null == sendSmsreSponse) {
+        if (null == sendSmsResponse) {
             return McuStatus.Unknown;
         }
 
-        if (sendSmsreSponse.success()) {
+        if (sendSmsResponse.success()) {
             return McuStatus.OK;
         }
 
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "sendSmsreSponse.getError_code() :" + sendSmsreSponse.getError_code());
-        System.out.println("sendSmsreSponse.getError_code() :" + sendSmsreSponse.getError_code());
-        return McuStatus.resolve(sendSmsreSponse.getError_code());
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "sendSmsreSponse.getError_code() :" + sendSmsResponse.getError_code());
+        System.out.println("sendSmsreSponse.getError_code() :" + sendSmsResponse.getError_code());
+        return McuStatus.resolve(sendSmsResponse.getError_code());
     }
 
     public GetConfMtInfoResponse getConfMtInfo(String confId, String mtId) {
@@ -1224,6 +1243,308 @@ public class McuRestClientService {
         return confInspectionsResponse;
     }
 
+    //开始画面合成
+    public McuStatus startVmps(String confId, McuVmpsParam mcuVmpsParam) {
+        if (!loginSuccess) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "[startVmps] has login out!!!");
+            System.out.println("[startVmps] has login out!!!");
+            return null;
+        }
+
+        StringBuilder url = new StringBuilder();
+        constructUrl(url, "/api/v1/vc/confs/{conf_id}/vmps");
+        Map<String, String> args = new HashMap<>();
+        args.put("conf_id", confId);
+
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Mcu startVmps : " + mcuVmpsParam.toString());
+        System.out.println("Mcu startVmps : " + mcuVmpsParam.toString());
+        McuPostMsg mcuPostMsg = new McuPostMsg(accountToken);
+        mcuPostMsg.setParams(mcuVmpsParam);
+        McuBaseResponse stratVmpsResponse = restClientService.exchange(url.toString(), HttpMethod.POST, mcuPostMsg.getMsg(), urlencodeMediaType, args, McuBaseResponse.class);
+
+        if (null == stratVmpsResponse) {
+            return McuStatus.Unknown;
+        }
+
+        if (stratVmpsResponse.success()) {
+            return McuStatus.OK;
+        }
+
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "startVmps getError_code() :" + stratVmpsResponse.getError_code());
+        System.out.println("startVmps getError_code() :" + stratVmpsResponse.getError_code());
+        return McuStatus.resolve(stratVmpsResponse.getError_code());
+    }
+
+    //更新画面合成
+    public McuStatus updateVmps(String confId, McuVmpsParam mcuVmpsParam) {
+        if (!loginSuccess) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "[updatteVmps] has login out!!!");
+            System.out.println("[updatteVmps] has login out!!!");
+            return null;
+        }
+        ///api/v1/vc/confs/{conf_id}/vmps/{vmp_id}
+        //会议主画面合成，默认vmp_id为1，异步操作，当未开启画面合成时返回错误
+        StringBuilder url = new StringBuilder();
+        constructUrl(url, "/api/v1/vc/confs/{conf_id}/vmps/{vmp_id}");
+        Map<String, String> args = new HashMap<>();
+        args.put("conf_id", confId);
+        args.put("vmp_id", "1");
+
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Mcu updatteVmps : " + mcuVmpsParam.toString());
+        System.out.println("Mcu updatteVmps : " + mcuVmpsParam.toString());
+        McuPostMsg mcuPostMsg = new McuPostMsg(accountToken);
+        mcuPostMsg.setParams(mcuVmpsParam);
+        McuBaseResponse updateVmpsResponse = restClientService.exchange(url.toString(), HttpMethod.POST, mcuPostMsg.getMsg(), urlencodeMediaType, args, McuBaseResponse.class);
+
+        if (null == updateVmpsResponse) {
+            return McuStatus.Unknown;
+        }
+
+        if (updateVmpsResponse.success()) {
+            return McuStatus.OK;
+        }
+
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "updatteVmps getError_code() :" + updateVmpsResponse.getError_code());
+        System.out.println("updatteVmps getError_code() :" + updateVmpsResponse.getError_code());
+        return McuStatus.resolve(updateVmpsResponse.getError_code());
+    }
+
+    //结束画面合成
+    public McuStatus endVmps(String confId) {
+        if (!loginSuccess) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "[endVmps] has login out!!!");
+            System.out.println("[endVmps] has login out!!!");
+            return null;
+        }
+
+        StringBuilder url = new StringBuilder();
+        ///api/v1/vc/confs/{conf_id}/vmps/{vmp_id}
+        //会议主画面合成，默认vmp_id为1，异步操作，当未开启画面合成时返回错误
+        constructUrl(url, "/api/v1/vc/confs/{conf_id}/vmps/{vmp_id}?account_token={account_token}");
+        Map<String, String> args = new HashMap<>();
+        args.put("conf_id", confId);
+        args.put("vmp_id", "1");
+        args.put("account_token", accountToken);
+
+        McuBaseResponse endVmpsResponse = restClientService.exchange(url.toString(), HttpMethod.DELETE, null, urlencodeMediaType, args, McuBaseResponse.class);
+
+        if (null == endVmpsResponse) {
+            return McuStatus.Unknown;
+        }
+
+        if (endVmpsResponse.success()) {
+            return McuStatus.OK;
+        }
+
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "end Vmps getError_code() :" + endVmpsResponse.getError_code());
+        System.out.println("end Vmps getError_code() :" + endVmpsResponse.getError_code());
+        return McuStatus.resolve(endVmpsResponse.getError_code());
+    }
+
+    //获取画面合成信息
+    public McuGetVmpsInfoResponse getVmpsInfo(String confId) {
+        if (!loginSuccess) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "[getVmpsInfo] has login out!!!");
+            System.out.println("[getVmpsInfo] has login out!!!");
+            return null;
+        }
+
+        StringBuilder url = new StringBuilder();
+        ///api/v1/vc/confs/{conf_id}/vmps/{vmp_id}
+        //会议主画面合成，默认vmp_id为1，异步操作，当未开启画面合成时返回错误
+        constructUrl(url, "/api/v1/vc/confs/{conf_id}/vmps/{vmp_id}?account_token={account_token}");
+        Map<String, String> args = new HashMap<>();
+        args.put("conf_id", confId);
+        args.put("vmp_id", "1");
+        args.put("account_token", accountToken);
+
+        McuGetVmpsInfoResponse mcuGetVmpsInfoResponse = restClientService.exchange(url.toString(), HttpMethod.GET, null, urlencodeMediaType, args, McuGetVmpsInfoResponse.class);
+
+        if (null == mcuGetVmpsInfoResponse) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "mcuGetVmpsInfoResponse, null == mcuMixsInfoResponse");
+            System.out.println("mcuGetVmpsInfoResponse, null == mcuGetVmpsInfoResponse");
+            return null;
+        }
+
+        if (!mcuGetVmpsInfoResponse.success()) {
+            int errorCode = mcuGetVmpsInfoResponse.getError_code();
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "mcuGetVmpsInfoResponse failed! errCode :" + errorCode + ", errmsg:" + McuStatus.resolve(errorCode).getDescription());
+            System.out.println("mcuGetVmpsInfoResponse failed! errCode :" + errorCode + ", errmsg:" + McuStatus.resolve(errorCode).getDescription());
+            return null;
+        }
+
+        return mcuGetVmpsInfoResponse;
+    }
+
+
+    //开始混音
+    public McuStatus startMix(String confId, McuStartMixparam mcuStartMixparam) {
+        if (!loginSuccess) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "[startMix] has login out!!!");
+            System.out.println("[startMix] has login out!!!");
+            return null;
+        }
+
+        StringBuilder url = new StringBuilder();
+        ///api/v1/vc/confs/{conf_id}/mixs
+        constructUrl(url, "api/v1/vc/confs/{conf_id}/mixs");
+        Map<String, String> args = new HashMap<>();
+        args.put("conf_id", confId);
+
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Mcu start Mix : " + mcuStartMixparam.toString());
+        System.out.println("Mcu start Mix : " + mcuStartMixparam.toString());
+        McuPostMsg mcuPostMsg = new McuPostMsg(accountToken);
+        mcuPostMsg.setParams(mcuStartMixparam);
+
+        McuBaseResponse baseResponse = restClientService.exchange(url.toString(), HttpMethod.POST, mcuPostMsg, urlencodeMediaType, args, McuBaseResponse.class);
+
+        if (null == baseResponse) {
+            return McuStatus.Unknown;
+        }
+
+        if (baseResponse.success()) {
+            return McuStatus.OK;
+        }
+
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "start Mix getError_code() :" + baseResponse.getError_code());
+        System.out.println("start Mix getError_code() :" + baseResponse.getError_code());
+        return McuStatus.resolve(baseResponse.getError_code());
+    }
+
+    //增加混音成员
+    public McuStatus addMixMembers(String confId, McuMixMembers mcuMixMembers) {
+        if (!loginSuccess) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "[addMixMembers] has login out!!!");
+            System.out.println("[addMixMembers] has login out!!!");
+            return null;
+        }
+
+        StringBuilder url = new StringBuilder();
+        ///api/v1/vc/confs/{conf_id}/mixs/{mix_id}/members
+        constructUrl(url, "/api/v1/vc/confs/{conf_id}/mixs/{mix_id}/members");
+        Map<String, String> args = new HashMap<>();
+        args.put("conf_id", confId);
+        args.put("mix_id", "1");
+
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Mcu addMixMembers : " + mcuMixMembers.toString());
+        System.out.println("Mcu addMixMembers : " + mcuMixMembers.toString());
+        McuPostMsg mcuPostMsg = new McuPostMsg(accountToken);
+        mcuPostMsg.setParams(mcuMixMembers);
+
+        McuBaseResponse addMixsMembersResponse = restClientService.exchange(url.toString(), HttpMethod.POST, mcuPostMsg, urlencodeMediaType, args, McuBaseResponse.class);
+
+        if (null == addMixsMembersResponse) {
+            return McuStatus.Unknown;
+        }
+
+        if (addMixsMembersResponse.success()) {
+            return McuStatus.OK;
+        }
+
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Mcu addMixMembers getError_code() :" + addMixsMembersResponse.getError_code());
+        System.out.println("Mcu addMixMembers getError_code() :" + addMixsMembersResponse.getError_code());
+        return McuStatus.resolve(addMixsMembersResponse.getError_code());
+    }
+
+    //删除混音成员
+    public McuStatus deleteMixMembers(String confId, McuMixMembers mcuMixMembers) {
+        if (!loginSuccess) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "[deleteMixMembers] has login out!!!");
+            System.out.println("[deleteMixMembers] has login out!!!");
+            return null;
+        }
+
+        StringBuilder url = new StringBuilder();
+        ///api/v1/vc/confs/{conf_id}/mixs/{mix_id}/members
+        constructUrl(url, "/api/v1/vc/confs/{conf_id}/mixs/{mix_id}/members");
+        Map<String, String> args = new HashMap<>();
+        args.put("conf_id", confId);
+        args.put("mix_id", "1");
+
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Mcu deleteMixMembers : " + mcuMixMembers.toString());
+        System.out.println("Mcu deleteMixMembers : " + mcuMixMembers.toString());
+        McuPostMsg mcuPostMsg = new McuPostMsg(accountToken);
+        mcuPostMsg.setParams(mcuMixMembers);
+
+        McuBaseResponse deleteMixsMembersResponse = restClientService.exchange(url.toString(), HttpMethod.DELETE, mcuPostMsg, urlencodeMediaType, args, McuBaseResponse.class);
+
+        if (null == deleteMixsMembersResponse) {
+            return McuStatus.Unknown;
+        }
+
+        if (deleteMixsMembersResponse.success()) {
+            return McuStatus.OK;
+        }
+
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Mcu deleteMixMembers getError_code() :" + deleteMixsMembersResponse.getError_code());
+        System.out.println("Mcu deleteMixMembers getError_code() :" + deleteMixsMembersResponse.getError_code());
+        return McuStatus.resolve(deleteMixsMembersResponse.getError_code());
+    }
+
+    //结束混音
+    public McuStatus endMixs(String confId) {
+        if (!loginSuccess) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "[endMixs] has login out!!!");
+            System.out.println("[endMixs] has login out!!!");
+            return null;
+        }
+
+        StringBuilder url = new StringBuilder();
+        ///api/v1/vc/confs/{conf_id}/mixs/{mix_id}
+        constructUrl(url, "/api/v1/vc/confs/{conf_id}/mixs/{mix_id}?account_token={account_token}");
+        Map<String, String> args = new HashMap<>();
+        args.put("conf_id", confId);
+        args.put("mix_id", "1");
+        args.put("account_token", accountToken);
+
+        McuBaseResponse endMixsMembersResponse = restClientService.exchange(url.toString(), HttpMethod.DELETE, null, urlencodeMediaType, args, McuBaseResponse.class);
+
+        if (null == endMixsMembersResponse) {
+            return McuStatus.Unknown;
+        }
+
+        if (endMixsMembersResponse.success()) {
+            return McuStatus.OK;
+        }
+
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Mcu end Mixs getError_code() :" + endMixsMembersResponse.getError_code());
+        System.out.println("Mcu end Mixs getError_code() :" + endMixsMembersResponse.getError_code());
+        return McuStatus.resolve(endMixsMembersResponse.getError_code());
+    }
+
+    //得到混音信息
+    public McuMixsInfoResponse getMixsInfo(String confId) {
+        if (!loginSuccess) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "[getMixsInfo] has login out!!!");
+            System.out.println("[getMixsInfo] has login out!!!");
+            return null;
+        }
+
+        StringBuilder url = new StringBuilder();
+        ///api/v1/vc/confs/{conf_id}/mixs/{mix_id}
+        constructUrl(url, "/api/v1/vc/confs/{conf_id}/mixs/{mix_id}?account_token={account_token}");
+        Map<String, String> args = new HashMap<>();
+        args.put("conf_id", confId);
+        args.put("mix_id", "1");
+        args.put("account_token", accountToken);
+
+        McuMixsInfoResponse mcuMixsInfoResponse = restClientService.exchange(url.toString(), HttpMethod.GET, null, urlencodeMediaType, args, McuMixsInfoResponse.class);
+
+        if (null == mcuMixsInfoResponse) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "mcuMixsInfoResponse, null == mcuMixsInfoResponse");
+            System.out.println("mcuMixsInfoResponse, null == mcuMixsInfoResponse");
+            return null;
+        }
+
+        if (!mcuMixsInfoResponse.success()) {
+            int errorCode = mcuMixsInfoResponse.getError_code();
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "mcuMixsInfoResponse failed! errCode :" + errorCode + ", errmsg:" + McuStatus.resolve(errorCode).getDescription());
+            System.out.println("mcuMixsInfoResponse failed! errCode :" + errorCode + ", errmsg:" + McuStatus.resolve(errorCode).getDescription());
+            return null;
+        }
+
+        return mcuMixsInfoResponse;
+    }
 
     @Autowired
     private RestClientService restClientService;

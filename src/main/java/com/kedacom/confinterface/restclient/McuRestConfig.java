@@ -148,6 +148,14 @@ public class McuRestConfig {
         this.callTimes = callTimes;
     }
 
+    public int getConfType() {
+        return confType;
+    }
+
+    public void setConfType(int confType) {
+        this.confType = confType;
+    }
+
     @Override
     public String toString() {
         return new StringBuilder().append("softwareKey:").append(softwareKey)
@@ -166,6 +174,7 @@ public class McuRestConfig {
                 .append(",callMode:").append(callMode)
                 .append(",callTimes:").append(callTimes)
                 .append(",callInterval:").append(callInterval)
+                .append(",confType:").append(confType)
                 .toString();
     }
 
@@ -179,12 +188,13 @@ public class McuRestConfig {
     private int bitrate = 2048;
     private String protocal = ProtocalTypeEnum.H323.getName();
     private String videoFormat;   //video_formats 4/13/25/8128主视频格式列表1-MPEG;2-H.261;3-H.263;4-H.264_HP;5-H.264_BP;6-H.265;7-H.263+;resolution*
-                                  //主视频分辨率1-QCIF;2-CIF;3-4CIF;12-720P;13-1080P;14-WCIF;15-W4CIF;16-4k;
-                                  //frame帧率bitrate码率
+                                  //                                  //主视频分辨率1-QCIF;2-CIF;3-4CIF;12-720P;13-1080P;14-WCIF;15-W4CIF;16-4k;
+                                  //                                  //frame帧率bitrate码率
     private String audioFormat;
     private int encryptedType = 0;
     private String encryptedKey;
     private int callMode = 2;
     private int callTimes = 30;
     private int callInterval = 20;
+    private int confType = 0; //会议类型0-传统会议；1-端口会议；JD2000的mcu不支持端口会议,端口会议里面的每个资源都可以转码,传统会议只有发言人和主席有转码能力
 }

@@ -64,7 +64,23 @@ public class  SchedulePublishService extends ConfInterfacePublishService{
         TerminalStatusNotify terminalStatusNotify = new TerminalStatusNotify();
         TerminalStatus terminalStatus = new TerminalStatus(account, accountType, status, forwardResources, reverseResources);
         terminalStatusNotify.addMtStatus(terminalStatus);
-        publishMessage(SubscribeMsgTypeEnum.TERMINAL_STATUS, groupId, terminalStatusNotify);
+        if("Conference".equals(accountType)){
+            Map<String, String> groupUrls = subscribeMsgs.get(SubscribeMsgTypeEnum.TERMINAL_STATUS.getType());
+            if (null == groupUrls) {
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"publishStatus, has no client subscribe message, type :"+SubscribeMsgTypeEnum.TERMINAL_STATUS.getType()+", name:"+SubscribeMsgTypeEnum.TERMINAL_STATUS.getName());
+                System.out.println("publishStatus, has no client subscribe message, type :"+SubscribeMsgTypeEnum.TERMINAL_STATUS.getType()+", name:"+SubscribeMsgTypeEnum.TERMINAL_STATUS.getName());
+                return;
+            }
+            if(groupUrls.containsKey(groupId)){
+                publishMessage(SubscribeMsgTypeEnum.TERMINAL_STATUS, groupId, terminalStatusNotify);
+            }else{
+                publishMessage(SubscribeMsgTypeEnum.TERMINAL_STATUS, "groupnotify", terminalStatusNotify);
+            }
+
+        }else{
+            publishMessage(SubscribeMsgTypeEnum.TERMINAL_STATUS, groupId, terminalStatusNotify);
+        }
+
     }
 
     @Override

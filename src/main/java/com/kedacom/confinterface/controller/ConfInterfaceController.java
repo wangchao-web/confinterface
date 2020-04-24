@@ -329,6 +329,115 @@ public class ConfInterfaceController {
         return getConfMtRequest.getResponseMsg();
     }
 
+    @PostMapping(value = "/vmps")
+    public DeferredResult<ResponseEntity<BaseResponseMsg>> startVmps(@RequestParam("GroupId") String groupId, @Valid @RequestBody VmpsParam vmpsParam){
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now in startVmps, groupId : " + groupId + "vmpsParam.toString() : " +vmpsParam.toString() + ", time : " + System.currentTimeMillis());
+        System.out.println("now in startVmps, groupId : " + groupId + "vmpsParam.toString() : " +vmpsParam.toString() + ", time : " + System.currentTimeMillis());
+        StartVmpsRequest startVmpsRequest = new StartVmpsRequest(groupId, vmpsParam);
+        confInterfaceService.vmps(startVmpsRequest,"start");
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now finished startVmps, time : " + System.currentTimeMillis());
+        System.out.println("now finished startVmps, time : " + System.currentTimeMillis());
+        return startVmpsRequest.getResponseMsg();
+    }
+
+    @DeleteMapping(value = "/vmps")
+    public DeferredResult<ResponseEntity<BaseResponseMsg>> endVmps(@RequestParam("GroupId") String groupId){
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now in end vmps, groupId : " + groupId + ", time : " + System.currentTimeMillis());
+        System.out.println("now in end vmps, groupId : " + groupId +", time : " + System.currentTimeMillis());
+        DeleteVmpsRequest deleteVmpsRequest = new DeleteVmpsRequest(groupId);
+        confInterfaceService.endVmps(deleteVmpsRequest);
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now finished end vmps, time : " + System.currentTimeMillis());
+        System.out.println("now finished end vmps, time : " + System.currentTimeMillis());
+        return deleteVmpsRequest.getResponseMsg();
+    }
+
+    @PostMapping(value = "/updateVmps")
+    public DeferredResult<ResponseEntity<BaseResponseMsg>> updateVmps(@RequestParam("GroupId") String groupId, @Valid @RequestBody VmpsParam vmpsParam){
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now in updateVmps, groupId : " + groupId + ", vmpsParam.toString() : " +vmpsParam.toString() + ", time : " + System.currentTimeMillis());
+        System.out.println("now in updateVmps, groupId : " + groupId + "vmpsParam.toString() : " +vmpsParam.toString() + ", time : " + System.currentTimeMillis());
+        StartVmpsRequest startVmpsRequest = new StartVmpsRequest(groupId, vmpsParam);
+        confInterfaceService.vmps(startVmpsRequest,"update");
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now finished updateVmps, time : " + System.currentTimeMillis());
+        System.out.println("now finished updateVmps, time : " + System.currentTimeMillis());
+        return startVmpsRequest.getResponseMsg();
+    }
+
+    @GetMapping(value = "/vmps")
+    public DeferredResult<ResponseEntity<GetVmpsInfoResponse>> getVmpsInfo(@RequestParam("GroupId") String groupId){
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now in get vmps info , groupId : " + groupId + ", time : " + System.currentTimeMillis());
+        System.out.println("now in get info, groupId : " + groupId +", time : " + System.currentTimeMillis());
+        GetVmpsRequest getVmpsRequest = new GetVmpsRequest(groupId);
+        confInterfaceService.getVmpsInfo(getVmpsRequest);
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now finished get vmps info, time : " + System.currentTimeMillis());
+        System.out.println("now finished get vmps info , time : " + System.currentTimeMillis());
+        return getVmpsRequest.getResponseMsg();
+    }
+
+    @PostMapping(value = "/mixs")
+    public DeferredResult<ResponseEntity<BaseResponseMsg>> startMixs(@RequestParam("GroupId") String groupId,@Valid @RequestBody MixsParam mixsParam){
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now in start Mixs, groupId : " + groupId + ", mixsParam.toString() : " +mixsParam.toString() +", time : " + System.currentTimeMillis());
+        System.out.println("now in start Mixs, groupId : " + groupId + ", mixsParam.toString() : " + mixsParam.toString() + ", time : " + System.currentTimeMillis());
+        StartMixRequest startMixRequest = new StartMixRequest(groupId,mixsParam);
+        confInterfaceService.startMixs(startMixRequest);
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now finished start Mixs, time : " + System.currentTimeMillis());
+        System.out.println("now finished start Mixs, time : " + System.currentTimeMillis());
+        return startMixRequest.getResponseMsg();
+    }
+
+    @DeleteMapping(value = "/mixs")
+    public DeferredResult<ResponseEntity<BaseResponseMsg>> endMixs(@RequestParam("GroupId") String groupId){
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now in end Mixs, groupId : " + groupId  +", time : " + System.currentTimeMillis());
+        System.out.println("now in end Mixs, groupId : " + groupId + ", time : " + System.currentTimeMillis());
+        EndMixRequest endMixRequest = new EndMixRequest(groupId);
+        confInterfaceService.endMixs(endMixRequest);
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now finished end Mixs, time : " + System.currentTimeMillis());
+        System.out.println("now finished end Mixs, time : " + System.currentTimeMillis());
+        return endMixRequest.getResponseMsg();
+    }
+
+    @GetMapping(value = "/mixs")
+    public DeferredResult<ResponseEntity<MixsInfoResponse>> getMixsInfo(@RequestParam("GroupId") String groupId){
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now in get Mixs info, groupId : " + groupId  +", time : " + System.currentTimeMillis());
+        System.out.println("now in get Mixs info, groupId : " + groupId + ", time : " + System.currentTimeMillis());
+        GetMixsInfosRequest getMixsInfosRequest = new GetMixsInfosRequest(groupId);
+        confInterfaceService.getMixsInfo(getMixsInfosRequest);
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now finished end Mixs, time : " + System.currentTimeMillis());
+        System.out.println("now finished get Mixs info, time : " + System.currentTimeMillis());
+        return getMixsInfosRequest.getResponseMsg();
+    }
+
+    @PostMapping(value = "/mixsMembers")
+    public DeferredResult<ResponseEntity<BaseResponseMsg>> addMixsMembers(@RequestParam("GroupId") String groupId,@Valid @RequestBody MixMembers mixMembers){
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now in add Mixs members , groupId : " + groupId + ", mixMembers.toString() : " +mixMembers.toString() +", time : " + System.currentTimeMillis());
+        System.out.println("now in add Mixs members , groupId : " + groupId + ", mixMembers.toString() : " + mixMembers.toString() + ", time : " + System.currentTimeMillis());
+        MixMembersRequest mixMembersRequest = new MixMembersRequest(groupId, mixMembers);
+        confInterfaceService.mixMembers(mixMembersRequest,true);
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now finished add Mixs members, time : " + System.currentTimeMillis());
+        System.out.println("now finished add Mixs members, time : " + System.currentTimeMillis());
+        return mixMembersRequest.getResponseMsg();
+    }
+
+    @DeleteMapping(value = "/mixsMembers")
+    public DeferredResult<ResponseEntity<BaseResponseMsg>> deleteMixsMembers(@RequestParam("GroupId") String groupId,@Valid @RequestBody MixMembers mixMembers){
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now in delete Mixs members , groupId : " + groupId + ", mixMembers.toString() : " +mixMembers.toString() +", time : " + System.currentTimeMillis());
+        System.out.println("now in delete Mixs members , groupId : " + groupId + ", mixMembers.toString() : " + mixMembers.toString() + ", time : " + System.currentTimeMillis());
+        MixMembersRequest mixMembersRequest = new MixMembersRequest(groupId, mixMembers);
+        confInterfaceService.mixMembers(mixMembersRequest,false);
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now finished delete Mixs members, time : " + System.currentTimeMillis());
+        System.out.println("now finished delete Mixs members, time : " + System.currentTimeMillis());
+        return mixMembersRequest.getResponseMsg();
+    }
+
+    @PostMapping(value = "/monitors")
+    public DeferredResult<ResponseEntity<MonitorsResponse>> startMonitors(@RequestParam("GroupId") String groupId,@Valid @RequestBody MonitorsParams monitorsParams){
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now in start  Monitors , groupId : " + groupId + ", monitorsParams.toString() : " +monitorsParams.toString() +", time : " + System.currentTimeMillis());
+        System.out.println("now in start Monitors , groupId : " + groupId + ", monitorsParams.toString() : " + monitorsParams.toString() + ", time : " + System.currentTimeMillis());
+        StartMonitorsRequest startMonitorsRequest = new StartMonitorsRequest(groupId, monitorsParams);/
+        //confInterfaceService.mixMembers(mixMembersRequest,true);
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now finished start Monitors, time : " + System.currentTimeMillis());
+        System.out.println("now finished start Monitors , time : " + System.currentTimeMillis());
+        return startMonitorsRequest.getResponseMsg();
+    }
 
     @ExceptionHandler
     @ResponseBody
