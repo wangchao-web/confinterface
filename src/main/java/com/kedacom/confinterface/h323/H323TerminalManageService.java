@@ -171,7 +171,7 @@ public class H323TerminalManageService extends TerminalManageService implements 
             if (null == p2PCallResult) {
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "OnInvited, translateCall, reject invitation!");
                 System.out.println("OnInvited, translateCall fail, reject invitation!");
-                if (terminalService.isDynamicBind()){
+                if (terminalService.isDynamicBind()) {
                     terminalService.unBindProxyMT();
                 }
                 terminalService.getConferenceParticipant().AcceptInvitation(false);
@@ -265,8 +265,8 @@ public class H323TerminalManageService extends TerminalManageService implements 
             return;
         }
 
-        if(terminalService.dualSource.size() > 0){
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"OnKickedOff dualSource.size() : " + terminalService.dualSource.size());
+        if (terminalService.dualSource.size() > 0) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "OnKickedOff dualSource.size() : " + terminalService.dualSource.size());
             System.out.println("OnKickedOff dualSource.size() : " + terminalService.dualSource.size());
             terminalService.dualSource.clear();
         }
@@ -289,7 +289,7 @@ public class H323TerminalManageService extends TerminalManageService implements 
             System.out.println("OnKickedOff, mtAccount " + mtAccount);
             if (null != mtAccount) {
                 p2PCallGroup.removeCallMember(mtAccount);
-                if (p2PCallGroup.getCallMap().isEmpty()){
+                if (p2PCallGroup.getCallMap().isEmpty()) {
                     LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "OnKickedOff, remove p2pCallGroup : " + groupId);
                     p2pCallGroupMap.remove(groupId);
                 }
@@ -338,7 +338,7 @@ public class H323TerminalManageService extends TerminalManageService implements 
             return;
         }
 
-        Boolean  bOK= terminalService.onOpenLogicalChannel(mediaDescriptions);
+        Boolean bOK = terminalService.onOpenLogicalChannel(mediaDescriptions);
 
         if (!bOK) {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "OnLocalMediaRequested, onOpenLogicalChannel failed! participantid :" + participantid);
@@ -488,6 +488,7 @@ public class H323TerminalManageService extends TerminalManageService implements 
             }
         }
 
+
         if (mediaDescriptions.get(0).getDual()) {
             DualStreamRequestFail(terminalService);
         } else if (null != terminalService.getRemoteMtAccount() || null != terminalService.getProxyMTE164()) {
@@ -515,7 +516,7 @@ public class H323TerminalManageService extends TerminalManageService implements 
         }
 
         for (MediaDescription mediaDescription : mediaDescriptions) {
-            if(!mediaDescription.getDual()) {
+            if (!mediaDescription.getDual()) {
                 for (DetailMediaResouce mediaResouce : mediaResouces) {
                     if (mediaResouce.getStreamIndex() != mediaDescription.getStreamIndex()) {
                         continue;
@@ -525,8 +526,8 @@ public class H323TerminalManageService extends TerminalManageService implements 
                     resourceIds.add(mediaResouce.getId());
                     break;
                 }
-            }else{
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"OnMediaCleaned, dual stream is closed, publish dual status!");
+            } else {
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "OnMediaCleaned, dual stream is closed, publish dual status!");
                 System.out.println("OnMediaCleaned, dual stream is closed, publish dual status!");
                 terminalService.dualPublish();
             }
@@ -768,8 +769,8 @@ public class H323TerminalManageService extends TerminalManageService implements 
         }
 
         boolean bOk = terminalService.cancelCallMt();
-        if (!bOk){
-            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "P2PCallRequestFail, cancelCallMt fail, vmt: " + terminalService.getE164() + ", account: "+ p2PCallRequest.getAccount());
+        if (!bOk) {
+            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "P2PCallRequestFail, cancelCallMt fail, vmt: " + terminalService.getE164() + ", account: " + p2PCallRequest.getAccount());
         }
     }
 

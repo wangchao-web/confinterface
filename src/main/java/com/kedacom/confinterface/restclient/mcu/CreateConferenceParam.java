@@ -41,7 +41,7 @@ public class CreateConferenceParam {
         this.safe_conf = 0;
         this.password = null;
         this.encrypted_type = 2;
-        this.conf_type = 0;
+        this.conf_type = 0;   //会议类型,0-传统会议；1-端口会议；
         this.call_mode = 2; // 自动呼叫模式， 0：手动呼叫模式
         this.call_interval = 20; //单位秒
         this.call_times = 30;

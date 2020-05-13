@@ -129,6 +129,6 @@ public class RestClientService {
 
     @Autowired
     private RestTemplate restTemplate;
-    //private RestTemplate restTemplate =new RestTemplate();
+
 
 }

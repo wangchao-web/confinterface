@@ -13,6 +13,14 @@ public class CameraCtrlParam {
         this.resourceId = resourceId;
     }
 
+    public String getResourceId() {
+        return resourceId;
+    }
+
+    public void setResourceId(String resourceId) {
+        this.resourceId = resourceId;
+    }
+
     public int getState() {
         return state;
     }
