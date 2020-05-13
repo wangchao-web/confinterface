@@ -18,5 +18,10 @@ public class McuMixMembers {
         this.members = members;
     }
 
+    @Override
+    public String toString() {
+        return "mt_id:"+members.toString();
+    }
+
     List<TerminalId> members; //增加或者删除混音成员数组
 }

@@ -1,7 +1,5 @@
 package com.kedacom.confinterface.util;
 
-import javax.management.Query;
-
 public enum ConfInterfaceResult {
     OK(0, "Ok"),
     NOT_SUPPORT_METHOD(1, "not support this method!"),
@@ -30,20 +28,26 @@ public enum ConfInterfaceResult {
     EXIST_DUALSTREAM(50022, "exist dual stream!"),
     MAINSTREAM_NOT_EXIST(50026,"mainstream doesn't exist"),
     CLOSE_CHANNEL(50023, "close logical channel failed!"),
-    P2PCALL(50024, "p2p call failed!"),
-    P2PCANCELCALL(50025, "p2p cancelCallMt failed!"),
-    TERMINALHASBEENCALLED(50026,"The terminal has been called"),
-    QUERY_CONFS_INFO_IS_NULL(50027,"query confs info is null"),
-    QUERY_CONFS_CASCADES_INFO_IS_NULL(50028,"query confs cascades info is null"),
+    P2P_CALL(50024, "p2p call failed!"),
+    P2P_CANCEL_CALL(50025, "p2p cancelCallMt failed!"),
+    TERMINAL_HAS_BEEN_CALLED(50026,"The terminal has been called"),
+    ACCOUNT_E164_INVALID(50027, "Unused GK , Use E164 call failed"),
+    QUERY_CONFS_INFO_IS_NULL(50028,"query confs  info is null"),
     CONF_NOT_EXIT(50029,"confid not exit"),
     QUERY_CONFS_CASCADES_MT_INFO_IS_NULL(50030,"query confs cascades mt info is null"),
     SEND_SMS_FAILED(50031,"send message failed"),
     GET_MT_INFO_FAILED(50032,"get mt info failed"),
-    START_VMPS(50033,"start vmps failed"),
+    OPERATE_VMPS(50033,"operate vmps failed"),
     END_VMPS(50034,"end vmps failed!"),
     START_MIXS(50035,"start mixs failed !"),
     OPERATE_MIXS_MEMBERS_FAILED(50036,"operate mixs members failed !"),
-    END_MIXS(50037,"end mixs failed !");
+    END_MIXS(50037,"end mixs failed !"),
+    START_MONITORS(50038,"start monitors failed"),
+    GET_VMPS_INFO_FAILED(50039,"get vmps info failed"),
+    GET_MIXS_INFO_FAILED(50040,"get mixs info failed"),
+    MONITORS_MEMBERS_NOT_EXIST(50041,"monitors Members not exist"),
+    END_MONITORS(50042,"end monitors failed"),
+    QUERY_CONFS_CASCADES_INFO_IS_NULL(50043,"query confs cascades  info is null");
 
     public int getCode(){
         return code;

@@ -1,0 +1,30 @@
+package com.kedacom.confinterface.restclient.mcu;
+
+import java.util.List;
+
+public class McuMonitorsHeartbeatParam {
+    public McuMonitorsHeartbeatParam(List<McuMonitorsDst> monitors) {
+        this.monitors = monitors;
+    }
+
+    public McuMonitorsHeartbeatParam() {
+    }
+
+    public List<McuMonitorsDst> getMonitors() {
+        return monitors;
+    }
+
+    public void setMonitors(List<McuMonitorsDst> monitors) {
+        this.monitors = monitors;
+    }
+
+
+
+    @Override
+    public String toString() {
+        return new StringBuilder().append("monitors:").append(monitors.toString())
+                .toString();
+    }
+
+    private List<McuMonitorsDst> monitors;
+}

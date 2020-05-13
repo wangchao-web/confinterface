@@ -1,7 +1,7 @@
 package com.kedacom.confinterface.restclient.mcu;
 
 public enum McuStatus {
-    OK(0, "success"),
+    OK(200, "success"),
     Authentication(10001, "软件认证失败"),
     AccountTokenAuthentication(10002, "accountToken认证失败"),
     PasswordError(10101, "password 验证错误"),
@@ -55,6 +55,11 @@ public enum McuStatus {
     Mixing(20811, "当前正在进行会议混音"),
     NotMixing(20812, "当前不在进行会议混音"),
     NotPauseMix(20813, "当前未被暂停会议混音"),
+    MixsDiscussionNorStartAgain (20813, "会议已处于讨论状态, 不能再次开始"),
+    MIxsNotSTart(20819, "会议未处于讨论状态, 不能停止"),
+    VmpsStarting(20819, "画面合成已开始"),
+    VmpsNotStarting(20819, "画面合成尚未开始, 不能进行此项操作"),
+    VmpsUnbroadcast(20819, "画面合成未广播码流"),
     GKRejectCall(21505, "呼叫被GK拒绝"),
     InvalidCallSignalAddr(21506, "无效呼叫信令地址"),
     ReduplicateName(21508, "MCU别名或E164号或会议E164号与GK上其他网络实体重复"),
@@ -87,6 +92,8 @@ public enum McuStatus {
     SetEncodeParamError(28534, "设置编码参数失败"),
     MessageDealTimeout(28535, "消息处理超时"),
     SaveAudioBasMap(29104, "保存音频Bas句柄映射表错误"),
+
+    MIxsSTartIng(20356, "会议正在开启混音, 请稍后"),
     Unknown(99999, "Unknown");
 
     public int getValue() {

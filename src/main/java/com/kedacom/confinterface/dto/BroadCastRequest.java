@@ -28,12 +28,14 @@ public class BroadCastRequest extends BaseRequestMsg<BroadCastResponse> {
         this.forwardResources = forwardResources;
     }
 
+    @Override
     public void makeErrorResponseMsg(int code, HttpStatus status, String message) {
         BroadCastResponse broadCastResponse = new BroadCastResponse(code, status.value(), message);
         ResponseEntity<BroadCastResponse> responseEntity = new ResponseEntity<>(broadCastResponse, status);
         responseMsg.setResult(responseEntity);
     }
 
+    @Override
     public void makeSuccessResponseMsg() {
         BroadCastResponse broadCastResponse = new BroadCastResponse(0, HttpStatus.OK.value(), "ok");
         broadCastResponse.setType(broadCastParam.getType());

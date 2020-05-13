@@ -37,13 +37,14 @@ public class H323TerminalService extends TerminalService {
     }
 
 
-
     public Future<Boolean> startRegGK() {
-        if (regGK)
+        if (regGK) {
             return new AsyncResult<>(true);
+        }
 
-        if (null == conferenceParticipant)
+        if (null == conferenceParticipant) {
             return new AsyncResult<>(true);
+        }
 
         //注册Gk
         try {
@@ -115,12 +116,14 @@ public class H323TerminalService extends TerminalService {
         if (null != reverseChannel) {
             List<UpdateResourceParam> updateResourceParams = new ArrayList<>();
             for (DetailMediaResouce detailMediaResouce : reverseChannel) {
-                if (!mediaDescriptions.get(0).getMediaType().equals(detailMediaResouce.getType()))
+                if (!mediaDescriptions.get(0).getMediaType().equals(detailMediaResouce.getType())) {
                     continue;
+                }
 
                 if (mediaDescriptions.get(0).getDual() && detailMediaResouce.getDual() != 1
-                        || !mediaDescriptions.get(0).getDual() && detailMediaResouce.getDual() == 1)
+                        || !mediaDescriptions.get(0).getDual() && detailMediaResouce.getDual() == 1) {
                     continue;
+                }
 
                 int streamIndex = mediaDescriptions.get(0).getStreamIndex();
                 if (detailMediaResouce.compareAndSetStreamIndex(-1, streamIndex)) {
@@ -142,9 +145,9 @@ public class H323TerminalService extends TerminalService {
                 if (null == exchangeInfos) {
                     //如果查询不到资源节点，则清理相应的资源信息
                     for (DetailMediaResouce detailMediaResouce : reverseChannel) {
-                        if (!detailMediaResouce.getId().equals(resourceInfo.get(0)))
+                        if (!detailMediaResouce.getId().equals(resourceInfo.get(0))) {
                             continue;
-
+                        }
                         reverseChannel.remove(detailMediaResouce);
                         updateResourceParams.clear();
                         resourceInfo.clear();
@@ -175,8 +178,9 @@ public class H323TerminalService extends TerminalService {
                     CreateResourceParam createResourceParam = new CreateResourceParam();
                     createResourceParam.setSdp(constructSdp(mediaDescription));
                     CreateResourceResponse resourceResponse = addExchange(createResourceParam);
-                    if (null == resourceResponse)
+                    if (null == resourceResponse) {
                         return false;
+                    }
 
                     resourceInfo.add(resourceResponse.getResourceID());
                     addMediaResource(mediaDescription.getStreamIndex(), mediaDescription.getDual(), resourceResponse);
@@ -226,8 +230,9 @@ public class H323TerminalService extends TerminalService {
 
         resourceInfo.clear();
 
-        if (bOnlyDualStream)
+        if (bOnlyDualStream) {
             return true;
+        }
 
         //在收到主流的反向的通道打开时，发起正向主流通道的打开
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "H323, start open forward logical channel...........");
@@ -262,8 +267,9 @@ public class H323TerminalService extends TerminalService {
                     if (null == exchangeInfos) {
                         //清理资源
                         for (DetailMediaResouce cleanResource : forwardChannel) {
-                            if (!cleanResource.getId().equals(resourceInfo.get(0)))
+                            if (!cleanResource.getId().equals(resourceInfo.get(0))) {
                                 continue;
+                            }
 
                             bCreate = true;
                             forwardChannel.remove(cleanResource);
@@ -290,12 +296,13 @@ public class H323TerminalService extends TerminalService {
             CreateResourceParam createResourceParam = new CreateResourceParam();
             createResourceParam.setSdp(constructCreateSdp(mediaDescriptions.get(0)));
             resourceResponse = addExchange(createResourceParam);
-            if (null == resourceResponse)
+            if (null == resourceResponse) {
                 return false;
+            }
 
             resourceInfo.add(resourceResponse.getResourceID());
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "resourceResponse" + resourceResponse.getSdp());
-            System.out.println("resourceResponse" + resourceResponse.getSdp());
+            System.out.println("resourceResponse : " + resourceResponse.getSdp());
             newMediaDescription.add(constructRequestMediaDescription(mediaDescriptions.get(0), resourceResponse.getSdp()));
         }
         boolean bOk = false;
@@ -412,8 +419,9 @@ public class H323TerminalService extends TerminalService {
         videoDualStreamMediaDesc.setStreamIndex(dualStreamIndex);
 
         for (DetailMediaResouce detailMediaResouce : forwardChannel) {
-            if (!detailMediaResouce.getId().equals(dualStreamResourceId))
+            if (!detailMediaResouce.getId().equals(dualStreamResourceId)) {
                 continue;
+            }
 
             detailMediaResouce.setStreamIndex(dualStreamIndex);
             break;
@@ -424,8 +432,9 @@ public class H323TerminalService extends TerminalService {
     }
 
     public boolean closeDualStreamChannel() {
-        if (null == videoDualStreamMediaDesc || null == forwardChannel || null == dualStreamResourceId)
+        if (null == videoDualStreamMediaDesc || null == forwardChannel || null == dualStreamResourceId) {
             return true;
+        }
 
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "closeDualStreamChannel, streamIndex : " + videoDualStreamMediaDesc.getStreamIndex());
         System.out.println("closeDualStreamChannel, streamIndex : " + videoDualStreamMediaDesc.getStreamIndex());
@@ -438,8 +447,9 @@ public class H323TerminalService extends TerminalService {
 
         List<String> resourceIds = new ArrayList<>();
         resourceIds.add(dualStreamResourceId);
-        if (removeMediaResource(true, resourceIds))
+        if (removeMediaResource(true, resourceIds)) {
             dualStreamResourceId = null;
+        }
 
         return true;
     }
@@ -497,6 +507,14 @@ public class H323TerminalService extends TerminalService {
 
     public AtomicInteger getForwardGenericStreamNum() {
         return forwardGenericStreamNum;
+    }
+
+    @Override
+    public CreateResourceResponse monitorsAddExchange(MediaDescription mediaDescription){
+        CreateResourceParam createResourceParam = new CreateResourceParam();
+        createResourceParam.setSdp(constructSdp(mediaDescription));
+        CreateResourceResponse resourceResponse = addExchange(createResourceParam);
+        return resourceResponse;
     }
 
     private boolean regGK;

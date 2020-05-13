@@ -140,7 +140,7 @@ public class ConfinterfaceApplicationTests implements ApplicationContextAware {
             System.out.println("create conference ok, confId : " + confId);
 
             McuStatus mcuStatus = mcuRestClientService.endConference(confId, true);
-            if (mcuStatus.getValue() > 0){
+            if (mcuStatus.getValue() != 200){
                 System.out.println("end conference failed! errmsg : " + mcuStatus.getDescription());
             } else {
                 System.out.println("end conference ok!");

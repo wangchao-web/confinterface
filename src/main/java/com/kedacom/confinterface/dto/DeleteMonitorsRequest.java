@@ -4,19 +4,18 @@ import com.kedacom.confinterface.util.ConfInterfaceResult;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
-public class CancelInspectionRequest extends BaseRequestMsg<BaseResponseMsg> {
-
-    public CancelInspectionRequest(String groupId, InspectionParam inspectionParam) {
+public class DeleteMonitorsRequest extends BaseRequestMsg<BaseResponseMsg>{
+    public DeleteMonitorsRequest(String groupId, MonitorsParams monitorsParams) {
         super(groupId);
-        this.inspectionParam = inspectionParam;
+        this.monitorsParams = monitorsParams;
     }
 
-    public InspectionParam getInspectionParam() {
-        return inspectionParam;
+    public MonitorsParams getMonitorsParams() {
+        return monitorsParams;
     }
 
-    public void setInspectionParam(InspectionParam inspectionParam) {
-        this.inspectionParam = inspectionParam;
+    public void setMonitorsParams(MonitorsParams monitorsParams) {
+        this.monitorsParams = monitorsParams;
     }
 
     @Override
@@ -33,5 +32,5 @@ public class CancelInspectionRequest extends BaseRequestMsg<BaseResponseMsg> {
         responseMsg.setResult(responseEntity);
     }
 
-    private InspectionParam inspectionParam;
+    private MonitorsParams monitorsParams;
 }

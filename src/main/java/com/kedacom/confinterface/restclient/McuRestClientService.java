@@ -9,6 +9,7 @@ import com.kedacom.confinterface.restclient.mcu.*;
 import com.kedacom.confinterface.restclient.mcu.ConfsCascadesMtsRspInfo;
 import com.kedacom.confinterface.service.ConfInterfaceService;
 import com.kedacom.confinterface.service.TerminalManageService;
+import com.kedacom.confinterface.service.TerminalMediaSourceService;
 import com.kedacom.confinterface.service.TerminalService;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -68,7 +69,7 @@ public class McuRestClientService {
         }
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "mcuRestConfig.getSoftwareKey() : " + mcuRestConfig.getSoftwareKey());
         System.out.println("mcuRestConfig.getSoftwareKey() : " + mcuRestConfig.getSoftwareKey());
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "mcuRestConfig.getSoftwareKey() : " + mcuRestConfig.getSoftwareKey());
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"mcuRestConfig.getSecretKey() : " + mcuRestConfig.getSecretKey());
         System.out.println("mcuRestConfig.getSecretKey() : " + mcuRestConfig.getSecretKey());
 
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "param: " + param.toString());
@@ -203,8 +204,9 @@ public class McuRestClientService {
     }
 
     public McuStatus endConference(String confId, boolean deleteConf) {
-        if (!loginSuccess)
+        if (!loginSuccess) {
             return McuStatus.TimeOut;
+        }
 
         McuBaseResponse response = null;
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "endConference :　");
@@ -217,8 +219,9 @@ public class McuRestClientService {
 
             McuPostMsg mcuPostMsg = new McuPostMsg(accountToken);
             response = restClientService.exchange(url.toString(), HttpMethod.DELETE, mcuPostMsg.getMsg(), urlencodeMediaType, args, McuBaseResponse.class);
-            if (null == response)
+            if (null == response) {
                 return McuStatus.Unknown;
+            }
         } else {
             synchronized (this) {
                 List<String> channels = confSubcribeChannelMap.get(confId);
@@ -227,16 +230,6 @@ public class McuRestClientService {
                     System.out.println("channels is null or isEmpty");
                     return McuStatus.OK;
                 }
-           /* Iterator<String> iterator = channels.iterator();
-            while (iterator.hasNext()) {
-                String channel = iterator.next();
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"channel : " + channel);
-                System.out.println("channel : " + channel);
-                synchronized (this){
-                    mcuSubscribeClientService.unsubscribe(channel);
-                }
-                iterator.remove();
-            }*/
                 if (null != channels) {
                     for (String channel : channels) {
                         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "channel : " + channel);
@@ -249,8 +242,9 @@ public class McuRestClientService {
             }
         }
 
-        if (null == response)
+        if (null == response) {
             return McuStatus.OK;
+        }
 
         return McuStatus.resolve(response.getError_code());
     }
@@ -318,8 +312,9 @@ public class McuRestClientService {
     }
 
     public McuStatus leftConference(String confId, List<TerminalId> mts, boolean delConf) {
-        if (mts.isEmpty())
+        if (mts.isEmpty()) {
             return McuStatus.OK;
+        }
 
         if (!loginSuccess) {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "leftConference, has login out!!!");
@@ -337,8 +332,9 @@ public class McuRestClientService {
         McuPostMsg mcuPostMsg = new McuPostMsg(accountToken);
         mcuPostMsg.setParams(leftConferenceMts);
         McuBaseResponse response = restClientService.exchange(url.toString(), HttpMethod.DELETE, mcuPostMsg.getMsg(), urlencodeMediaType, args, McuBaseResponse.class);
-        if (null == response)
+        if (null == response) {
             return McuStatus.Unknown;
+        }
 
         if (!response.success()) {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "left conference failed! errCode : " + response.getError_code());
@@ -349,8 +345,9 @@ public class McuRestClientService {
             endConference(confId, true);
         }
 
-        if (response.success())
+        if (response.success()) {
             return McuStatus.OK;
+        }
 
         return McuStatus.resolve(response.getError_code());
     }
@@ -574,11 +571,13 @@ public class McuRestClientService {
         McuPostMsg mcuPostMsg = new McuPostMsg(accountToken);
         mcuPostMsg.setParams(terminalId);
         McuBaseResponse response = restClientService.exchange(url.toString(), HttpMethod.PUT, mcuPostMsg.getMsg(), urlencodeMediaType, args, McuBaseResponse.class);
-        if (null == response)
+        if (null == response) {
             return McuStatus.Unknown;
+        }
 
-        if (response.success())
+        if (response.success()) {
             return McuStatus.OK;
+        }
 
         return McuStatus.resolve(response.getError_code());
     }
@@ -601,11 +600,13 @@ public class McuRestClientService {
         McuPostMsg mcuPostMsg = new McuPostMsg(accountToken);
         mcuPostMsg.setParams(cameraCtrlParam);
         McuBaseResponse response = restClientService.exchange(url.toString(), HttpMethod.POST, mcuPostMsg.getMsg(), urlencodeMediaType, args, McuBaseResponse.class);
-        if (null == response)
+        if (null == response) {
             return McuStatus.Unknown;
+        }
 
-        if (response.success())
+        if (response.success()) {
             return McuStatus.OK;
+        }
 
         return McuStatus.resolve(response.getError_code());
     }
@@ -630,11 +631,13 @@ public class McuRestClientService {
         mcuPostMsg.setParams(needIFrameParam);
 
         McuBaseResponse response = restClientService.exchange(url.toString(), HttpMethod.POST, mcuPostMsg.getMsg(), urlencodeMediaType, args, McuBaseResponse.class);
-        if (null == response)
+        if (null == response) {
             return McuStatus.Unknown;
+        }
 
-        if (response.success())
+        if (response.success()) {
             return McuStatus.OK;
+        }
 
         return McuStatus.resolve(response.getError_code());
     }
@@ -657,11 +660,13 @@ public class McuRestClientService {
         McuPostMsg mcuPostMsg = new McuPostMsg(accountToken);
         mcuPostMsg.setParams(ctrlVolumeParam);
         McuBaseResponse response = restClientService.exchange(url.toString(), HttpMethod.PUT, mcuPostMsg.getMsg(), urlencodeMediaType, args, McuBaseResponse.class);
-        if (null == response)
+        if (null == response) {
             return McuStatus.Unknown;
+        }
 
-        if (response.success())
+        if (response.success()) {
             return McuStatus.OK;
+        }
 
         return McuStatus.resolve(response.getError_code());
     }
@@ -690,11 +695,13 @@ public class McuRestClientService {
         McuPostMsg mcuPostMsg = new McuPostMsg(accountToken);
         mcuPostMsg.setParams(silenceOrMuteParam);
         McuBaseResponse response = restClientService.exchange(url.toString(), HttpMethod.PUT, mcuPostMsg.getMsg(), urlencodeMediaType, args, McuBaseResponse.class);
-        if (null == response)
+        if (null == response) {
             return McuStatus.Unknown;
+        }
 
-        if (response.success())
+        if (response.success()) {
             return McuStatus.OK;
+        }
 
         return McuStatus.resolve(response.getError_code());
     }
@@ -724,11 +731,13 @@ public class McuRestClientService {
             response = restClientService.exchange(url.toString(), HttpMethod.DELETE, mcuPostMsg.getMsg(), urlencodeMediaType, args, McuBaseResponse.class);
         }
 
-        if (null == response)
+        if (null == response) {
             return McuStatus.Unknown;
+        }
 
-        if (response.success())
+        if (response.success()) {
             return McuStatus.OK;
+        }
 
         return McuStatus.resolve(response.getError_code());
     }
@@ -751,11 +760,13 @@ public class McuRestClientService {
         McuPostMsg mcuPostMsg = new McuPostMsg(accountToken);
         mcuPostMsg.setParams(onlineMtsInfo);
         McuBaseResponse response = restClientService.exchange(url.toString(), HttpMethod.POST, mcuPostMsg.getMsg(), urlencodeMediaType, args, McuBaseResponse.class);
-        if (null == response)
+        if (null == response) {
             return McuStatus.Unknown;
+        }
 
-        if (response.success())
+        if (response.success()) {
             return McuStatus.OK;
+        }
 
         return McuStatus.resolve(response.getError_code());
     }
@@ -860,6 +871,81 @@ public class McuRestClientService {
         }
     }
 
+    @Scheduled(initialDelay = monitorsHeartbeatInterval, fixedRate = monitorsHeartbeatInterval)
+    public void monitorsDoHearbeat() {
+        if (!loginSuccess) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "monitorsDoHearbeat, has login out!!!");
+            System.out.println("monitorsDoHearbeat, has login out!!!");
+            return;
+        }
+        if(ConfInterfaceService.monitorsMemberHearbeat == null || ConfInterfaceService.monitorsMemberHearbeat.isEmpty()){
+           /* LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "monitorsMemberHearbeat is null or empty  *****! current time : " + System.currentTimeMillis());
+            System.out.println("monitorsMemberHearbeat is null or empty  *****! current time : " + System.currentTimeMillis());*/
+            return;
+        }
+        for (Map.Entry<String, Map<String, MonitorsMember>> monitorsMemberHearbeat : ConfInterfaceService.monitorsMemberHearbeat.entrySet()) {
+            //获取所有组的监看信息
+            String confId = monitorsMemberHearbeat.getKey();
+            Map<String, MonitorsMember> monitorsMembersMaps = monitorsMemberHearbeat.getValue();
+
+            if(monitorsMembersMaps.isEmpty() || monitorsMembersMaps == null){
+                /*LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "monitorsDoHearbeat monitorsMembersMaps is null or empty  *****! + "+ ", confId : " + confId);
+                System.out.println("monitorsDoHearbeat monitorsMembersMaps is null or empty  *****! + "+ ", confId : " + confId);*/
+                continue;
+            }
+            McuMonitorsHeartbeatParam mcuMonitorsHeartbeatParam = new McuMonitorsHeartbeatParam();
+            List<McuMonitorsDst> monitors = new ArrayList<>();
+            for (Map.Entry<String, MonitorsMember> monitorsMembersMap : monitorsMembersMaps.entrySet()){
+                MonitorsMember monitorsMember = monitorsMembersMap.getValue();
+                if(monitorsMember == null){
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "monitorsDoHearbeat monitorsMember is null or empty  *****! + "+ ", confId : " + confId);
+                    System.out.println("monitorsDoHearbeat monitorsMember is null or empty  *****! + "+ ", confId : " + confId);
+                    continue;
+                }
+                McuMonitorsDst mcuMonitorsDst = new McuMonitorsDst(monitorsMember.getDstIp(), monitorsMember.getPort());
+                McuStatus mcuStatus = NeedMonistorsFrame(confId, monitorsMember.getDstIp(), monitorsMember.getPort());
+                if(mcuStatus.getValue() == 200){
+                   /* LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Mcu monitorsDoHearbeat NeedMonistorsFrame is success " );
+                    System.out.println("Mcu monitorsDoHearbeat NeedMonistorsFrame is success " );*/
+                }else{
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Mcu monitorsDoHearbeat NeedMonistorsFrame is failed  errcode : " + mcuStatus.getValue() + ", confId : " + confId +", dstIP : "+monitorsMember.getDstIp()+", port : "+monitorsMember.getPort());
+                    System.out.println("Mcu monitorsDoHearbeat NeedMonistorsFrame is failed  errcode : " + mcuStatus.getValue() + ", confId : " + confId +", dstIP : "+monitorsMember.getDstIp()+", port : "+monitorsMember.getPort());
+                }
+                monitors.add(mcuMonitorsDst);
+            }
+            if (monitors.isEmpty()){
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "monitorsDoHearbeat monitors is null or empty  *****! + "+ ", confId : " + confId);
+                System.out.println("monitorsDoHearbeat monitors is null or empty  *****! + "+ ", confId : " + confId);
+                continue;
+            }
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"confId : " + confId + ", monitorsDoHearbeat monitors : " +  monitors.toString());
+            System.out.println("confId : " + confId + ", monitorsDoHearbeat monitors : " +  monitors.toString());
+            mcuMonitorsHeartbeatParam.setMonitors(monitors);
+            StringBuilder url = new StringBuilder();
+            constructUrl(url, "/api/v1/vc/confs/{conf_id}/monitors_heartbeat");
+            Map<String, String> args = new HashMap<>();
+            args.put("conf_id", confId);
+            McuPostMsg mcuPostMsg = new McuPostMsg(accountToken);
+            mcuPostMsg.setParams(mcuMonitorsHeartbeatParam);
+            McuBaseResponse MonitorsResponse = restClientService.exchange(url.toString(), HttpMethod.POST, mcuPostMsg.getMsg(), urlencodeMediaType, args, McuBaseResponse.class);
+
+            if (null == MonitorsResponse) {
+                continue;
+            }
+
+            if (MonitorsResponse.success()) {
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"confId : " + confId + ", monitorsDoHearbeat is success " );
+                System.out.println("confId : " + confId + ", monitorsDoHearbeat is success " );
+                continue ;
+            }
+
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Mcu MonitorsResponse getError_code() :" + MonitorsResponse.getError_code());
+            System.out.println("Mcu MonitorsResponse getError_code() :" + MonitorsResponse.getError_code());
+            continue ;
+        }
+
+    }
+
     private void constructUrl(StringBuilder url, String restApi) {
         //System.out.println("url length : " + url.length());
 
@@ -867,10 +953,11 @@ public class McuRestClientService {
             url.delete(0, url.length());
         }
 
-        if ("prod".equals(activeProf))
+        if ("prod".equals(activeProf)) {
             url.append("https://");
-        else
+        } else {
             url.append("http://");
+        }
 
         url.append(mcuRestConfig.getMcuIp());
         if (mcuRestConfig.getMcuRestPort() > 0) {
@@ -893,8 +980,9 @@ public class McuRestClientService {
         }
 
         for (String channel : subscribeChannelList) {
-            if (channel.equals(subscribeChannel.toString()))
+            if (channel.equals(subscribeChannel.toString())) {
                 return;
+            }
         }
 
         mcuSubscribeClientService.subscribe(subscribeChannel.toString());
@@ -914,8 +1002,9 @@ public class McuRestClientService {
         }
 
         for (String channel : subscribeChannelList) {
-            if (channel.equals(subscribeChannel.toString()))
+            if (channel.equals(subscribeChannel.toString())) {
                 return;
+            }
         }
 
         //订阅会议终端信息 添加终端失败通知(/confs/{conf_id}/mts) 及 终端列表(/confs/{conf_id}/cascades/{cascade_id}/mts/{mt_id})
@@ -946,8 +1035,9 @@ public class McuRestClientService {
         }
 
         for (String channel : subscribeChannelList) {
-            if (channel.equals(subscribeChannel.toString()))
+            if (channel.equals(subscribeChannel.toString())) {
                 return;
+            }
         }
 
         mcuSubscribeClientService.subscribe(subscribeChannel.toString());
@@ -969,8 +1059,9 @@ public class McuRestClientService {
         }
 
         for (String channel : subscribeChannelList) {
-            if (channel.equals(subscribeChannel.toString()))
+            if (channel.equals(subscribeChannel.toString())) {
                 return;
+            }
         }
 
         mcuSubscribeClientService.subscribe(subscribeChannel.toString());
@@ -992,8 +1083,9 @@ public class McuRestClientService {
         }
 
         for (String channel : subscribeChannelList) {
-            if (channel.equals(subscribeChannel.toString()))
+            if (channel.equals(subscribeChannel.toString())) {
                 return;
+            }
         }
 
         mcuSubscribeClientService.subscribe(subscribeChannel.toString());
@@ -1016,8 +1108,59 @@ public class McuRestClientService {
         }
 
         for (String channel : subscribeChannelList) {
-            if (channel.equals(subscribeChannel.toString()))
+            if (channel.equals(subscribeChannel.toString())) {
                 return;
+            }
+        }
+
+        mcuSubscribeClientService.subscribe(subscribeChannel.toString());
+        subscribeChannelList.add(subscribeChannel.toString());
+        confSubcribeChannelMap.put(confId, subscribeChannelList);
+    }
+
+    public void subscribeVmps(String confId) {
+        ///confs/{conf_id}/vmps/{vmp_id}
+        StringBuilder subscribeChannel = new StringBuilder();
+        subscribeChannel.delete(0, subscribeChannel.length());
+        subscribeChannel.append("/confs/");
+        subscribeChannel.append(confId);
+        subscribeChannel.append("/vmps/");
+        subscribeChannel.append("1");
+
+        List<String> subscribeChannelList = confSubcribeChannelMap.get(confId);
+        if (null == subscribeChannelList) {
+            subscribeChannelList = Collections.synchronizedList(new ArrayList<>());
+        }
+
+        for (String channel : subscribeChannelList) {
+            if (channel.equals(subscribeChannel.toString())) {
+                return;
+            }
+        }
+
+        mcuSubscribeClientService.subscribe(subscribeChannel.toString());
+        subscribeChannelList.add(subscribeChannel.toString());
+        confSubcribeChannelMap.put(confId, subscribeChannelList);
+    }
+
+    public void subscribeMixs(String confId) {
+        ///confs/{conf_id}/mixs/{mix_id}
+        StringBuilder subscribeChannel = new StringBuilder();
+        subscribeChannel.delete(0, subscribeChannel.length());
+        subscribeChannel.append("/confs/");
+        subscribeChannel.append(confId);
+        subscribeChannel.append("/mixs/");
+        subscribeChannel.append("1");
+
+        List<String> subscribeChannelList = confSubcribeChannelMap.get(confId);
+        if (null == subscribeChannelList) {
+            subscribeChannelList = Collections.synchronizedList(new ArrayList<>());
+        }
+
+        for (String channel : subscribeChannelList) {
+            if (channel.equals(subscribeChannel.toString())) {
+                return;
+            }
         }
 
         mcuSubscribeClientService.subscribe(subscribeChannel.toString());
@@ -1033,19 +1176,20 @@ public class McuRestClientService {
         subscribeChannel.delete(0, subscribeChannel.length());
         subscribeChannel.append("/confs/*");
 
-        List<String> subscribeChannelList = confSubcribeChannelMap.get("");
+        List<String> subscribeChannelList = confSubcribeChannelMap.get("allConf");
         if (null == subscribeChannelList) {
             subscribeChannelList = Collections.synchronizedList(new ArrayList<>());
         }
 
         for (String channel : subscribeChannelList) {
-            if (channel.equals(subscribeChannel.toString()))
+            if (channel.equals(subscribeChannel.toString())) {
                 return;
+            }
         }
 
         mcuSubscribeClientService.subscribe(subscribeChannel.toString());
         subscribeChannelList.add(subscribeChannel.toString());
-        confSubcribeChannelMap.put("", subscribeChannelList);
+        confSubcribeChannelMap.put("allConf", subscribeChannelList);
     }
 
     public List<ConfsDetailRspInfo> queryConfs() {
@@ -1368,8 +1512,8 @@ public class McuRestClientService {
 
         if (!mcuGetVmpsInfoResponse.success()) {
             int errorCode = mcuGetVmpsInfoResponse.getError_code();
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "mcuGetVmpsInfoResponse failed! errCode :" + errorCode + ", errmsg:" + McuStatus.resolve(errorCode).getDescription());
-            System.out.println("mcuGetVmpsInfoResponse failed! errCode :" + errorCode + ", errmsg:" + McuStatus.resolve(errorCode).getDescription());
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "mcu Get Vmps Info Response failed! errCode :" + errorCode + ", errmsg:" + McuStatus.resolve(errorCode).getDescription());
+            System.out.println("mcu Get Vmps Info Response failed! errCode :" + errorCode + ", errmsg:" + McuStatus.resolve(errorCode).getDescription());
             return null;
         }
 
@@ -1387,7 +1531,7 @@ public class McuRestClientService {
 
         StringBuilder url = new StringBuilder();
         ///api/v1/vc/confs/{conf_id}/mixs
-        constructUrl(url, "api/v1/vc/confs/{conf_id}/mixs");
+        constructUrl(url, "/api/v1/vc/confs/{conf_id}/mixs");
         Map<String, String> args = new HashMap<>();
         args.put("conf_id", confId);
 
@@ -1396,8 +1540,9 @@ public class McuRestClientService {
         McuPostMsg mcuPostMsg = new McuPostMsg(accountToken);
         mcuPostMsg.setParams(mcuStartMixparam);
 
-        McuBaseResponse baseResponse = restClientService.exchange(url.toString(), HttpMethod.POST, mcuPostMsg, urlencodeMediaType, args, McuBaseResponse.class);
-
+        McuBaseResponse baseResponse = restClientService.exchange(url.toString(), HttpMethod.POST, mcuPostMsg.getMsg(), urlencodeMediaType, args, McuBaseResponse.class);
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "baseResponse : " + baseResponse);
+        System.out.println("baseResponse : " + baseResponse);
         if (null == baseResponse) {
             return McuStatus.Unknown;
         }
@@ -1431,7 +1576,7 @@ public class McuRestClientService {
         McuPostMsg mcuPostMsg = new McuPostMsg(accountToken);
         mcuPostMsg.setParams(mcuMixMembers);
 
-        McuBaseResponse addMixsMembersResponse = restClientService.exchange(url.toString(), HttpMethod.POST, mcuPostMsg, urlencodeMediaType, args, McuBaseResponse.class);
+        McuBaseResponse addMixsMembersResponse = restClientService.exchange(url.toString(), HttpMethod.POST, mcuPostMsg.getMsg(), urlencodeMediaType, args, McuBaseResponse.class);
 
         if (null == addMixsMembersResponse) {
             return McuStatus.Unknown;
@@ -1466,7 +1611,7 @@ public class McuRestClientService {
         McuPostMsg mcuPostMsg = new McuPostMsg(accountToken);
         mcuPostMsg.setParams(mcuMixMembers);
 
-        McuBaseResponse deleteMixsMembersResponse = restClientService.exchange(url.toString(), HttpMethod.DELETE, mcuPostMsg, urlencodeMediaType, args, McuBaseResponse.class);
+        McuBaseResponse deleteMixsMembersResponse = restClientService.exchange(url.toString(), HttpMethod.DELETE, mcuPostMsg.getMsg(), urlencodeMediaType, args, McuBaseResponse.class);
 
         if (null == deleteMixsMembersResponse) {
             return McuStatus.Unknown;
@@ -1546,6 +1691,176 @@ public class McuRestClientService {
         return mcuMixsInfoResponse;
     }
 
+    //开始监看
+    public McuStatus startMonitors(String confId, McuStartMonitorsParam mcuStartMonitorsParam) {
+        if (!loginSuccess) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "[startMonitors] has login out!!!");
+            System.out.println("[startMonitors] has login out!!!");
+            return null;
+        }
+        McuMonitorsDst dst = mcuStartMonitorsParam.getDst();
+
+        StringBuilder url = new StringBuilder();
+        ///api/v1/vc/confs/{conf_id}/monitors
+        constructUrl(url, "/api/v1/vc/confs/{conf_id}/monitors");
+        Map<String, String> args = new HashMap<>();
+        args.put("conf_id", confId);
+
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Mcu startMonitors : " + mcuStartMonitorsParam.toString());
+        System.out.println("Mcu startMonitors : " + mcuStartMonitorsParam.toString());
+        McuPostMsg mcuPostMsg = new McuPostMsg(accountToken);
+        mcuPostMsg.setParams(mcuStartMonitorsParam);
+
+        McuBaseResponse startMonitorsResponse = restClientService.exchange(url.toString(), HttpMethod.POST, mcuPostMsg.getMsg(), urlencodeMediaType, args, McuBaseResponse.class);
+
+        if (null == startMonitorsResponse) {
+            return McuStatus.Unknown;
+        }
+
+        if (startMonitorsResponse.success()) {
+            McuStatus mcuStatus = NeedMonistorsFrame(confId, dst.getIp(), dst.getPort());
+            if(mcuStatus.getValue() == 200){
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Mcu startMonitors NeedMonistorsFrame is success " );
+                System.out.println("Mcu startMonitors NeedMonistorsFrame is success " );
+            }else{
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Mcu startMonitors NeedMonistorsFrame is failed  errcode : " + mcuStatus.getValue() );
+                System.out.println("Mcu startMonitors NeedMonistorsFrame is failed  errcode : " + mcuStatus.getValue());
+            }
+
+            return McuStatus.OK;
+        }
+
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Mcu startMonitors getError_code() :" + startMonitorsResponse.getError_code());
+        System.out.println("Mcu startMonitors getError_code() :" + startMonitorsResponse.getError_code());
+        return McuStatus.resolve(startMonitorsResponse.getError_code());
+    }
+
+    //取消监看
+    public McuStatus deleteMonistors(String confId, String dstIp, int port) {
+        if (!loginSuccess) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "[deleteMonistors] has login out!!!");
+            System.out.println("[deleteMonistors] has login out!!!");
+            return null;
+        }
+
+        StringBuilder url = new StringBuilder();
+        ///api/v1/vc/confs/{conf_id}/monitors/{dst_ip}/{dst_port}
+        constructUrl(url, "/api/v1/vc/confs/{conf_id}/monitors/{dst_ip}/{dst_port}?account_token={account_token}");
+        Map<String, String> args = new HashMap<>();
+        args.put("conf_id", confId);
+        args.put("dst_ip", dstIp);
+        args.put("dst_port", String.valueOf(port));
+        args.put("account_token", accountToken);
+
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Mcu deleteMonistors dst_ip : " + dstIp + ", dst_port : " + port);
+        System.out.println("Mcu deleteMonistors dst_ip : " + dstIp + ", dst_port : " + port);
+
+
+        McuBaseResponse deleteMonitorsResponse = restClientService.exchange(url.toString(), HttpMethod.DELETE, null, urlencodeMediaType, args, McuBaseResponse.class);
+
+        if (null == deleteMonitorsResponse) {
+            return McuStatus.Unknown;
+        }
+
+        if (deleteMonitorsResponse.success()) {
+
+            return McuStatus.OK;
+        }
+
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Mcu deleteMonistors getError_code() :" + deleteMonitorsResponse.getError_code());
+        System.out.println("Mcu deleteMonistors getError_code() :" + deleteMonitorsResponse.getError_code());
+        return McuStatus.resolve(deleteMonitorsResponse.getError_code());
+    }
+
+    //获取监看关键帧
+    public McuStatus NeedMonistorsFrame(String confId, String dstIp, int port) {
+        if (!loginSuccess) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "[NeedMonistorsFrame] has login out!!!");
+            System.out.println("[NeedMonistorsFrame] has login out!!!");
+            return null;
+        }
+
+        StringBuilder needIframeUrl = new StringBuilder();
+        ///api/v1/vc/confs/{conf_id}/neediframe/monitors
+        constructUrl(needIframeUrl, "/api/v1/vc/confs/{conf_id}/neediframe/monitors");
+        Map<String, String> needIframeArgs = new HashMap<>();
+        needIframeArgs.put("conf_id", confId);
+
+        McuMonitorsDst mcuMonitorsDst = new McuMonitorsDst(dstIp, port);
+        McuMonitorsIframeParam mcuMonitorsIframeParam = new McuMonitorsIframeParam(mcuMonitorsDst);
+        McuPostMsg needIframePostMsg = new McuPostMsg(accountToken);
+        needIframePostMsg.setParams(mcuMonitorsIframeParam);
+        McuBaseResponse needIframeResponse = restClientService.exchange(needIframeUrl.toString(), HttpMethod.POST, needIframePostMsg.getMsg(), urlencodeMediaType, needIframeArgs, McuBaseResponse.class);
+
+        if (null == needIframeResponse) {
+            return McuStatus.Unknown;
+        }
+
+        if (needIframeResponse.success()) {
+            return McuStatus.OK;
+        }
+
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Mcu needIframeResponse getError_code() :" + needIframeResponse.getError_code());
+        System.out.println("Mcu needIframeResponse getError_code() :" + needIframeResponse.getError_code());
+        return McuStatus.resolve(needIframeResponse.getError_code());
+    }
+
+    //获取监看信息
+    public McuStatus GetMonistors(String confId, String dstIp, int port) {
+        if (!loginSuccess) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "[GetMonistors] has login out!!!");
+            System.out.println("[GetMonistors] has login out!!!");
+            return null;
+        }
+
+        StringBuilder url = new StringBuilder();
+        ///api/v1/vc/confs/{conf_id}/monitors/{dst_ip}/{dst_port}
+        constructUrl(url, "/api/v1/vc/confs/{conf_id}/monitors/{dst_ip}/{dst_port}?account_token={account_token}");
+        Map<String, String> args = new HashMap<>();
+        args.put("conf_id", confId);
+        args.put("dst_ip", dstIp);
+        args.put("dst_port", String.valueOf(port));
+        args.put("account_token", accountToken);
+
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Mcu GetMonistors dst_ip : " + dstIp + ", dst_port : " + port + ", confId : " +confId);
+        System.out.println("Mcu GetMonistors dst_ip : " + dstIp + ", dst_port : " + port + ", confId : " +confId);
+
+
+        GetMonitorsInfoResponse getMonitorsInfoResponse = restClientService.exchange(url.toString(), HttpMethod.GET, null, urlencodeMediaType, args, GetMonitorsInfoResponse.class);
+
+        if (null == getMonitorsInfoResponse) {
+            return McuStatus.Unknown;
+        }
+
+        if (getMonitorsInfoResponse.success()) {
+            return McuStatus.OK;
+        }
+
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Mcu getMonitorsInfoResponse getError_code() :" + getMonitorsInfoResponse.getError_code());
+        System.out.println("Mcu getMonitorsInfoResponse getError_code() :" + getMonitorsInfoResponse.getError_code());
+        return McuStatus.resolve(getMonitorsInfoResponse.getError_code());
+    }
+
+    public Map<String, List<String>> getConfSubcribeChannelMap() {
+        return confSubcribeChannelMap;
+    }
+
+    public void setConfSubcribeChannelMap(Map<String, List<String>> confSubcribeChannelMap) {
+        this.confSubcribeChannelMap = confSubcribeChannelMap;
+    }
+    public void removeConfSubcribeChannelMap(String confId) {
+        if(!confSubcribeChannelMap.containsKey(confId)){
+            return;
+        }
+        confSubcribeChannelMap.remove(confId);
+    }
+
+    public void removeMcuSubscribe(String channel) {
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"removeMcuSubscribe channel : " +channel);
+        System.out.println("removeMcuSubscribe channel : " +channel);
+        mcuSubscribeClientService.unsubscribe(channel);
+    }
+
     @Autowired
     private RestClientService restClientService;
 
@@ -1558,6 +1873,9 @@ public class McuRestClientService {
     @Autowired
     private Environment env;
 
+    @Autowired
+    private TerminalMediaSourceService terminalMediaSourceService;
+
 
     protected final org.slf4j.Logger logger = LoggerFactory.getLogger(this.getClass());
 
@@ -1566,6 +1884,7 @@ public class McuRestClientService {
     private List<String> cookies;
     //private final long heartbeatInterval = 25 * 60 * 1000L;
     private final long heartbeatInterval = 1 * 60 * 1000L;
+    private final long monitorsHeartbeatInterval = 10000L;
     //private volatile boolean loginSuccess;
     public volatile boolean loginSuccess = false;
     private Map<String, List<String>> confSubcribeChannelMap;

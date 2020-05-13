@@ -20,6 +20,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -96,6 +97,26 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
             System.out.println("process StartDualStreamRequest..........");
             StartDualStreamRequest startDualStreamRequest = (StartDualStreamRequest) requestMsg;
             processStartDualStreamRequest(subscribeEvent, groupConfInfo, startDualStreamRequest);
+        } else if (requestMsg instanceof StartVmpsRequest) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "process StartVmpsRequest..........");
+            System.out.println("process StartVmpsRequest..........");
+            StartVmpsRequest startVmpsRequest = (StartVmpsRequest) requestMsg;
+            processStartVmpsRequest(subscribeEvent, groupConfInfo, startVmpsRequest);
+        } else if (requestMsg instanceof StartMixRequest) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "process StartMixRequest..........");
+            System.out.println("process StartMixRequest..........");
+            StartMixRequest startMixRequest = (StartMixRequest) requestMsg;
+            processStartMixsRequest(subscribeEvent, groupConfInfo, startMixRequest);
+        } else if (requestMsg instanceof MixMembersRequest) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "process MixMembersRequest..........");
+            System.out.println("process MixMembersRequest..........");
+            MixMembersRequest mixMembersRequest = (MixMembersRequest) requestMsg;
+            processMixMembersRequest(subscribeEvent, groupConfInfo, mixMembersRequest);
+        }else if (requestMsg instanceof EndMixRequest) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "process EndMixRequest..........");
+            System.out.println("process EndMixRequest..........");
+            EndMixRequest endMixRequest = (EndMixRequest) requestMsg;
+            processEndMixRequest(subscribeEvent, groupConfInfo, endMixRequest);
         }
     }
 
@@ -131,7 +152,7 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
         int tryTimes = 3;
         do {
             McuStatus mcuStatus = mcuRestClientService.inspections(confId, mode, srcMtId, dstMtId);
-            if (mcuStatus.getValue() == 0 || tryTimes == 1) {
+            if (mcuStatus.getValue() == 200 || tryTimes == 1) {
                 //选看成功或者尝试次数到了，直接退出循环
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "tryInspections, confId:" + confId + ", mode:" + mode + ", srcMtId:" + srcMtId + ", dstMtId:" + dstMtId + ", errCode:" + mcuStatus.getValue() + ", tryTimes:" + tryTimes);
                 System.out.println("tryInspections, confId:" + confId + ", mode:" + mode + ", srcMtId:" + srcMtId + ", dstMtId:" + dstMtId + ", errCode:" + mcuStatus.getValue() + ", tryTimes:" + tryTimes);
@@ -184,8 +205,9 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
         TerminalService dstInspectionService;
         for (ConcurrentHashMap.Entry<String, InspectedParam> inspectedTerminal : inspectedTerminals.entrySet()) {
             dstInspectionService = groupConfInfo.getMember(inspectedTerminal.getKey());
-            if (null == dstInspectionService)
+            if (null == dstInspectionService) {
                 continue;
+            }
 
             if (!dstInspectionService.isOnline()) {
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "dstTerminal[" + dstInspectionService.getE164() + "] is not online, processing inspection when dst is online!");
@@ -215,8 +237,9 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
 
         //todo：此处暂时未考虑mcu级联的情况，后面根据需要，可以考虑
         GetConfMtInfoResponse getConfMtInfoResponse = mcuRestClientService.getConfMtInfo(confId, mtId);
-        if (null == getConfMtInfoResponse)
+        if (null == getConfMtInfoResponse) {
             return;
+        }
 
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processSubscribeMts, ConfMtInfo:" + getConfMtInfoResponse.toString());
         System.out.println("processSubscribeMts, ConfMtInfo:" + getConfMtInfoResponse.toString());
@@ -231,7 +254,7 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
         TerminalService terminalService = groupConfInfo.getMember(e164);
 
         if (null == terminalService) {
-            if (groupConfInfo.getCreatedConf().equals("mcu")) {
+            if ("mcu".equals(groupConfInfo.getCreatedConf())) {
                 Boolean bVmt = false;
                 groupConfInfo.addMtId(getConfMtInfoResponse.getMt_id(), e164);
                 if (getConfMtInfoResponse.getAlias().contains("confInterface")) {
@@ -250,13 +273,13 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
                 groupConfInfo.addMember(terminal);
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processSubscribeMts createTerminal  ,terminal  " + terminal.toString());
                 System.out.println("processSubscribeMts createTerminal  ,terminal  " + terminal.toString());
-                if(getConfMtInfoResponse.getOnline() == 1){
+                if (getConfMtInfoResponse.getOnline() == 1) {
                     if (!bVmt) {
                         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "createTerminal, terminal(e164:" + terminal.getE164() + ",mtId:" + mtId + ") publishStatus add Mt Online!");
                         System.out.println("createTerminal, terminal(e164:" + terminal.getE164() + ",mtId:" + mtId + ") publishStatus add Mt Online!");
                         TerminalManageService.publishStatus(e164, groupConfInfo.getGroupId(), TerminalOnlineStatusEnum.ONLINE.getCode());
                     }
-                }else{
+                } else {
                     if (!bVmt) {
                         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "createTerminal, terminal(e164:" + terminal.getE164() + ",mtId:" + mtId + ") publishStatus add Mt Offline !");
                         System.out.println("createTerminal, terminal(e164:" + terminal.getE164() + ",mtId:" + mtId + ") publishStatus add Mt Offline !");
@@ -270,7 +293,7 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "terminalServiceMtId : " + terminalServiceMtId + "mtId : " + mtId);
             System.out.println("terminalServiceMtId : " + terminalServiceMtId + "mtId : " + mtId);
             if (terminalServiceMtId != null) {
-                if (groupConfInfo.getCreatedConf().equals("mcu") && !terminalServiceMtId.equals(mtId)) {
+                if ("mcu".equals(groupConfInfo.getCreatedConf()) && !terminalServiceMtId.equals(mtId)) {
                     if (getConfMtInfoResponse.getOnline() == 1) {
                         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processSubscribeMts terminalService account : " + terminalService.getE164() + "Online : " + terminalService.getOnline() + "terminalService mtID : " + terminalService.getMtId() + " , getConfMtInfoResponse mtId : " + getConfMtInfoResponse.getMt_id());
                         System.out.println("processSubscribeMts terminalService account : " + terminalService.getE164() + "Online : " + terminalService.getOnline() + "terminalService mtID : " + terminalService.getMtId() + " , getConfMtInfoResponse mtId : " + getConfMtInfoResponse.getMt_id());
@@ -293,7 +316,7 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
         if (terminalService.isOnline()) {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processSubscribeMts, terminal(e164:" + terminalService.getE164() + ",mtId:" + mtId + ") is current online!");
             System.out.println("processSubscribeMts, terminal(e164:" + terminalService.getE164() + ",mtId:" + mtId + ") is current online!");
-            if(getConfMtInfoResponse.getOnline() == 1){
+            if (getConfMtInfoResponse.getOnline() == 1) {
                 if (!terminalService.isVmt()) {
                     LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processSubscribeMts, terminal(e164:" + terminalService.getE164() + ",mtId:" + mtId + ") publishStatus state change!");
                     System.out.println("processSubscribeMts, terminal(e164:" + terminalService.getE164() + ",mtId:" + mtId + ") publishStatus state change!");
@@ -307,12 +330,54 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
                 }
 
                 terminalService.setOnline(TerminalOnlineStatusEnum.OFFLINE.getCode());
+                ConcurrentHashMap<String, MonitorsMember> monitorsMembers = groupConfInfo.getMonitorsMembers();
+                if (monitorsMembers != null || !monitorsMembers.isEmpty()) {
+                    String groupId = groupConfInfo.getGroupId();
+                    String video = terminalService.getE164() + "video";
+                    String audio = terminalService.getE164() + "audio";
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "groupId : "+groupId +", monitorsMembers is not null or empty + videoE164 : " + video + ", audioE164 : " + audio);
+                    System.out.println("groupId : "+groupId + ", monitorsMembers is not null or empty + videoE164 : " + video + ", audioE164 : " + audio);
+                    if (monitorsMembers.containsKey(video)) {
+                        MonitorsMember monitorsMember = monitorsMembers.get(video);
+                        if (monitorsMember != null) {
+                            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processSubscribeMsg get videoE164 monitorsMember not null videoE164 : " + video);
+                            System.out.println("processSubscribeMsg get videoE164 monitorsMember not null videoE164 : " + video);
+                            ArrayList<String> resourceIDs = new ArrayList<>();
+                            resourceIDs.add(monitorsMember.getId());
+                            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processSubscribeMsg get videoE164 : " + video + " terminalService not null removeExchange resourceID : " + monitorsMember.getId());
+                            System.out.println("processSubscribeMsg get videoE164 : " + video + " terminalService not null removeExchange resourceID : " + monitorsMember.getId());
+                            //terminalService.removeExchange(resourceIDs);
+                            confInterfaceService.removeExchange(resourceIDs,groupId);
+                        }
+                        groupConfInfo.deleteMonitorsMembers(video);
+                        terminalMediaSourceService.setMonitorsMembers(confId, monitorsMembers);
+                        ConfInterfaceService.monitorsMemberHearbeat.put(confId,monitorsMembers);
+                    }
+
+                    if (monitorsMembers.containsKey(audio)) {
+                        MonitorsMember monitorsMember = monitorsMembers.get(audio);
+                        if (monitorsMember != null) {
+                            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processSubscribeMsg get audioE164 monitorsMember not null videoE164 : " + audio);
+                            System.out.println("processSubscribeMsg get audioE164 monitorsMember not null videoE164 : " + audio);
+                            ArrayList<String> resourceIDs = new ArrayList<>();
+                            resourceIDs.add(monitorsMember.getId());
+                            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processSubscribeMsg get audioE164 : " + audio + " terminalService not null removeExchange resourceID : " + monitorsMember.getId());
+                            System.out.println("processSubscribeMsg get audioE164 : " + audio + " terminalService not null removeExchange resourceID : " + monitorsMember.getId());
+                            //terminalService.removeExchange(resourceIDs);
+                            confInterfaceService.removeExchange(resourceIDs,groupId);
+                        }
+                        groupConfInfo.deleteMonitorsMembers(audio);
+                        terminalMediaSourceService.setMonitorsMembers(confId, monitorsMembers);
+                        ConfInterfaceService.monitorsMemberHearbeat.put(confId,monitorsMembers);
+                    }
+                }
 
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "terminal(e164:" + e164 + ",mtId:" + mtId + ") is offline! confId:" + groupConfInfo.getConfId() + ", vmt:" + terminalService.isVmt());
                 System.out.println("terminal(e164:" + e164 + ",mtId:" + mtId + ") is offline! confId:" + groupConfInfo.getConfId() + ", vmt:" + terminalService.isVmt());
                 //判断是否有其他的终端选看该终端，如果有，则重置相应终端的选看状态
-                if (!terminalService.isInspected())
+                if (!terminalService.isInspected()) {
                     return;
+                }
 
                 terminalService.clearStatus();
                 ConcurrentHashMap<String, InspectedParam> inspentedTerminals = terminalService.getInspentedTerminals();
@@ -335,8 +400,8 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
                     terminalService.setMtId(mtId);
                     terminalService.setConfId(groupConfInfo.getConfId());
                     groupConfInfo.addMtId(mtId, terminalService.getE164());
-                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"terminalService.setMtId : "+mtId);
-                    System.out.println("terminalService.setMtId : "+mtId);
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "terminalService.setMtId : " + mtId);
+                    System.out.println("terminalService.setMtId : " + mtId);
                 }
 
                 //等到逻辑通道成功打开再设置为终端上线，在逻辑通道没有打开之前，进行选看等其他操作会失败
@@ -429,7 +494,7 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "TerminalOfflineReasonEnum.Normal.getReason() : " + TerminalOfflineReasonEnum.Normal.getReason());
             System.out.println("TerminalOfflineReasonEnum.Normal.getReason() : " + TerminalOfflineReasonEnum.Normal.getReason());
             terminalService.setOnline(status);
-        }else if (20401 == subscribeEvent.getErrorCode()) {
+        } else if (20401 == subscribeEvent.getErrorCode()) {
             //返回该错误码时，指定终端不可及, 可能不在线
             status = TerminalOnlineStatusEnum.OFFLINE.getCode();
             terminalOfflineReasonEnum = TerminalOfflineReasonEnum.Unreachable;
@@ -468,8 +533,9 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
             } else {
                 String groupID = UUID.randomUUID().toString().replaceAll("\\-", "");
                 GroupConfInfo groupConfInfo = new GroupConfInfo(groupID, confId);
-                groupConfInfo.setCreatedConf("mcu");
+                //groupConfInfo.setCreatedConf("mcu");
                 confInterfaceService.addGroupConfInfo(groupConfInfo);
+                //terminalMediaSourceService.setGroup(groupID, confId);
                 TerminalManageService.publishStatus(groupID, groupID, TerminalOnlineStatusEnum.ONLINE.getCode());
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "get conf info subscribe message add ConfId and publishStatus confinterface create : " + confId + "groupId : " + groupID);
                 System.out.println("get conf info subscribe message add ConfId and publishStatus confinterface create : " + confId + "groupId : " + groupID);
@@ -485,7 +551,10 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processSubscribeMsg, method : " + method + ", channel : " + channel);
         System.out.println("processSubscribeMsg, method : " + method + ", channel : " + channel);
         String[] parseResult = channel.split("/");
-
+        String confId = groupConfInfo.getConfId();
+        String groupId = groupConfInfo.getGroupId();
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"processSubscribeMsg  groupId: " + groupId +", confId : " +confId);
+        System.out.println("processSubscribeMsg  groupId : " + groupId +", confId : " +confId);
         if (channel.contains("mts")) {
             //终端列表 /confs/{conf_id}/cascades/{cascade_id}/mts/{mt_id}
             //添加终端失败通知 /confs/{conf_id}/mts
@@ -501,35 +570,76 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
                     }
                     String E164 = mtIdMap.get(mtId);
                     TerminalService broadcastVmtService = groupConfInfo.getBroadcastVmtService();
-                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"mtIdMap E164 : " +E164);
-                    System.out.println("mtIdMap E164 : " +E164);
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "mtIdMap E164 : " + E164);
+                    System.out.println("mtIdMap E164 : " + E164);
                     TerminalService member = groupConfInfo.getMember(E164);
                     if (member == null) {
                         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "cascades delete member is null  ******* ");
                         System.out.println("cascades delete member is null  ******* ");
                         return;
                     }
+                    ConcurrentHashMap<String, MonitorsMember> monitorsMembers = groupConfInfo.getMonitorsMembers();
+                    if (monitorsMembers != null || !monitorsMembers.isEmpty()) {
+                        String video = member.getE164() + "video";
+                        String audio = member.getE164() + "audio";
+                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processSubscribeMsg method(delete) monitorsMembers is not null or empty + videoE164 : " + video + ", audioE164 : " + audio);
+                        System.out.println("processSubscribeMsg method(delete) monitorsMembers is not null or empty + videoE164 : " + video + ", audioE164 : " + audio);
+                        if (monitorsMembers.containsKey(video)) {
+                            MonitorsMember monitorsMember = monitorsMembers.get(video);
+                            if (monitorsMember != null) {
+                                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processSubscribeMsg method(delete) get videoE164 monitorsMember not null videoE164 : " + video);
+                                System.out.println("processSubscribeMsg method(delete) get videoE164 monitorsMember not null videoE164 : " + video);
+                                ArrayList<String> resourceIDs = new ArrayList<>();
+                                resourceIDs.add(monitorsMember.getId());
+                                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processSubscribeMsg method(delete) get videoE164 : " + video + " terminalService not null removeExchange resourceID : " + monitorsMember.getId());
+                                System.out.println("processSubscribeMsg method(delete) get videoE164 : " + video + " terminalService not null removeExchange resourceID : " + monitorsMember.getId());
+                                //member.removeExchange(resourceIDs);
+                                confInterfaceService.removeExchange(resourceIDs,groupId);
+                            }
+                            groupConfInfo.deleteMonitorsMembers(video);
+                            terminalMediaSourceService.setMonitorsMembers(confId, monitorsMembers);
+                            ConfInterfaceService.monitorsMemberHearbeat.put(confId,monitorsMembers);
+                        }
+
+                        if (monitorsMembers.containsKey(audio)) {
+                            MonitorsMember monitorsMember = monitorsMembers.get(audio);
+                            if (monitorsMember != null) {
+                                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processSubscribeMsg method(delete) get audioE164 monitorsMember not null videoE164 : " + audio);
+                                System.out.println("processSubscribeMsg method(delete) get audioE164 monitorsMember not null videoE164 : " + audio);
+                                ArrayList<String> resourceIDs = new ArrayList<>();
+                                resourceIDs.add(monitorsMember.getId());
+                                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processSubscribeMsg method(delete) get audioE164 : " + audio + " terminalService not null removeExchange resourceID : " + monitorsMember.getId());
+                                System.out.println("processSubscribeMsg method(delete) get audioE164 : " + audio + " terminalService not null removeExchange resourceID : " + monitorsMember.getId());
+                                //member.removeExchange(resourceIDs);
+                                confInterfaceService.removeExchange(resourceIDs,groupId);
+                            }
+                            groupConfInfo.deleteMonitorsMembers(audio);
+                            terminalMediaSourceService.setMonitorsMembers(confId, monitorsMembers);
+                            ConfInterfaceService.monitorsMemberHearbeat.put(confId,monitorsMembers);
+                        }
+                    }
+
                     boolean vmt = member.isVmt();
                     groupConfInfo.delMember(member);
                     if (broadcastVmtService == null) {
                         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "broadcastVmtService is null ******");
                         System.out.println("broadcastVmtService is null ******");
                     } else {
-                        if(broadcastVmtService.getE164().equals(E164)) {
+                        if (broadcastVmtService.getE164().equals(E164)) {
                             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "set setBroadcastVmtService is null : " + broadcastVmtService.getE164());
                             System.out.println("set setBroadcastVmtService is null : " + broadcastVmtService.getE164());
                             groupConfInfo.setBroadcast();
                             groupConfInfo.setDelay(0);
                             groupConfInfo.setBroadcastType(BroadcastTypeEnum.UNKNOWN.getCode());
                             groupConfInfo.getUsedVmtMembers().remove(E164);
-                            terminalMediaSourceService.delBroadcastSrcInfo(groupConfInfo.getGroupId());
+                            terminalMediaSourceService.delBroadcastSrcInfo(groupId);
                         }
                     }
-                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "MT leave confinterface publishStatus E164 : " + E164 + ", groupConfInfo.getGroupId()" + groupConfInfo.getGroupId());
-                    System.out.println("MT leave confinterface publishStatus E164 : " + E164 + ", groupConfInfo.getGroupId()" + groupConfInfo.getGroupId());
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "MT leave confinterface publishStatus E164 : " + E164 + ", groupConfInfo.getGroupId()" + groupId);
+                    System.out.println("MT leave confinterface publishStatus E164 : " + E164 + ", groupConfInfo.getGroupId()" + groupId);
                     if (!vmt) {
-                        System.out.println("terminal not vmt, publishStatus!! e164:" + E164 +" , vmt : "+ vmt);
-                        TerminalManageService.publishStatus(E164, groupConfInfo.getGroupId(), TerminalOnlineStatusEnum.LEAVECONFERENCE.getCode());
+                        System.out.println("terminal not vmt, publishStatus!! e164:" + E164 + " , vmt : " + vmt);
+                        TerminalManageService.publishStatus(E164, groupId, TerminalOnlineStatusEnum.LEAVECONFERENCE.getCode());
                     }
 
                     LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "cascades DELETE mtId : " + mtId + ", E164 : " + E164);
@@ -557,10 +667,10 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
                 groupConfInfo.setBroadcastType(BroadcastTypeEnum.UNKNOWN.getCode());
                 groupConfInfo.setBroadcastMtE164(null);
                 //更新数据库中的广播源信息
-                BroadcastSrcMediaInfo broadcastSrcMediaInfo = terminalMediaSourceService.getBroadcastSrcInfo(groupConfInfo.getGroupId());
+                BroadcastSrcMediaInfo broadcastSrcMediaInfo = terminalMediaSourceService.getBroadcastSrcInfo(groupId);
                 broadcastSrcMediaInfo.setType(BroadcastTypeEnum.UNKNOWN.getCode());
                 broadcastSrcMediaInfo.setMtE164(null);
-                terminalMediaSourceService.setBroadcastSrcInfo(groupConfInfo.getGroupId(), broadcastSrcMediaInfo);
+                terminalMediaSourceService.setBroadcastSrcInfo(groupId, broadcastSrcMediaInfo);
             }
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "get speaker subscribe message, channel :" + channel);
             System.out.println("get speaker subscribe message, channel :" + channel);
@@ -571,9 +681,68 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
             if (!method.equals(SubscribeMethodEnum.DELETE.getName())) {
                 return;
             }
-
             //处理会议被删除的情况
             processConfDeleted(groupConfInfo);
+        } else if (channel.contains("vmps")) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processSubscribeMsg get vmps info subscribe message, channel :" + channel + "method : " + method);
+            System.out.println("processSubscribeMsg get vmps info subscribe message, channel :" + channel + "method : " + method);
+            if (method.equals(SubscribeMethodEnum.DELETE.getName())) {
+                ConcurrentHashMap<String, MonitorsMember> monitorsMembers = groupConfInfo.getMonitorsMembers();
+                if (monitorsMembers.containsKey("vmps")) {
+                    MonitorsMember monitorsMember = monitorsMembers.get("vmps");
+                    if (monitorsMember != null) {
+                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processSubscribeMsg get vmps monitorsMember not null");
+                        System.out.println("processSubscribeMsg get vmps monitorsMember not null");
+                        ArrayList<String> resourceIDs = new ArrayList<>();
+                        resourceIDs.add(monitorsMember.getId());
+                        //TerminalService terminalService = groupConfInfo.getMtMember("vmps");
+                        //if (terminalService != null) {
+                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processSubscribeMsg get vmps terminalService not null removeExchange " + monitorsMember.getId());
+                        System.out.println("processSubscribeMsg get vmps terminalService not null removeExchange " + monitorsMember.getId());
+                        confInterfaceService.removeExchange(resourceIDs, groupId);
+                        //terminalService.setRestClientService(null);
+                        //groupConfInfo.delMtMember("vmps");
+                        //}
+                    }
+                    groupConfInfo.deleteMonitorsMembers("vmps");
+                    terminalMediaSourceService.setMonitorsMembers(confId, monitorsMembers);
+                    ConfInterfaceService.monitorsMemberHearbeat.put(confId,monitorsMembers);
+                }
+                TerminalManageService.publishStatus(groupId, groupId, TerminalOnlineStatusEnum.VMPSDELETE.getCode());
+            }
+            if (method.equals(SubscribeMethodEnum.UPDATE.getName())){
+                TerminalManageService.publishStatus(groupId, groupId, TerminalOnlineStatusEnum.VMPSCHANGE.getCode());
+            }
+        } else if (channel.contains("mixs")) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processSubscribeMsg get mixs info subscribe message, channel :" + channel + "method : " + method);
+            System.out.println("processSubscribeMsg get mixs info subscribe message, channel :" + channel + "method : " + method);
+            if (method.equals(SubscribeMethodEnum.DELETE.getName())) {
+                ConcurrentHashMap<String, MonitorsMember> monitorsMembers = groupConfInfo.getMonitorsMembers();
+                if (monitorsMembers.containsKey("mixs")) {
+                    MonitorsMember monitorsMember = monitorsMembers.get("mixs");
+                    if (monitorsMember != null) {
+                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processSubscribeMsg get mixs monitorsMember not null");
+                        System.out.println("processSubscribeMsg get mixs monitorsMember not null");
+                        ArrayList<String> resourceIDs = new ArrayList<>();
+                        resourceIDs.add(monitorsMember.getId());
+                        //TerminalService terminalService = groupConfInfo.getMtMember("mixs");
+                        //if (terminalService != null) {
+                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processSubscribeMsg get mixs terminalService not null removeExchange : " + monitorsMember.getId());
+                        System.out.println("processSubscribeMsg get mixs terminalService not null removeExchange : " + monitorsMember.getId());
+                        confInterfaceService.removeExchange(resourceIDs, groupId);
+                        //terminalService.setRestClientService(null);
+                        //groupConfInfo.delMtMember("mixs");
+                        //}
+                    }
+                    groupConfInfo.deleteMonitorsMembers("mixs");
+                    terminalMediaSourceService.setMonitorsMembers(confId, monitorsMembers);
+                    ConfInterfaceService.monitorsMemberHearbeat.put(confId,monitorsMembers);
+                }
+                TerminalManageService.publishStatus(groupId, groupId, TerminalOnlineStatusEnum.MIXSDELETE.getCode());
+            }
+            if (method.equals(SubscribeMethodEnum.UPDATE.getName())){
+                TerminalManageService.publishStatus(groupId, groupId, TerminalOnlineStatusEnum.MIXSCHANGE.getCode());
+            }
         }
 
     }
@@ -585,19 +754,42 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processConfDeleted, groupId:" + groupId + ", confId:" + confId);
         System.out.println("processConfDeleted, groupId:" + groupId + ", confId:" + confId);
 
-        if (groupConfInfo.getCreatedConf().equals("confinterface")) {
+       /* if ("confinterface".equals(groupConfInfo.getCreatedConf())) {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "confinterface is confinterface create not endConference");
             System.out.println("confinterface is mcu create not endConference");
             mcuRestClientService.endConference(confId, false);
+        }*/
+
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "confinterface is confinterface create not endConference");
+        System.out.println("confinterface is mcu create not endConference");
+        mcuRestClientService.endConference(confId, false);
+
+        ConcurrentHashMap<String, MonitorsMember> monitorsMembers = groupConfInfo.getMonitorsMembers();
+        synchronized (this) {
+            if (monitorsMembers != null || !monitorsMembers.isEmpty()) {
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processConfDeleted get  monitorsMember not null");
+                System.out.println("processConfDeleted get monitorsMember not null");
+                ArrayList<String> resourceIDs = new ArrayList<>();
+                for (Map.Entry<String, MonitorsMember> monitorsMember : monitorsMembers.entrySet()) {
+                    MonitorsMember memberValue = monitorsMember.getValue();
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processConfDeleted E164 : " + monitorsMember.getKey() + ", monitorsMember : " + memberValue.toString());
+                    System.out.println("processConfDeleted E164 : " + monitorsMember.getKey() + ", monitorsMember : " + memberValue.toString());
+                    resourceIDs.add(memberValue.getId());
+                }
+                confInterfaceService.removeExchange(resourceIDs, groupId);
+                monitorsMembers.clear();
+                terminalMediaSourceService.deleteMonitorsMembers(confId);
+                ConfInterfaceService.monitorsMemberHearbeat.remove(confId);
+            }
         }
         confInterfaceService.delGroupConfInfo(groupConfInfo);
         groupConfInfo.cancelGroup();
-        terminalMediaSourceService.delGroup(groupConfInfo.getGroupId());
+        terminalMediaSourceService.delGroup(groupId);
         terminalMediaSourceService.delGroupMtMembers(groupId, null);
         terminalMediaSourceService.delGroupVmtMembers(groupId, null);
         terminalMediaSourceService.delBroadcastSrcInfo(groupId);
-
         TerminalManageService.publishStatus(groupId, groupId, TerminalOnlineStatusEnum.OFFLINE.getCode());
+        confInterfacePublishService.cancelSubscribeMessage(SubscribeMsgTypeEnum.TERMINAL_STATUS.getType(), groupId, "endConf");
     }
 
     private void processBroadcastRequest(SubscribeEvent subscribeEvent, GroupConfInfo groupConfInfo, BroadCastRequest broadCastRequest) {
@@ -672,10 +864,11 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
             dstTerminal.setInspectionStatus(InspectionStatusEnum.FAIL);
         } else if (dstInspectMode.equals(InspectionModeEnum.ALL.getName())) {
             InspectionModeEnum inspectionVideoOrAudioMode;
-            if (inspectionFailMode == InspectionModeEnum.VIDEO)
+            if (inspectionFailMode == InspectionModeEnum.VIDEO) {
                 inspectionVideoOrAudioMode = InspectionModeEnum.AUDIO;
-            else
+            } else {
                 inspectionVideoOrAudioMode = InspectionModeEnum.VIDEO;
+            }
 
             if (dstTerminal.getInspectStatus(inspectionVideoOrAudioMode.getCode()) == InspectionStatusEnum.OK.getCode()) {
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "terminal[" + dstTerminal.getE164() + "] " + inspectionFailMode.getName() + " inspection failed, " + inspectionVideoOrAudioMode.getName() + " inspection ok, cancel " + inspectionVideoOrAudioMode.getName() + " inspection!");
@@ -761,8 +954,9 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
             }
         }
 
-        if (null == requestMsg)
+        if (null == requestMsg) {
             return;
+        }
 
         //等到相互选看的两个终端的订阅消息全部收到后，再处理
         //其他三个方向的订阅消息都已经收到，不管成功还是失败，在此回应失败
@@ -901,7 +1095,7 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
                     LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processInspectionOK, dst is vmt, set reverse channel!");
                     System.out.println("processInspectionOK, dst is vmt, set reverse channel!");
                     List<DetailMediaResouce> reverseDetailResource = dstTerminal.getReverseChannel();
-                    if (groupConfInfo.getCreatedConf().equals("mcu")) {
+                    if ("mcu".equals(groupConfInfo.getCreatedConf())) {
                         groupConfInfo.useVmtMember(dstTerminal);
                     }
                     inspectionRequest.makeSuccessResponseMsg(TerminalMediaResource.convertToMediaResource(reverseDetailResource, inspectionParam.getMode()));
@@ -1017,7 +1211,7 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processJoinDiscussionRequest, start discussion, mt:" + mtService.getE164() + ", vmt:" + vmtE164);
             System.out.println("processJoinDiscussionRequest, start discussion, mt:" + mtService.getE164() + ", vmt:" + vmtE164);
             McuStatus mcuStatus = confInterfaceService.startInspectionForDiscusion(groupConfInfo, mtService, vmtService, bMutualInspection, joinDiscussionGroupRequest);
-            if (mcuStatus.getValue() > 0 && joinDiscussionGroupRequest.getWaitMsg().isEmpty()) {
+            if (mcuStatus.getValue() != 200 && joinDiscussionGroupRequest.getWaitMsg().isEmpty()) {
                 LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50005 : inspection terminal failed!");
                 joinDiscussionGroupRequest.makeErrorResponseMsg(ConfInterfaceResult.INSPECTION.getCode(), HttpStatus.OK, mcuStatus.getDescription());
             }
@@ -1207,8 +1401,9 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
             //取消选看时，只需要处理delete方法，收到该方法，则认为取消成功
             boolean bCancelInspection = processCancelInspection(subscribeEvent, groupConfInfo);
 
-            if (bCancelInspection)
+            if (bCancelInspection) {
                 cancelInspectionRequest.makeSuccessResponseMsg();
+            }
         }
     }
 
@@ -1278,6 +1473,97 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
         }
     }
 
+    private void processStartVmpsRequest(SubscribeEvent subscribeEvent, GroupConfInfo groupConfInfo, StartVmpsRequest startVmpsRequest) {
+        ///confs/{conf_id}/vmps/{vmp_id}
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processStartVmpsRequest subscribeEvent channel : " + subscribeEvent.getChannel()+ ", confId : "+ groupConfInfo.getConfId());
+        System.out.println("processStartVmpsRequest subscribeEvent channel : " + subscribeEvent.getChannel()+ ", confId : "+ groupConfInfo.getConfId());
+        startVmpsRequest.removeMsg(subscribeEvent.getChannel());
+        groupConfInfo.delWaitDealTask(subscribeEvent.getChannel());
+        if (subscribeEvent.getMethod().equals(SubscribeMethodEnum.DELETE.getName())) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "subscribeEvent.getMethod() : " + subscribeEvent.getMethod());
+            System.out.println("subscribeEvent.getMethod() : " + subscribeEvent.getMethod());
+        }
+        if (subscribeEvent.getMethod().equals(SubscribeMethodEnum.UPDATE.getName())) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "subscribeEvent.getMethod() : " + subscribeEvent.getMethod());
+            System.out.println("subscribeEvent.getMethod() : " + subscribeEvent.getMethod());
+            startVmpsRequest.makeSuccessResponseMsg();
+        }
+        if (subscribeEvent.getMethod().equals(SubscribeMethodEnum.NOTIFY.getName())) {
+            int errorCode = subscribeEvent.getErrorCode();
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "subscribeEvent.getMethod() : " + subscribeEvent.getMethod() + "errorCode : " + errorCode);
+            System.out.println("subscribeEvent.getMethod() : " + subscribeEvent.getMethod() + "errorCode : " + errorCode);
+            startVmpsRequest.makeErrorResponseMsg(ConfInterfaceResult.OPERATE_VMPS.getCode(), HttpStatus.OK, String.valueOf(errorCode));
+        }
+    }
+
+    private void processStartMixsRequest(SubscribeEvent subscribeEvent, GroupConfInfo groupConfInfo, StartMixRequest startMixRequest) {
+        ///confs/{conf_id}/vmps/{vmp_id}
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processStartMixsRequest subscribeEvent channel : " + subscribeEvent.getChannel()+ ", confId : "+ groupConfInfo.getConfId());
+        System.out.println("processStartMixsRequest subscribeEvent channel : " + subscribeEvent.getChannel()+ ", confId : "+ groupConfInfo.getConfId());
+        startMixRequest.removeMsg(subscribeEvent.getChannel());
+        groupConfInfo.delWaitDealTask(subscribeEvent.getChannel());
+        if (subscribeEvent.getMethod().equals(SubscribeMethodEnum.DELETE.getName())) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processStartMixsRequest subscribeEvent.getMethod() : " + subscribeEvent.getMethod());
+            System.out.println("processStartMixsRequest subscribeEvent.getMethod() : " + subscribeEvent.getMethod());
+        }
+        if (subscribeEvent.getMethod().equals(SubscribeMethodEnum.UPDATE.getName())) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processStartMixsRequest subscribeEvent.getMethod() : " + subscribeEvent.getMethod());
+            System.out.println("processStartMixsRequest subscribeEvent.getMethod() : " + subscribeEvent.getMethod());
+            startMixRequest.makeSuccessResponseMsg();
+        }
+        if (subscribeEvent.getMethod().equals(SubscribeMethodEnum.NOTIFY.getName())) {
+            int errorCode = subscribeEvent.getErrorCode();
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processStartMixsRequest subscribeEvent.getMethod() : " + subscribeEvent.getMethod() + "errorCode : " + errorCode);
+            System.out.println("processStartMixsRequest subscribeEvent.getMethod() : " + subscribeEvent.getMethod() + "errorCode : " + errorCode);
+            startMixRequest.makeErrorResponseMsg(ConfInterfaceResult.START_MIXS.getCode(), HttpStatus.OK, String.valueOf(errorCode));
+        }
+    }
+
+    private void processMixMembersRequest(SubscribeEvent subscribeEvent, GroupConfInfo groupConfInfo, MixMembersRequest mixMembersRequest) {
+        ///confs/{conf_id}/vmps/{vmp_id}
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processMixMembersRequest subscribeEvent channel : " + subscribeEvent.getChannel()+ ", confId : "+ groupConfInfo.getConfId());
+        System.out.println("processMixMembersRequest subscribeEvent channel : " + subscribeEvent.getChannel()+ ", confId : "+ groupConfInfo.getConfId());
+        mixMembersRequest.removeMsg(subscribeEvent.getChannel());
+        groupConfInfo.delWaitDealTask(subscribeEvent.getChannel());
+        if (subscribeEvent.getMethod().equals(SubscribeMethodEnum.DELETE.getName())) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processMixMembersRequest subscribeEvent.getMethod() : " + subscribeEvent.getMethod());
+            System.out.println("processMixMembersRequest subscribeEvent.getMethod() : " + subscribeEvent.getMethod());
+        }
+        if (subscribeEvent.getMethod().equals(SubscribeMethodEnum.UPDATE.getName())) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processStartMixsRequest subscribeEvent.getMethod() : " + subscribeEvent.getMethod());
+            System.out.println("processMixMembersRequest subscribeEvent.getMethod() : " + subscribeEvent.getMethod());
+            mixMembersRequest.makeSuccessResponseMsg();
+        }
+        if (subscribeEvent.getMethod().equals(SubscribeMethodEnum.NOTIFY.getName())) {
+            int errorCode = subscribeEvent.getErrorCode();
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processMixMembersRequest subscribeEvent.getMethod() : " + subscribeEvent.getMethod() + "errorCode : " + errorCode);
+            System.out.println("processMixMembersRequest subscribeEvent.getMethod() : " + subscribeEvent.getMethod() + "errorCode : " + errorCode);
+            mixMembersRequest.makeErrorResponseMsg(ConfInterfaceResult.OPERATE_MIXS_MEMBERS_FAILED.getCode(), HttpStatus.OK, String.valueOf(errorCode));
+        }
+    }
+
+    private void processEndMixRequest(SubscribeEvent subscribeEvent, GroupConfInfo groupConfInfo, EndMixRequest endMixRequest) {
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processEndMixRequest subscribeEvent channel : " + subscribeEvent.getChannel()+ ", confId : "+ groupConfInfo.getConfId());
+        System.out.println("processEndMixRequest subscribeEvent channel : " + subscribeEvent.getChannel() + ", confId : "+ groupConfInfo.getConfId());
+        endMixRequest.removeMsg(subscribeEvent.getChannel());
+        groupConfInfo.delWaitDealTask(subscribeEvent.getChannel());
+        if (subscribeEvent.getMethod().equals(SubscribeMethodEnum.DELETE.getName())) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "endMixRequest end Mixs success processEndMixRequest subscribeEvent.getMethod() : " + subscribeEvent.getMethod() +", confId : "+ groupConfInfo.getConfId());
+            System.out.println("endMixRequest end Mixs success processEndMixRequest subscribeEvent.getMethod() : " + subscribeEvent.getMethod() +", confId : "+ groupConfInfo.getConfId());
+            endMixRequest.makeSuccessResponseMsg();
+        }
+        if (subscribeEvent.getMethod().equals(SubscribeMethodEnum.UPDATE.getName())) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processEndMixRequest subscribeEvent.getMethod() : " + subscribeEvent.getMethod());
+            System.out.println("processEndMixRequest subscribeEvent.getMethod() : " + subscribeEvent.getMethod());
+        }
+        if (subscribeEvent.getMethod().equals(SubscribeMethodEnum.NOTIFY.getName())) {
+            int errorCode = subscribeEvent.getErrorCode();
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processEndMixRequest subscribeEvent.getMethod() : " + subscribeEvent.getMethod() + "errorCode : " + errorCode);
+            System.out.println("processEndMixRequest subscribeEvent.getMethod() : " + subscribeEvent.getMethod() + "errorCode : " + errorCode);
+            endMixRequest.makeErrorResponseMsg(ConfInterfaceResult.OPERATE_MIXS_MEMBERS_FAILED.getCode(), HttpStatus.OK, String.valueOf(errorCode));
+        }
+    }
+
     @Autowired
     private ConfInterfaceService confInterfaceService;
 
@@ -1289,6 +1575,9 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
 
     @Autowired
     private TerminalManageService terminalManageService;
+
+    @Autowired
+    private ConfInterfacePublishService confInterfacePublishService;
 
     private final org.slf4j.Logger logger = LoggerFactory.getLogger(this.getClass());
 }

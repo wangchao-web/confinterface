@@ -4,7 +4,7 @@ import java.util.ArrayList;
 
 
 public class VmpsParam {
-    public VmpsParam(@Range(min = 1, max = 4) int mode, @Range(min = 1, max = 63) int layout, @Range(min = 0, max = 1) int broadcast, @Range(min = 0, max = 1) int voiceHint, @Range(min = 0, max = 1) int showMtName, MtNameStyle mtNameStyle, ArrayList<VmpsMembersInfo> members, SingleChannelPollInfo poll) {
+    public VmpsParam(@Range(min = 1, max = 4) int mode, @Range(min = 0, max = 63) int layout, @Range(min = 0, max = 1) int broadcast, @Range(min = 0, max = 1) int voiceHint, @Range(min = 0, max = 1) int showMtName, MtNameStyle mtNameStyle, ArrayList<VmpsMembersInfo> members, SingleChannelPollInfo poll) {
         this.mode = mode;
         this.layout = layout;
         this.broadcast = broadcast;
@@ -89,15 +89,13 @@ public class VmpsParam {
                 .append(", broadcast:").append(broadcast)
                 .append(", voiceHint:").append(voiceHint)
                 .append(", showMtName:").append(showMtName)
-                .append(", mtNameStyle:").append(mtNameStyle.toString())
-                .append(", members:").append(members.toString())
                 .toString();
     }
 
     @Range(min = 1, max = 4)
     private int mode; // 1定制画面合成2-自动画面合成；3-自动画面合成批量轮询；4-定制画面合成批量轮询；
 
-    @Range(min = 1, max = 63)
+    @Range(min = 0, max = 63)
     private int layout; // 画面合成风格
 
     @Range(min = 0, max = 1)

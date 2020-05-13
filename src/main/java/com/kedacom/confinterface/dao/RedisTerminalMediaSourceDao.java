@@ -2,12 +2,14 @@ package com.kedacom.confinterface.dao;
 
 import com.kedacom.confinterface.LogService.LogOutputTypeEnum;
 import com.kedacom.confinterface.LogService.LogTools;
+import com.kedacom.confinterface.dto.MonitorsMember;
 import com.kedacom.confinterface.dto.TerminalMediaResource;
 import com.kedacom.confinterface.redis.RedisClient;
 import net.sf.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class RedisTerminalMediaSourceDao implements TerminalMediaSourceDao {
 
@@ -18,7 +20,11 @@ public class RedisTerminalMediaSourceDao implements TerminalMediaSourceDao {
     private final String groupMtMembersPrefix = "groupMtMembers_";
     private final String groupVmtMembersPrefix = "groupVmtMembers_";
     private final String groupInspectionPrefix = "groupInspections_";
-
+    private final String  monitorsResourcePrefix = "monitors_";
+	
+	private final String confMtListPrefix = "confMtList_";
+	
+    private final String publishUrlPrefix = "publishUrl_";
     private RedisClient redisClient;
     private String  srvToken;
 
@@ -105,8 +111,9 @@ public class RedisTerminalMediaSourceDao implements TerminalMediaSourceDao {
     @Override
     public List<Terminal> getGroupMtMembers(String groupId) {
         String key = keyGenernate(groupMtMembersPrefix, groupId);
-        if (!redisClient.keyExist(key))
+        if (!redisClient.keyExist(key)) {
             return null;
+        }
 
         return (List<Terminal>)redisClient.listGet(key, 0, -1);
     }
@@ -166,8 +173,9 @@ public class RedisTerminalMediaSourceDao implements TerminalMediaSourceDao {
     public List<Terminal> delGroupVmtMember(String groupId, String e164){
         String key = keyGenernate(groupVmtMembersPrefix, groupId);
 
-        if (!redisClient.keyExist(key))
+        if (!redisClient.keyExist(key)) {
             return null;
+        }
 
         Terminal terminal = new Terminal(e164);
         redisClient.listRemove(key, 0, terminal);
@@ -178,8 +186,9 @@ public class RedisTerminalMediaSourceDao implements TerminalMediaSourceDao {
     @Override
     public List<Terminal> getGroupVmtMembers(String groupId) {
         String key = keyGenernate(groupVmtMembersPrefix, groupId);
-        if (!redisClient.keyExist(key))
+        if (!redisClient.keyExist(key)) {
             return null;
+        }
 
         return (List<Terminal>)redisClient.listGet(key, 0, -1);
     }
@@ -204,8 +213,9 @@ public class RedisTerminalMediaSourceDao implements TerminalMediaSourceDao {
     @Override
     public InspectionSrcParam getInspectionParam(String e164) {
         String key = keyGenernate(groupInspectionPrefix, e164);
-        if (redisClient.keyExist(key))
+        if (redisClient.keyExist(key)) {
             return (InspectionSrcParam)redisClient.getValue(key);
+        }
 
         return null;
     }
@@ -237,12 +247,14 @@ public class RedisTerminalMediaSourceDao implements TerminalMediaSourceDao {
     @Override
     public List<TerminalMediaResource> getTerminalMediaResources(String groupId) {
         String key = keyGenernate(groupMtMembersPrefix, groupId);
-        if (!redisClient.keyExist(key))
+        if (!redisClient.keyExist(key)) {
             return null;
+        }
 
         List<Terminal> mts = (List<Terminal>) redisClient.listGet(key, 0, -1);
-        if (null == mts || mts.isEmpty())
+        if (null == mts || mts.isEmpty()) {
             return null;
+        }
 
         List<TerminalMediaResource> terminalMediaResources = new ArrayList<>();
         for (Terminal terminal : mts) {
@@ -250,12 +262,14 @@ public class RedisTerminalMediaSourceDao implements TerminalMediaSourceDao {
         }
 
         String vmtKey = keyGenernate(groupVmtMembersPrefix, groupId);
-        if (!redisClient.keyExist(key))
+        if (!redisClient.keyExist(key)) {
             return terminalMediaResources;
+        }
 
         List<Terminal> vmts = (List<Terminal>) redisClient.listGet(vmtKey, 0, -1);
-        if (null == vmts || vmts.isEmpty())
+        if (null == vmts || vmts.isEmpty()) {
             return terminalMediaResources;
+        }
 
         for (Terminal vmt : vmts) {
             terminalMediaResources.add(getTerminalMediaResource(vmt.getMtE164()));
@@ -329,6 +343,93 @@ public class RedisTerminalMediaSourceDao implements TerminalMediaSourceDao {
         BroadcastSrcMediaInfo broadcastSrcMediaInfo = getBroadcastSrcInfo(groupId);
         redisClient.delValue(key);
         return broadcastSrcMediaInfo;
+    }
+
+    @Override
+    public ConcurrentHashMap<String, MonitorsMember> setMonitorsMembers(String confId, Map<String, MonitorsMember> monitorsMembers) {
+        String key = keyGenernate(monitorsResourcePrefix, confId);
+        redisClient.setValue(key, monitorsMembers);
+        return (ConcurrentHashMap<String, MonitorsMember>)redisClient.getValue(key);
+    }
+
+    @Override
+    public ConcurrentHashMap<String, MonitorsMember> deleteMonitorsMembers(String confId) {
+        String key = keyGenernate(monitorsResourcePrefix, confId);
+        if (!redisClient.keyExist(key)) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"deleteMonitorsMembers, "+confId+", not found this confId!");
+            System.out.println("deleteMonitorsMembers, "+confId+", not found this confId!");
+            return null;
+        }
+        ConcurrentHashMap<String, MonitorsMember> stringMonitorsMemberMap = getMonitorsMembers(confId);
+        redisClient.delValue(key);
+        return stringMonitorsMemberMap;
+    }
+
+    @Override
+    public ConcurrentHashMap<String, MonitorsMember> getMonitorsMembers(String confId) {
+        String key = keyGenernate(monitorsResourcePrefix, confId);
+        if (!redisClient.keyExist(key)) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"gettMonitorsMembers, "+confId+", not found this confId!");
+            System.out.println("gettMonitorsMembers, "+confId+", not found this confId!");
+            return null;
+        }
+        return (ConcurrentHashMap<String, MonitorsMember>)redisClient.getValue(key);
+    }
+
+
+ //用于会议服务断开之后服务再启动时给上层业务推送失败的状态
+    @Override
+    public Map<String, String> setMtPublish(String E164, String publishUrl) {
+        String key = keyGenernate(confMtListPrefix, srvToken);
+        redisClient.hashPut(key, E164, publishUrl);
+        return (Map<String, String>)redisClient.hashGet(key);
+    }
+
+    //用于会议服务断开之后服务再启动时给上层业务推送失败的状态
+    @Override
+    public Map<String, String> deleteMtPublish(String E164) {
+        if(null == E164){
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"deleteMtPublish, E164:"+ E164 +" not exist E164 !");
+            System.out.println("deleteMtPublish, E164:"+ E164 +" not exist E164 !");
+            return null;
+        }
+        String key = keyGenernate(confMtListPrefix, srvToken);
+        redisClient.hashRemove(key, E164);
+        return (Map<String, String>)redisClient.hashGet(key);
+    }
+
+    @Override
+    public Map<String, String> getMtPublish() {
+        String key = keyGenernate(confMtListPrefix, srvToken);
+        return (Map<String, String>) redisClient.hashGet(key);
+    }
+
+
+
+    //用于保存订阅的路径
+    @Override
+    public Map<String, String> setPublishUrl(String groupId, String publishUrl) {
+        String key = keyGenernate(publishUrlPrefix, srvToken);
+        redisClient.hashPut(key, groupId, publishUrl);
+        return (Map<String, String>)redisClient.hashGet(key);
+    }
+
+    @Override
+    public Map<String, String> deletePublishUrl(String groupId) {
+        if(null == groupId){
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"deletePublishUrl, groupId:"+ groupId +" not exist groupId !");
+            System.out.println("deletePublishUrl, groupId:"+ groupId +" not exist groupId !");
+            return null;
+        }
+        String key = keyGenernate(publishUrlPrefix, srvToken);
+        redisClient.hashRemove(key, groupId);
+        return (Map<String, String>)redisClient.hashGet(key);
+    }
+
+    @Override
+    public Map<String, String> getPublishUrl() {
+        String key = keyGenernate(publishUrlPrefix, srvToken);
+        return (Map<String, String>) redisClient.hashGet(key);
     }
 
     private String keyGenernate(String keyPrefix, String params) {

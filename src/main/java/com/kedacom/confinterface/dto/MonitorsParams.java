@@ -1,11 +1,13 @@
 package com.kedacom.confinterface.dto;
 
+import org.hibernate.validator.constraints.Range;
+
 public class MonitorsParams {
 
-    public MonitorsParams(int mode, int type, String e164) {
+    public MonitorsParams(@Range(min = 0, max = 1) int mode, @Range(min = 1, max = 3) int type, String e164) {
         this.mode = mode;
         this.type = type;
-        E164 = e164;
+        this.e164 = e164;
     }
 
     public MonitorsParams() {
@@ -28,11 +30,11 @@ public class MonitorsParams {
     }
 
     public String getE164() {
-        return E164;
+        return e164;
     }
 
     public void setE164(String e164) {
-        E164 = e164;
+        this.e164 = e164;
     }
 
     @Override
@@ -40,11 +42,12 @@ public class MonitorsParams {
         return new StringBuilder()
                 .append("mode:").append(mode)
                 .append(", type:").append(type)
-                .append(", E164:").append(E164)
+                .append(", E164:").append(e164)
                 .toString();
     }
-
+    @Range(min = 0, max = 1)
     private int mode; //监控模式 0-视频；1-音频；
+    @Range(min = 1, max = 3)
     private int type; //监控类型1-终端；2-画面合成；3-混音；
-    private String E164; // 监控终端E164, type为终端时必填
+    private String e164; // 监控终端E164, type为终端时必填
 }

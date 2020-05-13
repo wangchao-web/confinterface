@@ -42,6 +42,16 @@ public class Creator {
         this.mobile = mobile;
     }
 
+    @Override
+    public String toString() {
+        return new StringBuilder().append("name:").append(name)
+                .append(", account:").append(account)
+                .append(", account_type:").append(account_type)
+                .append(", telephone:").append(telephone)
+                .append(", mobile:").append(mobile)
+                .toString();
+    }
+
     private String name;
     private String account;
     private int account_type;

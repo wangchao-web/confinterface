@@ -6,6 +6,7 @@ import com.kedacom.confinterface.dao.InspectionSrcParam;
 import com.kedacom.confinterface.dao.Terminal;
 import com.kedacom.confinterface.dto.BaseRequestMsg;
 import com.kedacom.confinterface.dto.BaseResponseMsg;
+import com.kedacom.confinterface.dto.MonitorsMember;
 import com.kedacom.confinterface.service.TerminalService;
 
 import java.util.List;
@@ -26,6 +27,7 @@ public class GroupConfInfo {
         this.usedVmtMembers = new ConcurrentHashMap<>();
         this.mtIdMap = new ConcurrentHashMap<>();
         this.waitDealTask = null;
+        this.monitorsMembers = new ConcurrentHashMap<>();
     }
 
 
@@ -78,7 +80,7 @@ public class GroupConfInfo {
 
             this.broadcastVmtService.setSupportDualStream(true);
             freeVmtMembers.remove(broadcastVmtService.getE164());
-            if (createdConf.equals("mcu")) {
+            if ("mcu".equals(createdConf)) {
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "setBroadcastVmtService createdConf is mcu : " + broadcastVmtService.getE164());
                 System.out.println("setBroadcastVmtService createdConf is mcu : " + broadcastVmtService.getE164());
                 usedVmtMembers.put(broadcastVmtService.getE164(), broadcastVmtService);
@@ -92,8 +94,9 @@ public class GroupConfInfo {
     }
 
     public boolean isTerminalType() {
-        if (1 == broadcastType)
+        if (1 == broadcastType) {
             return true;
+        }
         return false;
     }
 
@@ -165,8 +168,9 @@ public class GroupConfInfo {
 
     public TerminalService getVmtMember(String vmtE164) {
         TerminalService terminalService = freeVmtMembers.get(vmtE164);
-        if (null != terminalService)
+        if (null != terminalService) {
             return terminalService;
+        }
 
         return usedVmtMembers.get(vmtE164);
     }
@@ -174,8 +178,9 @@ public class GroupConfInfo {
     public TerminalService getVmt(String resourceId) {
         for (Map.Entry<String, TerminalService> vmtMember : usedVmtMembers.entrySet()) {
             TerminalService terminalService = vmtMember.getValue();
-            if (terminalService.hasResourceId(true, resourceId))
+            if (terminalService.hasResourceId(true, resourceId)) {
                 return terminalService;
+            }
         }
 
         return null;
@@ -186,8 +191,9 @@ public class GroupConfInfo {
             for (Terminal vmt : vmts) {
                 if (null != broadcastVmtService && broadcastVmtService.getE164().equals(vmt.getMtE164())) {
                     String mtId = broadcastVmtService.getMtId();
-                    if (null != mtId)
+                    if (null != mtId) {
                         mtIdMap.remove(mtId);
+                    }
 
                     broadcastVmtService = null;
                     continue;
@@ -196,15 +202,17 @@ public class GroupConfInfo {
                 TerminalService vmtService = freeVmtMembers.remove(vmt.getMtE164());
                 if (null == vmtService) {
                     vmtService = usedVmtMembers.remove(vmt.getMtE164());
-                    if (null == vmtService)
+                    if (null == vmtService) {
                         continue;
+                    }
                 }
 
                 vmtService.setGroupId(null);
 
                 String mtId = vmtService.getMtId();
-                if (null != mtId)
+                if (null != mtId) {
                     mtIdMap.remove(mtId);
+                }
             }
         }
     }
@@ -232,25 +240,30 @@ public class GroupConfInfo {
         }
 
         String mtId = member.getMtId();
-        if (null != mtId)
+        if (null != mtId) {
             mtIdMap.remove(mtId);
+        }
     }
 
     public TerminalService getMember(String e164) {
-        if (null != broadcastVmtService && broadcastVmtService.getE164().equals(e164))
+        if (null != broadcastVmtService && broadcastVmtService.getE164().equals(e164)) {
             return broadcastVmtService;
+        }
 
         TerminalService terminalService = mtMembers.get(e164);
-        if (null != terminalService)
+        if (null != terminalService) {
             return terminalService;
+        }
 
         terminalService = freeVmtMembers.get(e164);
-        if (null != terminalService)
+        if (null != terminalService) {
             return terminalService;
+        }
 
         terminalService = usedVmtMembers.get(e164);
-        if (null != terminalService)
+        if (null != terminalService) {
             return terminalService;
+        }
 
         return null;
     }
@@ -270,22 +283,25 @@ public class GroupConfInfo {
     }
 
     public String getE164(String mtId) {
-        if (null == mtIdMap)
+        if (null == mtIdMap) {
             return null;
+        }
 
         return mtIdMap.get(mtId);
     }
 
     public BaseRequestMsg<? extends BaseResponseMsg> getWaitDealTask(String channel) {
-        if (null == waitDealTask)
+        if (null == waitDealTask) {
             return null;
+        }
 
         return waitDealTask.get(channel);
     }
 
     public void delWaitDealTask(String channel) {
-        if (null == waitDealTask)
+        if (null == waitDealTask) {
             return;
+        }
 
         waitDealTask.remove(channel);
     }
@@ -297,8 +313,9 @@ public class GroupConfInfo {
                 freeTerminalService = freeVmtMembers.get(vmtE164);
             } else {
                 for (Map.Entry<String, TerminalService> vmt : freeVmtMembers.entrySet()) {
-                    if (!vmt.getValue().isOnline())
+                    if (!vmt.getValue().isOnline()) {
                         continue;
+                    }
 
                     freeTerminalService = vmt.getValue();
                     break;
@@ -352,12 +369,14 @@ public class GroupConfInfo {
 
     public TerminalService getFreeVmt() {
         synchronized (freeVmtMembers) {
-            if (freeVmtMembers.isEmpty())
+            if (freeVmtMembers.isEmpty()) {
                 return null;
+            }
 
             for (Map.Entry<String, TerminalService> terminalServiceEntry : freeVmtMembers.entrySet()) {
-                if (!terminalServiceEntry.getValue().isOnline())
+                if (!terminalServiceEntry.getValue().isOnline()) {
                     continue;
+                }
 
                 return terminalServiceEntry.getValue();
             }
@@ -368,8 +387,9 @@ public class GroupConfInfo {
 
     public TerminalService getDstInspectionTerminal(String dstMtId) {
         String dstE164 = getE164(dstMtId);
-        if (null == dstE164)
+        if (null == dstE164) {
             return null;
+        }
 
         TerminalService dstTerminal = mtMembers.get(dstE164);
         if (null != dstTerminal) {
@@ -406,8 +426,9 @@ public class GroupConfInfo {
 
         TerminalService srcTerminal;
         InspectionSrcParam inspectionSrcParam = dstTerminal.getInspectionParam();
-        if (null == inspectionSrcParam)
+        if (null == inspectionSrcParam) {
             return null;
+        }
 
         String inspectE164 = inspectionSrcParam.getMtE164();
         if (dstTerminal.isVmt()) {
@@ -455,11 +476,12 @@ public class GroupConfInfo {
         this.waitDealTask = null;
         this.mtIdMap = null;
         //基于mcu上自己创建的会议删除
-        if(createdConf.equals("mcu")){
+        if("mcu".equals(createdConf)){
             this.groupId = null;
             this.confId = null;
         }
         this.createdConf = "";
+        this.monitorsMembers = null;
     }
 
     public boolean isConfinterface() {
@@ -498,6 +520,31 @@ public class GroupConfInfo {
         this.delay = delay;
     }
 
+    public ConcurrentHashMap<String, MonitorsMember> getMonitorsMembers() {
+        return monitorsMembers;
+    }
+
+    public void setMonitorsMembers(ConcurrentHashMap<String, MonitorsMember> monitorsMembers) {
+        this.monitorsMembers = monitorsMembers;
+    }
+
+    public void addMonitorsMembers(String E164,MonitorsMember monitorsMember) {
+        if(monitorsMembers == null){
+            monitorsMembers = new ConcurrentHashMap<>();
+        }
+        monitorsMembers.put(E164, monitorsMember);
+    }
+
+    public Map<String, MonitorsMember> deleteMonitorsMembers(String E164) {
+        if(monitorsMembers == null || monitorsMembers.isEmpty()){
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"monitorsMembers is null or empty ************");
+            System.out.println("monitorsMembers is null or empty ************");
+           return monitorsMembers;
+        }
+        monitorsMembers.remove(E164);
+        return monitorsMembers;
+    }
+
     private String groupId;
     private String confId;
     private int broadcastType;   //0-未知，1-终端，2-其他
@@ -511,5 +558,7 @@ public class GroupConfInfo {
     private boolean confinterface = false;
     private String createdConf; //用来判断是会议服务自己创建的会议还是mcu创建的会议 confinterface为会议自己创建,mcu为mcu创建的会议
     private int delay = 0; //用于判断mcu自己创建会议时,第一次设置广播源时,等待虚拟终端先呼叫起来 0,初始值,1在设置广播员是设置,2在虚拟终端入会时设置
+
+    private ConcurrentHashMap<String, MonitorsMember> monitorsMembers;
 
 }

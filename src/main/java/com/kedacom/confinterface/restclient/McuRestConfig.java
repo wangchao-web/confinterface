@@ -187,10 +187,11 @@ public class McuRestConfig {
     private String mcuRestApiVersion;
     private int bitrate = 2048;
     private String protocal = ProtocalTypeEnum.H323.getName();
-    private String videoFormat;   //video_formats 4/13/25/8128主视频格式列表1-MPEG;2-H.261;3-H.263;4-H.264_HP;5-H.264_BP;6-H.265;7-H.263+;resolution*
-                                  //                                  //主视频分辨率1-QCIF;2-CIF;3-4CIF;12-720P;13-1080P;14-WCIF;15-W4CIF;16-4k;
-                                  //                                  //frame帧率bitrate码率
-    private String audioFormat;
+    private String videoFormat;  //video_formats 4/13/25/8128主视频格式列表1-MPEG;2-H.261;3-H.263;4-H.264_HP;5-H.264_BP;6-H.265;7-H.263+;resolution*
+                                 //主视频分辨率1-QCIF;2-CIF;3-4CIF;12-720P;13-1080P;14-WCIF;15-W4CIF;16-4k;
+                                 //frame帧率bitrate码率
+    private String audioFormat;  //音频格式列表 不填默认支持所有，空列表默认支持所有1-G.722；2-G711(ULAW)；3-G.711(ALAW)；4-G.729；
+                                 //5-G.728；6-G722.1.C；7-MP3；8-G.719；9-MPEG-4 AAC LC；10-MPEG-4 AAC LD；11-MPEG-4 AAC LC(stereo)；12-MPEG-4 AAC LD(stereo)；13-OPUS；
     private int encryptedType = 0;
     private String encryptedKey;
     private int callMode = 2;

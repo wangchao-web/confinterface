@@ -7,9 +7,9 @@ import org.springframework.http.ResponseEntity;
 import java.util.ArrayList;
 import java.util.List;
 
-public class QueryConfsRequest extends BaseRequestMsg<QueryConfsResponse>{
+public class QueryAllConfsRequest extends BaseRequestMsg<QueryAllConfsResponse>{
 
-    public QueryConfsRequest(){
+    public QueryAllConfsRequest(){
         super("");
         confsDetailInfos = new ArrayList<>();
     }
@@ -20,17 +20,17 @@ public class QueryConfsRequest extends BaseRequestMsg<QueryConfsResponse>{
 
     @Override
     public void makeErrorResponseMsg(int code, HttpStatus status, String message) {
-        QueryConfsResponse queryConfsResponse = new QueryConfsResponse(code, status.value(), message);
-        queryConfsResponse.setConfs(null);
-        ResponseEntity<QueryConfsResponse> responseResponseEntity = new ResponseEntity<>(queryConfsResponse, HttpStatus.OK);
+        QueryAllConfsResponse queryAllConfsResponse = new QueryAllConfsResponse(code, status.value(), message);
+        queryAllConfsResponse.setConfs(null);
+        ResponseEntity<QueryAllConfsResponse> responseResponseEntity = new ResponseEntity<>(queryAllConfsResponse, HttpStatus.OK);
         responseMsg.setResult(responseResponseEntity);
     }
 
     @Override
     public void makeSuccessResponseMsg() {
-        QueryConfsResponse queryConfsResponse = new QueryConfsResponse(ConfInterfaceResult.OK.getCode(), HttpStatus.OK.value(), ConfInterfaceResult.OK.getMessage());
-        queryConfsResponse.setConfs(confsDetailInfos);
-        ResponseEntity<QueryConfsResponse> responseResponseEntity = new ResponseEntity<>(queryConfsResponse, HttpStatus.OK);
+        QueryAllConfsResponse queryAllConfsResponse = new QueryAllConfsResponse(ConfInterfaceResult.OK.getCode(), HttpStatus.OK.value(), ConfInterfaceResult.OK.getMessage());
+        queryAllConfsResponse.setConfs(confsDetailInfos);
+        ResponseEntity<QueryAllConfsResponse> responseResponseEntity = new ResponseEntity<>(queryAllConfsResponse, HttpStatus.OK);
         responseMsg.setResult(responseResponseEntity);
     }
 

@@ -22,11 +22,11 @@ public class StartMonitorsRequest extends BaseRequestMsg<MonitorsResponse> {
         this.monitorsParams = monitorsParams;
     }
 
-    public String getType() {
+    public int getType() {
         return type;
     }
 
-    public void setType(String type) {
+    public void setType(int type) {
         this.type = type;
     }
 
@@ -46,7 +46,7 @@ public class StartMonitorsRequest extends BaseRequestMsg<MonitorsResponse> {
         this.mode = mode;
     }
 
-    public void addMonitorsResponse(String type, String id, int mode){
+    public void addMonitorsResponse(int type, String id, int mode){
         this.type = type;
         this.id = id;
         this.mode = mode;
@@ -75,7 +75,7 @@ public class StartMonitorsRequest extends BaseRequestMsg<MonitorsResponse> {
                 .toString();
     }
     private  MonitorsParams monitorsParams;
-    private String type;   //资源类型，"video","audio"
+    private int type;   //监控类型 1-终端；2-画面合成；3-混音；
     private String id;      //资源号，由流媒体返回
-    private int mode; //监控类型 1-终端；2-画面合成；3-混音；
+    private int mode;      //资源类型，"video","audio"
 }

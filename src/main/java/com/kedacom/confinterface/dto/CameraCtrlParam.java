@@ -31,7 +31,7 @@ public class CameraCtrlParam {
 
     @Override
     public String toString() {
-        return new StringBuilder().append("resourceId:").append(resourceId).append("state:").append(state).append(", type:").append(type).toString();
+        return new StringBuilder().append("state:").append(state).append(", type:").append(type).toString();
     }
 
     @NotBlank

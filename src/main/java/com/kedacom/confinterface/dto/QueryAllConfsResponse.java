@@ -2,8 +2,8 @@ package com.kedacom.confinterface.dto;
 
 import java.util.List;
 
-public class QueryConfsResponse extends  BaseResponseMsg{
-    public QueryConfsResponse(int code, int status, String message) {
+public class QueryAllConfsResponse extends  BaseResponseMsg{
+    public QueryAllConfsResponse(int code, int status, String message) {
         super(code, status, message);
     }
 

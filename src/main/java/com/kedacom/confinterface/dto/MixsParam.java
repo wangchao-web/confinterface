@@ -33,6 +33,13 @@ public class MixsParam {
         this.members = members;
     }
 
+    @Override
+    public String toString() {
+        return new StringBuilder().append("mode:").append(mode)
+                .append(", members:").append(members.toString())
+                .toString();
+    }
+
     @Range(min = 1, max = 2)
     private int mode;//混音模式1-智能混音；2-定制混音；
 

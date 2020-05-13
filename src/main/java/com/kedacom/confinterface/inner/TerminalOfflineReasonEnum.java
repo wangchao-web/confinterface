@@ -18,7 +18,8 @@ public enum TerminalOfflineReasonEnum {
     ConfHolding(12,"ConfHolding 会议正举行"),
     Hascascaded(13,"Hascascaded 已级联"),
     Custom(14,"Custom 自定义"),
-    Adaptivebusy(15,"Adaptivebusy 适配器忙");
+    Adaptivebusy(15,"Adaptivebusy 适配器忙"),
+    NmediaResource(16,"流媒体创建资源或者更新失败");
     public int getCode(){
         return this.code;
     }

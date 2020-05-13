@@ -31,7 +31,7 @@ public class McuStartMixparam {
     @Override
     public String toString() {
         return new StringBuilder().append("mode:").append(mode)
-                .append("members:").append(members)
+                .append(", members:").append(members.toString())
                 .toString();
     }
 

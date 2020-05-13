@@ -63,13 +63,13 @@ public class SendSmsParam {
     List<Terminal> mts;
 
     @Range(min = 0, max = 2)
-    private int type ; // 短消息类型 0-自右至左滚动；1-翻页滚动；2-全页滚动；
+    private int type = 0; // 短消息类型 0-自右至左滚动；1-翻页滚动；2-全页滚动；
 
     @Range(min = 1, max = 255)
     private int rollNum ; // 滚动次数 1-255 新版本终端255为无限轮询
 
     @Range(min = 1, max = 3)
-    private int rollSpeed ; //滚动速度 1-慢速；2-中速；3-快速；
+    private int rollSpeed  = 1; //滚动速度 1-慢速；2-中速；3-快速；
 
     private String message; //消息内容,发送空消息即停止短消息 最大字符长度：1500个字节
 }

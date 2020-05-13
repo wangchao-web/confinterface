@@ -66,6 +66,8 @@ public class RestClientService {
 
             return resultEntity.getBody();
         } catch (Exception e){
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"e.printStackTrace() "+ e.getMessage());
+            System.out.println("e.printStackTrace() "+ e.getMessage());
             e.printStackTrace();
         }
 

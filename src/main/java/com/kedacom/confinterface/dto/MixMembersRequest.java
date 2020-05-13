@@ -1,12 +1,15 @@
 package com.kedacom.confinterface.dto;
 
+import com.kedacom.confinterface.dao.Terminal;
 import com.kedacom.confinterface.util.ConfInterfaceResult;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import java.util.List;
+
 public class MixMembersRequest extends BaseRequestMsg<BaseResponseMsg> {
 
-    public MixMembersRequest(String groupId, MixMembers mixMembers) {
+    public MixMembersRequest(String groupId, List<Terminal> mixMembers) {
         super(groupId);
         this.mixMembers = mixMembers;
     }
@@ -15,11 +18,11 @@ public class MixMembersRequest extends BaseRequestMsg<BaseResponseMsg> {
         super(groupId);
     }
 
-    public MixMembers getMixMembers() {
+    public List<Terminal> getMixMembers() {
         return mixMembers;
     }
 
-    public void setMixMembers(MixMembers mixMembers) {
+    public void setMixMembers(List<Terminal> mixMembers) {
         this.mixMembers = mixMembers;
     }
 
@@ -37,5 +40,6 @@ public class MixMembersRequest extends BaseRequestMsg<BaseResponseMsg> {
         responseMsg.setResult(responseEntity);
     }
 
-    private MixMembers mixMembers;
+    private List<Terminal> mixMembers;
+
 }

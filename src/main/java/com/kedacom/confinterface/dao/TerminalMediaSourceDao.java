@@ -1,9 +1,11 @@
 package com.kedacom.confinterface.dao;
 
+import com.kedacom.confinterface.dto.MonitorsMember;
 import com.kedacom.confinterface.dto.TerminalMediaResource;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public interface TerminalMediaSourceDao {
 
@@ -19,6 +21,12 @@ public interface TerminalMediaSourceDao {
     Map<String, String> getGroupsHash();
 
     Map<String, String> setGroup(String groupId, String confId);
+
+    ConcurrentHashMap<String, MonitorsMember> setMonitorsMembers(String confId, Map<String, MonitorsMember> monitorsMembers);
+
+    ConcurrentHashMap<String, MonitorsMember> deleteMonitorsMembers(String confId);
+
+    ConcurrentHashMap<String, MonitorsMember> getMonitorsMembers(String confId);
 
     Map<String, String> delGroup(String groupId);
 
@@ -52,4 +60,16 @@ public interface TerminalMediaSourceDao {
     BroadcastSrcMediaInfo setBroadcastSrcInfo(String groupId, BroadcastSrcMediaInfo broadcastSrcMediaInfo);
 
     BroadcastSrcMediaInfo delBroadcastSrcInfo(String groupId);
+
+    Map<String, String> setMtPublish(String E164, String publishUrl);
+
+    Map<String, String> deleteMtPublish(String E164);
+
+    Map<String, String> getMtPublish();
+
+    Map<String, String> setPublishUrl(String groupId, String publishUrl);
+
+    Map<String, String> deletePublishUrl(String groupId);
+
+    Map<String, String> getPublishUrl();
 }

@@ -115,6 +115,7 @@ public class McuSubscribeClientService implements ApplicationContextAware{
 
     //握手回调
     private class HshakeListener implements ClientSessionChannel.MessageListener {
+        @Override
         public void onMessage(ClientSessionChannel channel, Message message) {
             if (message.isSuccessful()) {
                 handShakeOk = true;

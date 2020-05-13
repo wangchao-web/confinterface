@@ -6,6 +6,7 @@ import com.kedacom.confinterface.LogService.LogOutputTypeEnum;
 import com.kedacom.confinterface.LogService.LogTools;
 import com.kedacom.confinterface.dao.Terminal;
 import com.kedacom.confinterface.dto.MediaResource;
+import com.kedacom.confinterface.inner.SubscribeMsgTypeEnum;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.ArrayList;
@@ -27,8 +28,9 @@ public abstract class TerminalManageService {
 
     public TerminalService getFreeVmt(){
         synchronized (freeVmtServiceMap) {
-            if (freeVmtServiceMap.isEmpty())
+            if (freeVmtServiceMap.isEmpty()) {
                 return null;
+            }
 
             for (Map.Entry<String, TerminalService> terminalServiceEntry : freeVmtServiceMap.entrySet()) {
                 TerminalService terminalService = terminalServiceEntry.getValue();
@@ -152,7 +154,7 @@ public abstract class TerminalManageService {
         }
     }
 
-    public static void publishStatus(String account, String groupId, int status, List<MediaResource> forwardResources, List<MediaResource> reverseResources){
+    public static void publishStatus(String account, String groupId, int status, List<MediaResource> forwardResources, List<MediaResource> reverseResources,String callMode){
         if (null == confInterfacePublishService){
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"TerminalManagerService, 1, publishStatus, confInterfacePublishService is null **************");
             System.out.println("TerminalManagerService, 1, publishStatus, confInterfacePublishService is null **************");
@@ -161,7 +163,7 @@ public abstract class TerminalManageService {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"TerminalManagerService, 1, publishStatus, confInterfacePublishService is not null **************");
             System.out.println("TerminalManagerService, 1, publishStatus, confInterfacePublishService is not null **************");
         }
-        confInterfacePublishService.publishStatus(account, groupId, status, forwardResources, reverseResources);
+        confInterfacePublishService.publishStatus(account, groupId, status, forwardResources, reverseResources,callMode);
     }
 
     public static void publishStatus(String account, String groupId, int status){
@@ -193,6 +195,13 @@ public abstract class TerminalManageService {
     public static void setPublishService(ConfInterfacePublishService inConfInterfacePublishService){
         confInterfacePublishService = inConfInterfacePublishService;
     }
+
+    //用于会议服务断链再重启之后推送状态
+    public static void publishStatus(SubscribeMsgTypeEnum type ,String publishUrl, Object publishmsg){
+        confInterfacePublishService.publishStatus(type, publishUrl, publishmsg);
+    }
+
+	
 
     public  int queryFreeVmtServiceMap(){
         return freeVmtServiceMap.size();

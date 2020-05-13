@@ -2,7 +2,6 @@ package com.kedacom.confinterface.controller;
 
 import com.kedacom.confinterface.LogService.LogOutputTypeEnum;
 import com.kedacom.confinterface.LogService.LogTools;
-import com.kedacom.confinterface.dao.Terminal;
 import com.kedacom.confinterface.dto.*;
 import com.kedacom.confinterface.inner.SubscribeMsgTypeEnum;
 import com.kedacom.confinterface.service.ConfInterfaceInitializingService;
@@ -149,10 +148,24 @@ public class ConfInterfaceController {
         }
     }
 
+    @DeleteMapping(value = "/subscription/terminalstatus")
+    public ResponseEntity<BaseResponseMsg> cancelSubscribeTerminalStatus(@RequestParam("GroupId") String groupId, @Valid @RequestBody SubscribeTerminalStatusParam subscribeTerminalStatusParam){
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now in cancelSubscribeTerminalStatus, groupId:"+groupId+", subscribeParam:"+subscribeTerminalStatusParam);
+        System.out.println("now in cancelSubscribeTerminalStatus, groupId:"+groupId+", subscribeParam:"+subscribeTerminalStatusParam);
+        if (null != confInterfacePublishService) {
+            confInterfacePublishService.cancelSubscribeMessage(SubscribeMsgTypeEnum.TERMINAL_STATUS.getType(), groupId, subscribeTerminalStatusParam.getUrl());
+            BaseResponseMsg baseResponseMsg = new BaseResponseMsg(ConfInterfaceResult.OK.getCode(), HttpStatus.OK.value(), ConfInterfaceResult.OK.getMessage());
+            return new ResponseEntity<>(baseResponseMsg, HttpStatus.OK);
+        } else {
+            BaseResponseMsg baseResponseMsg = new BaseResponseMsg(ConfInterfaceResult.NOT_SUPPORT_METHOD.getCode(), HttpStatus.OK.value(), ConfInterfaceResult.NOT_SUPPORT_METHOD.getMessage());
+            return new ResponseEntity<>(baseResponseMsg, HttpStatus.OK);
+        }
+    }
+
     @PostMapping(value = "/iframe")
     public DeferredResult<ResponseEntity<BaseResponseMsg>> sendIFrame(@RequestParam("GroupId") String groupId, @Valid @RequestBody SendIFrameParam sendIFrameParam){
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now in sendIFrame, groupId:"+groupId+", iframeParam:"+sendIFrameParam);
-        System.out.println("now in sendIFrame, groupId:"+groupId+", iframeParam:"+sendIFrameParam);
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now in sendIFrame, groupId:"+groupId+", iframeParam:"+sendIFrameParam.toString());
+        System.out.println("now in sendIFrame, groupId:"+groupId+", iframeParam:"+sendIFrameParam.toString());
         SendIFrameRequest sendIFrameRequest = new SendIFrameRequest(groupId, sendIFrameParam);
         confInterfaceService.sendIFrame(sendIFrameRequest);
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now finished sendIFrame, time:"+System.currentTimeMillis());
@@ -272,25 +285,36 @@ public class ConfInterfaceController {
     }
 
     @GetMapping(value = "/confs")
-    public DeferredResult<ResponseEntity<QueryConfsResponse>> getConfs(){
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"query confs! time:"+System.currentTimeMillis());
-        System.out.println("query confs ! time:"+System.currentTimeMillis());
-        QueryConfsRequest queryConfsRequest = new QueryConfsRequest();
-        confInterfaceService.queryConfs(queryConfsRequest);
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now finished query confs, time:"+System.currentTimeMillis());
-        System.out.println("now finished query confs ! time, time:"+System.currentTimeMillis());
-        return queryConfsRequest.getResponseMsg();
+    public DeferredResult<ResponseEntity<QueryAllConfsResponse>> getConfs(){
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"query All confs! time:"+System.currentTimeMillis());
+        System.out.println("query All confs ! time:"+System.currentTimeMillis());
+        QueryAllConfsRequest queryAllConfsRequest = new QueryAllConfsRequest();
+        confInterfaceService.queryConfs(queryAllConfsRequest);
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now finished query All confs, time:"+System.currentTimeMillis());
+        System.out.println("now finished query All confs ! time, time:"+System.currentTimeMillis());
+        return queryAllConfsRequest.getResponseMsg();
+    }
+
+    @GetMapping(value = "/confInfo")
+    public DeferredResult<ResponseEntity<QueryConfInfoResponse>>  getConfInfo(@RequestParam("GroupId") String groupId){
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"query confInfo! time:"+System.currentTimeMillis());
+        System.out.println("query confInfo ! time:"+System.currentTimeMillis());
+        QueryConfInfoRequest queryConfInfoRequest = new QueryConfInfoRequest(groupId);
+        confInterfaceService.queryConfInfo(queryConfInfoRequest);
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now finished  query confInfo, time:"+System.currentTimeMillis());
+        System.out.println("now finished query confInfo, time:"+System.currentTimeMillis());
+        return queryConfInfoRequest.getResponseMsg();
     }
 
     @GetMapping(value = "/cascades")
     public DeferredResult<ResponseEntity<QueryConfCascadesInfoResponse>>  getConfCascadeInfo(@RequestParam("GroupId") String groupId){
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"query getConfCascadeInfo! time:"+System.currentTimeMillis());
         System.out.println("query getConfCascadeInfo ! time:"+System.currentTimeMillis());
-        QueryConfsCascadesRequest QueryConfsCascadesRequest = new QueryConfsCascadesRequest(groupId);
-        confInterfaceService.queryConfsCascades(QueryConfsCascadesRequest);
+        QueryConfsCascadesRequest queryConfsCascadesRequest = new QueryConfsCascadesRequest(groupId);
+        confInterfaceService.queryConfsCascades(queryConfsCascadesRequest);
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now finished query query getConfCascadeInfo, time:"+System.currentTimeMillis());
         System.out.println("now finished query getConfCascadeInfo, time:"+System.currentTimeMillis());
-        return QueryConfsCascadesRequest.getResponseMsg();
+        return queryConfsCascadesRequest.getResponseMsg();
     }
 
     @GetMapping(value = "/cascades/{cascadeId}/mts")
@@ -306,7 +330,7 @@ public class ConfInterfaceController {
 
 
     @PostMapping(value = "/sms")
-    public DeferredResult<ResponseEntity<BaseResponseMsg>> sendSms(@RequestParam("GroupId") String groupId, @Valid @RequestBody SendSmsParam sendSmsParam){
+    public DeferredResult<ResponseEntity<SendSmsResponse>> sendSms(@RequestParam("GroupId") String groupId, @Valid @RequestBody SendSmsParam sendSmsParam){
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now in sendSms, groupId : " + groupId + "sendSmsParam.toString() : " +sendSmsParam.toString() + ", time : " + System.currentTimeMillis());
         System.out.println("now in sendSms, groupId : " + groupId + "sendSmsParam.toString() : " +sendSmsParam.toString() + ", time : " + System.currentTimeMillis());
         SendSmsRequest sendSmsRequest = new SendSmsRequest(groupId, sendSmsParam);
@@ -410,7 +434,7 @@ public class ConfInterfaceController {
     public DeferredResult<ResponseEntity<BaseResponseMsg>> addMixsMembers(@RequestParam("GroupId") String groupId,@Valid @RequestBody MixMembers mixMembers){
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now in add Mixs members , groupId : " + groupId + ", mixMembers.toString() : " +mixMembers.toString() +", time : " + System.currentTimeMillis());
         System.out.println("now in add Mixs members , groupId : " + groupId + ", mixMembers.toString() : " + mixMembers.toString() + ", time : " + System.currentTimeMillis());
-        MixMembersRequest mixMembersRequest = new MixMembersRequest(groupId, mixMembers);
+        MixMembersRequest mixMembersRequest = new MixMembersRequest(groupId, mixMembers.getMembers());
         confInterfaceService.mixMembers(mixMembersRequest,true);
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now finished add Mixs members, time : " + System.currentTimeMillis());
         System.out.println("now finished add Mixs members, time : " + System.currentTimeMillis());
@@ -421,7 +445,7 @@ public class ConfInterfaceController {
     public DeferredResult<ResponseEntity<BaseResponseMsg>> deleteMixsMembers(@RequestParam("GroupId") String groupId,@Valid @RequestBody MixMembers mixMembers){
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now in delete Mixs members , groupId : " + groupId + ", mixMembers.toString() : " +mixMembers.toString() +", time : " + System.currentTimeMillis());
         System.out.println("now in delete Mixs members , groupId : " + groupId + ", mixMembers.toString() : " + mixMembers.toString() + ", time : " + System.currentTimeMillis());
-        MixMembersRequest mixMembersRequest = new MixMembersRequest(groupId, mixMembers);
+        MixMembersRequest mixMembersRequest = new MixMembersRequest(groupId, mixMembers.getMembers());
         confInterfaceService.mixMembers(mixMembersRequest,false);
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now finished delete Mixs members, time : " + System.currentTimeMillis());
         System.out.println("now finished delete Mixs members, time : " + System.currentTimeMillis());
@@ -432,11 +456,22 @@ public class ConfInterfaceController {
     public DeferredResult<ResponseEntity<MonitorsResponse>> startMonitors(@RequestParam("GroupId") String groupId,@Valid @RequestBody MonitorsParams monitorsParams){
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now in start  Monitors , groupId : " + groupId + ", monitorsParams.toString() : " +monitorsParams.toString() +", time : " + System.currentTimeMillis());
         System.out.println("now in start Monitors , groupId : " + groupId + ", monitorsParams.toString() : " + monitorsParams.toString() + ", time : " + System.currentTimeMillis());
-        StartMonitorsRequest startMonitorsRequest = new StartMonitorsRequest(groupId, monitorsParams);/
-        //confInterfaceService.mixMembers(mixMembersRequest,true);
+        StartMonitorsRequest startMonitorsRequest = new StartMonitorsRequest(groupId, monitorsParams);
+        confInterfaceService.startMonitors(startMonitorsRequest);
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now finished start Monitors, time : " + System.currentTimeMillis());
         System.out.println("now finished start Monitors , time : " + System.currentTimeMillis());
         return startMonitorsRequest.getResponseMsg();
+    }
+
+    @DeleteMapping(value = "/monitors")
+    public DeferredResult<ResponseEntity<BaseResponseMsg>> DeleteMonitors(@RequestParam("GroupId") String groupId,@Valid @RequestBody MonitorsParams monitorsParams){
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now in delete  Monitors , groupId : " + groupId + ", monitorsParams.toString() : " +monitorsParams.toString() +", time : " + System.currentTimeMillis());
+        System.out.println("now in delete Monitors , groupId : " + groupId + ", monitorsParams.toString() : " + monitorsParams.toString() + ", time : " + System.currentTimeMillis());
+        DeleteMonitorsRequest deleteMonitorsRequest = new DeleteMonitorsRequest(groupId, monitorsParams);
+        confInterfaceService.deleteMonitors(deleteMonitorsRequest);
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now delete start Monitors, time : " + System.currentTimeMillis());
+        System.out.println("now finished delete Monitors , time : " + System.currentTimeMillis());
+        return deleteMonitorsRequest.getResponseMsg();
     }
 
     @ExceptionHandler

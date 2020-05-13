@@ -3,6 +3,7 @@ package com.kedacom.confinterface.sip;
 
 import com.kedacom.confadapter.media.MediaDescription;
 import com.kedacom.confinterface.dto.BaseRequestMsg;
+import com.kedacom.confinterface.exchange.CreateResourceResponse;
 import com.kedacom.confinterface.service.TerminalService;
 
 import java.util.Vector;
@@ -21,6 +22,11 @@ public class SipTerminalService extends TerminalService {
     @Override
     public boolean closeDualStreamChannel() {
         return false;
+    }
+
+    @Override
+    public CreateResourceResponse monitorsAddExchange(MediaDescription mediaDescription) {
+        return null;
     }
 
     @Override
