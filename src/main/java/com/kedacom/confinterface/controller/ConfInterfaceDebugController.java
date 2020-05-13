@@ -29,8 +29,9 @@ public class ConfInterfaceDebugController {
     @GetMapping("/groups")
     public Map<String, String> getGroups(){
         Map<String, String> groups = confInterfaceService.getGroups();
-        if (null == groups)
+        if (null == groups) {
             return new HashMap<>();
+        }
 
         return groups;
     }
@@ -38,8 +39,9 @@ public class ConfInterfaceDebugController {
     @GetMapping("/groups/{groupId}/terminals")
     public List<Terminal> getTerminalsByGroupId(@PathVariable("groupId") String groupId){
         List<Terminal> terminals = confInterfaceService.getGroupMtMembers(groupId);
-        if (null == terminals)
+        if (null == terminals) {
             return new ArrayList<>();
+        }
 
         return terminals;
     }
@@ -47,8 +49,9 @@ public class ConfInterfaceDebugController {
     @GetMapping("/groups/{groupId}/broadcastinfo")
     public BroadcastSrcMediaInfo getBroadcastByGroupId(@PathVariable("groupId") String groupId){
         BroadcastSrcMediaInfo broadcastSrcMediaInfo = confInterfaceService.getBroadcastSrc(groupId);
-        if (null == broadcastSrcMediaInfo)
+        if (null == broadcastSrcMediaInfo) {
             return new BroadcastSrcMediaInfo();
+        }
 
         return broadcastSrcMediaInfo;
     }
@@ -56,19 +59,22 @@ public class ConfInterfaceDebugController {
     @GetMapping("/groups/{groupId}/inspections")
     public List<InspectionParam> getInspectionParamByGroupId(@PathVariable("groupId") String groupId){
         GroupConfInfo groupConfInfo = confInterfaceService.getGroupConfInfo(groupId);
-        if (null == groupConfInfo)
+        if (null == groupConfInfo) {
             return  new ArrayList<>();
+        }
 
         Map<String, TerminalService> mtMembers = groupConfInfo.getMtMembers();
-        if (null == mtMembers)
+        if (null == mtMembers) {
             return new ArrayList<>();
+        }
 
         List<InspectionParam> inspectionParams = new ArrayList<>();
         for(Map.Entry<String, TerminalService> mtMemberEntry : mtMembers.entrySet()) {
             TerminalService terminalService = mtMemberEntry.getValue();
             InspectionSrcParam inspectionSrcParam = terminalService.getInspectionParam();
-            if (null == inspectionSrcParam)
+            if (null == inspectionSrcParam) {
                 continue;
+            }
 
             InspectionParam inspectionParam = new InspectionParam();
             inspectionParam.setDstMtE164(terminalService.getE164());
@@ -85,14 +91,16 @@ public class ConfInterfaceDebugController {
         }
 
         Map<String, TerminalService> vmtMembers = groupConfInfo.getUsedVmtMembers();
-        if (null == vmtMembers)
+        if (null == vmtMembers) {
             return inspectionParams;
+        }
 
         for (Map.Entry<String, TerminalService> vmtMemberEntry : vmtMembers.entrySet()){
             TerminalService terminalService = vmtMemberEntry.getValue();
             InspectionSrcParam inspectionSrcParam = terminalService.getInspectionParam();
-            if (null == inspectionSrcParam)
+            if (null == inspectionSrcParam) {
                 continue;
+            }
 
             InspectionParam inspectionParam = new InspectionParam();
             inspectionParam.setDstMtE164("");
@@ -107,8 +115,9 @@ public class ConfInterfaceDebugController {
     @GetMapping("/groups/{groupId}/mediaresources")
     public List<TerminalMediaResource> getMediaResourcesByGroupId(@PathVariable("groupId") String groupId){
         List<TerminalMediaResource> terminalMediaResources = confInterfaceService.getTerminalMediaResources(groupId);
-        if (null == terminalMediaResources)
+        if (null == terminalMediaResources) {
             return new ArrayList<>();
+        }
 
         return  terminalMediaResources;
     }

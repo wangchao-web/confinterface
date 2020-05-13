@@ -5,13 +5,7 @@ import org.hibernate.validator.constraints.Range;
 import javax.validation.constraints.NotBlank;
 
 public class CameraCtrlParam {
-    public String getResourceId() {
-        return resourceId;
-    }
 
-    public void setResourceId(String resourceId) {
-        this.resourceId = resourceId;
-    }
 
     public String getResourceId() {
         return resourceId;

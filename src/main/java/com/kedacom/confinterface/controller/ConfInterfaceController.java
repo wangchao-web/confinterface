@@ -464,7 +464,7 @@ public class ConfInterfaceController {
     }
 
     @DeleteMapping(value = "/monitors")
-    public DeferredResult<ResponseEntity<BaseResponseMsg>> DeleteMonitors(@RequestParam("GroupId") String groupId,@Valid @RequestBody MonitorsParams monitorsParams){
+    public DeferredResult<ResponseEntity<BaseResponseMsg>> deleteMonitors(@RequestParam("GroupId") String groupId,@Valid @RequestBody MonitorsParams monitorsParams){
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now in delete  Monitors , groupId : " + groupId + ", monitorsParams.toString() : " +monitorsParams.toString() +", time : " + System.currentTimeMillis());
         System.out.println("now in delete Monitors , groupId : " + groupId + ", monitorsParams.toString() : " + monitorsParams.toString() + ", time : " + System.currentTimeMillis());
         DeleteMonitorsRequest deleteMonitorsRequest = new DeleteMonitorsRequest(groupId, monitorsParams);

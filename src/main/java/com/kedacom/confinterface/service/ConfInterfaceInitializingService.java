@@ -296,8 +296,9 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
                 bOk = mcuSdkClientService.login();
             }
 
-            if (bOk)
+            if (bOk) {
                 break;
+            }
 
             try {
                 TimeUnit.SECONDS.sleep(1);
@@ -554,12 +555,14 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
 
         for (Map.Entry<String, TerminalService> mtMember : mtMembers.entrySet()) {
             TerminalService mtService = mtMember.getValue();
-            if (!mtService.isOnline())
+            if (!mtService.isOnline()) {
                 continue;
+            }
 
             InspectionSrcParam mtInspectionParam = mtService.getInspectionParam();
-            if (null == mtInspectionParam)
+            if (null == mtInspectionParam) {
                 continue;
+            }
 
             TerminalService vmtService = groupConfInfo.getVmtMember(mtInspectionParam.getMtE164());
             if (null != vmtService) {
@@ -649,7 +652,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
                             jedis.auth(redisConfig.getPassword());//密码
                         }
                         String ping = jedis.ping();
-                        if (ping.equalsIgnoreCase("PONG")) {
+                        if ("PONG".equalsIgnoreCase(ping)) {
                             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Connection to redis successful ！" + ping);
                             System.out.println("Connection to redis successful ！" + ping);
                             result = 0;

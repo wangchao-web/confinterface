@@ -36,7 +36,9 @@ public class BroadcastSrcMediaInfo implements Serializable {
         return new StringBuilder().append("mtE164:").append(mtE164).append(",Type:").append(type).toString();
     }
 
-    private int type;  //广播源类型：0-未知，1-终端，2-混音/画面合成/监控前端
+    //广播源类型：0-未知，1-终端，2-混音/画面合成/监控前端
+    private int type;
     private String mtE164;
-    private String vmtE164;  //保存作为广播使用的vmt的E164号
+    //保存作为广播使用的vmt的E164号
+    private String vmtE164;
 }
