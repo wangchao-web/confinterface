@@ -141,9 +141,9 @@ public class H323TerminalService extends TerminalService {
                 if (null == exchangeInfos) {
                     //如果查询不到资源节点，则清理相应的资源信息
                     for (DetailMediaResouce detailMediaResouce : reverseChannel) {
-                        if (!detailMediaResouce.getId().equals(resourceInfo.get(0)))
+                        if (!detailMediaResouce.getId().equals(resourceInfo.get(0))) {
                             continue;
-
+                        }
                         reverseChannel.remove(detailMediaResouce);
                         updateResourceParams.clear();
                         resourceInfo.clear();

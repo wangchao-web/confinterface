@@ -57,19 +57,21 @@ public class GroupConfInfo {
     }
 
     public void setBroadcastVmtService(TerminalService terminalService) {
-        if (null != terminalService){
+        if (null != terminalService) {
             this.broadcastVmtService = terminalService;
             this.broadcastVmtService.setSupportDualStream(true);
             return;
         }
 
-        synchronized (freeVmtMembers){
-            for(Map.Entry<String, TerminalService> vmt : freeVmtMembers.entrySet()){
+        synchronized (freeVmtMembers) {
+            for (Map.Entry<String, TerminalService> vmt : freeVmtMembers.entrySet()) {
                 this.broadcastVmtService = vmt.getValue();
                 break;
             }
 
-            if (null == broadcastVmtService){
+            if (null == broadcastVmtService) {
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "setBroadcastVmtService broadcastVmtService is null *****  ");
+                System.out.println("setBroadcastVmtService broadcastVmtService is null *****  ");
                 return;
             }
 

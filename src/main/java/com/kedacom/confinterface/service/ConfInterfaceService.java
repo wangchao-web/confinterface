@@ -263,7 +263,8 @@ public class ConfInterfaceService {
             mcuRestClientService.subscribeInspection(confId);
             mcuRestClientService.subscribeSpeaker(confId);
             mcuRestClientService.subscribeDual(confId);
-
+            mcuRestClientService.subscribeMixs(confId);
+            mcuRestClientService.subscribeVmps(confId);
             return;
         }
 
@@ -450,7 +451,6 @@ public class ConfInterfaceService {
             broadcastSrcMediaInfo.setType(BroadcastTypeEnum.UNKNOWN.getCode());
             broadcastSrcMediaInfo.setMtE164(null);
             terminalMediaSourceService.setBroadcastSrcInfo(groupId, broadcastSrcMediaInfo);
-
             cancelBroadCastRequest.makeSuccessResponseMsg();
         } else {
             LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50010 : cancel speaker failed!");

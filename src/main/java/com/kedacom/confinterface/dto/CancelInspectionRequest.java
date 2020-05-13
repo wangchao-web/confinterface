@@ -26,6 +26,7 @@ public class CancelInspectionRequest extends BaseRequestMsg<BaseResponseMsg> {
         responseMsg.setResult(responseEntity);
     }
 
+    @Override
     public void makeSuccessResponseMsg() {
         BaseResponseMsg baseResponseMsg = new BaseResponseMsg(ConfInterfaceResult.OK.getCode(), HttpStatus.OK.value(), ConfInterfaceResult.OK.getMessage());
         ResponseEntity<BaseResponseMsg> responseEntity = new ResponseEntity<>(baseResponseMsg, HttpStatus.OK);

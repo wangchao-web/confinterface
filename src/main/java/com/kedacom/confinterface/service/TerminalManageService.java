@@ -196,7 +196,7 @@ public abstract class TerminalManageService {
     }
 
     //用于会议服务断链再重启之后推送状态
-    public static  void publishStatus(SubscribeMsgTypeEnum type ,String publishUrl, Object publishmsg){
+    public static void publishStatus(SubscribeMsgTypeEnum type ,String publishUrl, Object publishmsg){
         confInterfacePublishService.publishStatus(type, publishUrl, publishmsg);
     }
 

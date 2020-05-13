@@ -97,7 +97,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
                     confInterfacePublishService.addSubscribeMessage(SubscribeMsgTypeEnum.TERMINAL_STATUS.getType(), split[7], mtPublish.getValue());*/
                     TerminalStatus terminalStatus = new TerminalStatus(mtPublish.getKey(), "MT", TerminalOnlineStatusEnum.OFFLINE.getCode(), null, null);
                     terminalStatusNotify.addMtStatus(terminalStatus);
-                    terminalManageService.publishStatus(SubscribeMsgTypeEnum.TERMINAL_STATUS, mtPublish.getValue(), terminalStatusNotify);
+                    TerminalManageService.publishStatus(SubscribeMsgTypeEnum.TERMINAL_STATUS, mtPublish.getValue(), terminalStatusNotify);
 
                 }
             }

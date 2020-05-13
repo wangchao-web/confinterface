@@ -1038,6 +1038,54 @@ public class McuRestClientService {
         confSubcribeChannelMap.put(confId, subscribeChannelList);
     }
 
+    public void subscribeVmps(String confId) {
+        ///confs/{conf_id}/vmps/{vmp_id}
+        StringBuilder subscribeChannel = new StringBuilder();
+        subscribeChannel.delete(0, subscribeChannel.length());
+        subscribeChannel.append("/confs/");
+        subscribeChannel.append(confId);
+        subscribeChannel.append("/vmps/");
+        subscribeChannel.append("1");
+
+        List<String> subscribeChannelList = confSubcribeChannelMap.get(confId);
+        if (null == subscribeChannelList) {
+            subscribeChannelList = Collections.synchronizedList(new ArrayList<>());
+        }
+
+        for (String channel : subscribeChannelList) {
+            if (channel.equals(subscribeChannel.toString()))
+                return;
+        }
+
+        mcuSubscribeClientService.subscribe(subscribeChannel.toString());
+        subscribeChannelList.add(subscribeChannel.toString());
+        confSubcribeChannelMap.put(confId, subscribeChannelList);
+    }
+
+    public void subscribeMixs(String confId) {
+        ///confs/{conf_id}/mixs/{mix_id}
+        StringBuilder subscribeChannel = new StringBuilder();
+        subscribeChannel.delete(0, subscribeChannel.length());
+        subscribeChannel.append("/confs/");
+        subscribeChannel.append(confId);
+        subscribeChannel.append("/mixs/");
+        subscribeChannel.append("1");
+
+        List<String> subscribeChannelList = confSubcribeChannelMap.get(confId);
+        if (null == subscribeChannelList) {
+            subscribeChannelList = Collections.synchronizedList(new ArrayList<>());
+        }
+
+        for (String channel : subscribeChannelList) {
+            if (channel.equals(subscribeChannel.toString()))
+                return;
+        }
+
+        mcuSubscribeClientService.subscribe(subscribeChannel.toString());
+        subscribeChannelList.add(subscribeChannel.toString());
+        confSubcribeChannelMap.put(confId, subscribeChannelList);
+    }
+
     @Autowired
     private RestClientService restClientService;
 

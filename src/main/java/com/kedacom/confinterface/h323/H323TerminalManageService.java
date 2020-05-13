@@ -561,9 +561,9 @@ public class H323TerminalManageService extends TerminalManageService implements 
     }
 
     @Override
-    public void OnKeyFrameRequested(String participantid, int index) {
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "OnKeyFrameRequested, terminal: " + participantid + " is on key frameRequest, threadName: " + Thread.currentThread().getName());
-        System.out.println("OnKeyFrameRequested, terminal: " + participantid + " is on key frameRequest  conference,threadName:" + Thread.currentThread().getName());
+    public void OnKeyFrameRequested(String participantid, Vector<MediaDescription> mediaDescriptions) {
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "OnKeyFrameRequested, terminal: " + participantid + " is on key frameRequest, threadName: " + Thread.currentThread().getName()+ "mediaDescriptions : " + mediaDescriptions.toString());
+        System.out.println("OnKeyFrameRequested, terminal: " + participantid + " is on key frameRequest  conference,threadName:" + Thread.currentThread().getName() + "mediaDescriptions : " + mediaDescriptions.toString());
         H323TerminalService terminalService = (H323TerminalService) usedVmtServiceMap.get(participantid);
         if (null == terminalService) {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "OnKeyFrameRequested, not found terminal! participantid: " + participantid);
@@ -597,9 +597,9 @@ public class H323TerminalManageService extends TerminalManageService implements 
             }
         }else{
             for(DetailMediaResouce detailMediaResouce : DetailMediaResouceForwardResources){
-                if(detailMediaResouce.getType().equals("video") && detailMediaResouce.getStreamIndex() == index){
-                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"forwardResource type is video resourceId is : " + detailMediaResouce.getId() + ", StreamIndex : " + index + ", detailMediaResouce : " +detailMediaResouce.toString());
-                    System.out.println("forwardResource type is video resourceId is : " + detailMediaResouce.getId() + ", StreamIndex : " +index + ", detailMediaResouce : " +detailMediaResouce.toString());
+                if(detailMediaResouce.getType().equals("video") && detailMediaResouce.getStreamIndex() == mediaDescriptions.get(0).getStreamIndex()){
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"forwardResource type is video resourceId is : " + detailMediaResouce.getId() + ", mediaDescriptions : " + mediaDescriptions.get(0).toString() + ", detailMediaResouce : " +detailMediaResouce.toString());
+                    System.out.println("forwardResource type is video resourceId is : " + detailMediaResouce.getId() + ", mediaDescriptions : " +mediaDescriptions.get(0).toString() + ", detailMediaResouce : " +detailMediaResouce.toString());
                     resourceId = detailMediaResouce.getId();
                 }
             }

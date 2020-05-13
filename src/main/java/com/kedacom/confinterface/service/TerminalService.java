@@ -52,10 +52,11 @@ public abstract class TerminalService {
         this.inspectAudioStatus = new AtomicInteger();
         this.inspectAudioStatus.set(InspectionStatusEnum.UNKNOWN.getCode());
         this.confId = null;
-        if (bVmt)
+        if (bVmt) {
             this.type = 2;
-        else
+        } else {
             this.type = 1;
+        }
         this.inspectionParam = null;
         this.inspentedTerminals = null;
         this.forwardChannel = null;
@@ -87,7 +88,7 @@ public abstract class TerminalService {
 
     public void setProxyMTE164(String proxyMTE164) {
         this.proxyMTE164 = proxyMTE164;
-        this.dynamicBind = 0;   //配置方式，即预绑定
+        this.dynamicBind = 0;    //配置方式，即预绑定
     }
 
     public void bindProxyMT(ConfSessionPeer proxyMT){
@@ -181,13 +182,15 @@ public abstract class TerminalService {
     public boolean hasResourceId(boolean bReverse, String resourceId){
         if (bReverse){
             for (DetailMediaResouce detailMediaResouce : reverseChannel){
-                if (detailMediaResouce.getId().equals(resourceId))
+                if (detailMediaResouce.getId().equals(resourceId)) {
                     return true;
+                }
             }
         } else {
             for (DetailMediaResouce detailMediaResouce : forwardChannel){
-                if (detailMediaResouce.getId().equals(resourceId))
+                if (detailMediaResouce.getId().equals(resourceId)) {
                     return true;
+                }
             }
         }
 
@@ -235,19 +238,22 @@ public abstract class TerminalService {
     }
 
     public void delInspentedTerminal(String e164) {
-        if (null == e164 || null == inspentedTerminals)
+        if (null == e164 || null == inspentedTerminals) {
             return;
+        }
 
         synchronized (inspentedTerminals) {
             inspentedTerminals.remove(e164);
-            if (inspentedTerminals.isEmpty())
+            if (inspentedTerminals.isEmpty()) {
                 inspectedStatus.set(InspectionStatusEnum.UNKNOWN.getCode());
+            }
         }
     }
 
     public InspectedParam getInspectedParam(String e164) {
-        if (null == inspentedTerminals)
+        if (null == inspentedTerminals) {
             return null;
+        }
 
         return inspentedTerminals.get(e164);
     }
@@ -257,13 +263,15 @@ public abstract class TerminalService {
     }
 
     public void setInspectedStatus(String e164, InspectionStatusEnum status) {
-        if (null == inspentedTerminals)
+        if (null == inspentedTerminals) {
             return;
+        }
 
         synchronized (inspentedTerminals) {
             InspectedParam inspectedParam = inspentedTerminals.get(e164);
-            if (null == inspectedParam)
+            if (null == inspectedParam) {
                 return;
+            }
 
             inspectedParam.setStatus(status);
         }
@@ -311,10 +319,11 @@ public abstract class TerminalService {
     }
 
     public void allowExtensiveStream() {
-        if (supportDualStream.get())
+        if (supportDualStream.get()) {
             conferenceParticipant.AllowAcceptExtensiveStreamRequest(true);
-        else
+        } else {
             conferenceParticipant.AllowAcceptExtensiveStreamRequest(false);
+        }
     }
 
     public void setDualStream(boolean dualStream) {
@@ -347,17 +356,20 @@ public abstract class TerminalService {
     }
 
     public boolean existInspectFail() {
-        if (inspectVideoStatus.get() == InspectionStatusEnum.FAIL.getCode())
+        if (inspectVideoStatus.get() == InspectionStatusEnum.FAIL.getCode()) {
             return true;
+        }
 
         return (inspectAudioStatus.get() == InspectionStatusEnum.FAIL.getCode());
     }
 
     public int getInspectStatus(int mode) {
-        if (mode == InspectionModeEnum.VIDEO.getCode())
+        if (mode == InspectionModeEnum.VIDEO.getCode()) {
             return inspectVideoStatus.get();
-        if (mode == InspectionModeEnum.AUDIO.getCode())
+        }
+        if (mode == InspectionModeEnum.AUDIO.getCode()) {
             return inspectAudioStatus.get();
+        }
 
         return InspectionStatusEnum.UNKNOWN.getCode();
     }
@@ -422,15 +434,17 @@ public abstract class TerminalService {
     }
 
     public BaseRequestMsg getWaitMsg(String msgName) {
-        if (null == waitMsg)
+        if (null == waitMsg) {
             return null;
+        }
 
         return waitMsg.get(msgName);
     }
 
     public void delWaitMsg(String msgName) {
-        if (null == waitMsg)
+        if (null == waitMsg) {
             return;
+        }
 
         waitMsg.remove(msgName);
     }
@@ -473,8 +487,9 @@ public abstract class TerminalService {
     public abstract boolean closeDualStreamChannel();
 
     public List<ExchangeInfo> getExchange(List<String> resourceInfo) {
-        if (null == resourceInfo || resourceInfo.isEmpty())
+        if (null == resourceInfo || resourceInfo.isEmpty()) {
             return null;
+        }
 
         StringBuilder url = new StringBuilder();
         constructUrl(url, "/services/media/v1/exchange?GroupID={groupId}&Action=querynode");
@@ -658,15 +673,19 @@ public abstract class TerminalService {
             case 1:
                 //慢速
                 textMsgReq.setSpeed(TextMsgRollSpeedEnum.Slower);
+                break;
             case 2:
                 //中速
                 textMsgReq.setSpeed(TextMsgRollSpeedEnum.Common);
+                break;
             case 3:
                 //快速
                 textMsgReq.setSpeed(TextMsgRollSpeedEnum.Faster);
+                break;
             default:
                 //自定义速度
                 textMsgReq.setSpeed(TextMsgRollSpeedEnum.InvalidSpeed);
+                break;
         }
         boolean bOk = conferenceParticipant.PostTextMsg(textMsgReq);
         return bOk;
@@ -727,11 +746,15 @@ public abstract class TerminalService {
         }
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"keyframe resourceId : " + resourceId);
         System.out.println("keyframe resourceId : " + resourceId);
+        QueryAndDelResourceParam keyframeParam = new QueryAndDelResourceParam();
+        ArrayList<String> resourceIds = new ArrayList<>();
+        resourceIds.add(resourceId);
+        keyframeParam.setResourceIDs(resourceIds);
         StringBuilder url = new StringBuilder();
-        constructUrl(url, "/services/media/v1/live?DeviceID=XXX&Action=keyframe");
+        constructUrl(url, "/services/media/v1/exchange?GroupID={groupId}&Action=keyframe");
         Map<String, String> args = new HashMap<>();
-        args.put("DeviceID", resourceId);
-        ResponseEntity<BaseResponseMsg>  keyFrame= restClientService.exchangeJson(url.toString(), HttpMethod.POST, null, args, BaseResponseMsg.class);
+        args.put("groupId", groupId);
+        ResponseEntity<BaseResponseMsg>  keyFrame= restClientService.exchangeJson(url.toString(), HttpMethod.POST, keyframeParam, args, BaseResponseMsg.class);
         if (null == keyFrame) {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "keyFrame, failed! null == removeResponse");
             System.out.println("keyFrame, failed! null == removeResponse");
@@ -749,8 +772,9 @@ public abstract class TerminalService {
     }
 
     public boolean removeExchange(List<String> resourceIds) {
-        if (null == resourceIds || resourceIds.isEmpty())
+        if (null == resourceIds || resourceIds.isEmpty()) {
             return true;
+        }
 
         QueryAndDelResourceParam removeParam = new QueryAndDelResourceParam();
         removeParam.setResourceIDs(resourceIds);
@@ -799,11 +823,13 @@ public abstract class TerminalService {
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "                detailMediaResource(type:" + detailMediaResouce.getType() + ", dual:" + detailMediaResouce.getDual() + ")");
                 System.out.println("                detailMediaResource(type:" + detailMediaResouce.getType() + ", dual:" + detailMediaResouce.getDual() + ")");
 
-                if (!mediaDescription.getMediaType().equals(detailMediaResouce.getType()))
+                if (!mediaDescription.getMediaType().equals(detailMediaResouce.getType())) {
                     continue;
+                }
 
-                if (mediaDescription.getStreamIndex() != detailMediaResouce.getStreamIndex())
+                if (mediaDescription.getStreamIndex() != detailMediaResouce.getStreamIndex()) {
                     continue;
+                }
 
                 UpdateResourceParam updateResourceParam = new UpdateResourceParam(detailMediaResouce.getId());
                 updateResourceParam.setSdp(constructSdp(mediaDescription));
@@ -1172,8 +1198,9 @@ public abstract class TerminalService {
     }
 
     protected TransportAddress constructTransAddress(String sdp) {
-        if (null == sdp)
+        if (null == sdp) {
             return null;
+        }
 
         TransportAddress rtpAddress = new TransportAddress();
 
@@ -1200,8 +1227,9 @@ public abstract class TerminalService {
                 getPort = true;
             }
 
-            if (getAddress && getPort)
+            if (getAddress && getPort) {
                 break;
+            }
         }
 
         return rtpAddress;
@@ -1212,8 +1240,9 @@ public abstract class TerminalService {
         System.out.println("[constructSdp] mediaDescription.getEncodingFormat().name() : " +mediaDescription.getEncodingFormat().name() + ", rtpIp: " + mediaDescription.getRtpAddress().getIP() +
                 ", rtcpIp: " + mediaDescription.getRtcpAddress().getIP());
 
-        if (null == mediaDescription)
+        if (null == mediaDescription) {
             return "";
+        }
 
         String rtpProtocolType = getIpProtocolType(mediaDescription.getRtpAddress().getIP());
         String rtcpProtocolType = getIpProtocolType(mediaDescription.getRtcpAddress().getIP());
@@ -1385,8 +1414,9 @@ public abstract class TerminalService {
     }
 
     protected void constructH264Fmtp(StringBuilder sdp, int payload, H264Description h264Description) {
-        if (null == h264Description)
+        if (null == h264Description) {
             return;
+        }
 
         ProfileEnum profile = h264Description.getProfile();
         int level = h264Description.getLevel();
@@ -1469,15 +1499,15 @@ public abstract class TerminalService {
     }
 
     protected void constructH264Desc(String profileLevelId, String packetizationMode, H264Description h264Description) {
-        if (profileLevelId.contains("42"))
+        if (profileLevelId.contains("42")) {
             h264Description.setProfile(ProfileEnum.BASELINE);
-        else if (profileLevelId.contains("4D"))
+        } else if (profileLevelId.contains("4D")) {
             h264Description.setProfile(ProfileEnum.MAIN);
-        else if (profileLevelId.contains("58"))
+        } else if (profileLevelId.contains("58")) {
             h264Description.setProfile(ProfileEnum.EXTENDED);
-        else if (profileLevelId.contains("64"))
+        } else if (profileLevelId.contains("64")) {
             h264Description.setProfile(ProfileEnum.HIGH);
-        else {
+        } else {
             //h264Description.setProfileLevelId(profileLevelId);
             h264Description.setProfile(ProfileEnum.BASELINE);
         }
@@ -1505,10 +1535,11 @@ public abstract class TerminalService {
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "updateMediaResource, bReverseChannel:" + bReverseChannel + ", exchangeInfoSize:" + exchangeInfos.size());
         System.out.println("updateMediaResource, bReverseChannel:" + bReverseChannel + ", exchangeInfoSize:" + exchangeInfos.size());
         CopyOnWriteArrayList<DetailMediaResouce> channel;
-        if (bReverseChannel)
+        if (bReverseChannel) {
             channel = reverseChannel;
-        else
+        } else {
             channel = forwardChannel;
+        }
 
         if (null == channel) {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "updateMediaResource, channel == null!");
@@ -1518,8 +1549,9 @@ public abstract class TerminalService {
 
         for (ExchangeInfo exchangeInfo : exchangeInfos) {
             for (DetailMediaResouce detailMediaResouce : channel) {
-                if (!exchangeInfo.getResourceID().equals(detailMediaResouce.getId()))
+                if (!exchangeInfo.getResourceID().equals(detailMediaResouce.getId())) {
                     continue;
+                }
 
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "updateMediaResource, resourceId:" + exchangeInfo.getResourceID() + ", localSdp:" + exchangeInfo.getLocalSdp());
                 System.out.println("updateMediaResource, resourceId:" + exchangeInfo.getResourceID() + ", localSdp:" + exchangeInfo.getLocalSdp());
@@ -1596,8 +1628,9 @@ public abstract class TerminalService {
             } else {
                 String dualAccount = remoteMtAccount;
 
-                if (null != proxyMTE164)
+                if (null != proxyMTE164) {
                     dualAccount = e164;
+                }
 
                 MediaResource mediaResource = new MediaResource();
                 mediaResource.setDual(detailMediaResouce.getDual() == 1);
@@ -1625,8 +1658,9 @@ public abstract class TerminalService {
     protected void dualAddMediaResource() {
         String dualAccount = remoteMtAccount;
 
-        if (null != proxyMTE164)
+        if (null != proxyMTE164) {
             dualAccount = e164;
+        }
 
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"dualAddMediaResource, dualAccount : " + dualAccount);
         System.out.println("dualAddMediaResource, dualAccount : " + dualAccount);
@@ -1645,8 +1679,9 @@ public abstract class TerminalService {
     public void dualPublish() {
         String dualAccount = remoteMtAccount;
 
-        if (null != proxyMTE164)
+        if (null != proxyMTE164) {
             dualAccount = e164;
+        }
 
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"dualAccount : " + dualAccount);
         System.out.println("dualAccount : " + dualAccount);
@@ -1678,16 +1713,18 @@ public abstract class TerminalService {
     protected boolean removeMediaResource(boolean forwardResource, List<String> resourceIds) {
         List<DetailMediaResouce> channel;
 
-        if (forwardResource)
+        if (forwardResource) {
             channel = forwardChannel;
-        else
+        } else {
             channel = reverseChannel;
+        }
 
         boolean bOk = removeExchange(resourceIds);
         for (String resourceId : resourceIds) {
             for (DetailMediaResouce detailMediaResouce : channel) {
-                if (!detailMediaResouce.getId().equals(resourceId))
+                if (!detailMediaResouce.getId().equals(resourceId)) {
                     continue;
+                }
                 channel.remove(detailMediaResouce);
                 break;
             }
@@ -1697,8 +1734,9 @@ public abstract class TerminalService {
     }
 
     protected void parseRtpMapAndFmtp(String sdp, MediaDescription mediaDescription) {
-        if (null == sdp)
+        if (null == sdp) {
             return;
+        }
 
         String[] mediaSdps = sdp.split("\r\n");
         String fmtp = null;
@@ -1707,12 +1745,14 @@ public abstract class TerminalService {
         for (String mediaSdp : mediaSdps) {
             if (mediaSdp.contains("a=fmtp:")) {
                 fmtp = mediaSdp;
-                if (getRtpMap)
+                if (getRtpMap) {
                     break;
+                }
             }
 
-            if (!mediaSdp.contains("a=rtpmap:"))
+            if (!mediaSdp.contains("a=rtpmap:")) {
                 continue;
+            }
 
             int startIndex = mediaSdp.indexOf(":");
             int endIndex = mediaSdp.indexOf(" ");
@@ -1728,12 +1768,14 @@ public abstract class TerminalService {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"parseRtpMapAndFmtp, encName: " + encName + ", EncodingFormatEnum.H264.name(): " + EncodingFormatEnum.H264.name());
             System.out.println("parseRtpMapAndFmtp, encName: " + encName + ", EncodingFormatEnum.H264.name(): " + EncodingFormatEnum.H264.name());
 
-            if (!encName.equals(EncodingFormatEnum.H264.name()))
+            if (!encName.equals(EncodingFormatEnum.H264.name())) {
                 break;
+            }
         }
 
-        if (null == fmtp)
+        if (null == fmtp) {
             return;
+        }
 
         String profileLevelIdToken = "profile-level-id=";
         String packetizationModeToken = "packetization-mode=";
@@ -1756,8 +1798,9 @@ public abstract class TerminalService {
     }
 
     protected Vector<MediaDescription> constructAckMediaDescription(Vector<MediaDescription> mcuOpenChannelMediaDescriptions) {
-        if (null == mcuOpenChannelMediaDescriptions || mcuOpenChannelMediaDescriptions.isEmpty())
+        if (null == mcuOpenChannelMediaDescriptions || mcuOpenChannelMediaDescriptions.isEmpty()) {
             return new Vector<>();
+        }
 
         CopyOnWriteArrayList<DetailMediaResouce> channels;
         Vector<MediaDescription> localMediaDescriptions = new Vector<>();
@@ -1766,17 +1809,20 @@ public abstract class TerminalService {
         //h323,mcu端只会主动打开mcu到终端的通道，即反向通道
         //sip，mcu端在打开mcu到终端的通道的同时，会携带终端到mcu方向的通道的接收地址，因此需要在回应时将正向和方向的地址全部带回
         for (MediaDescription mediaDescription : mcuOpenChannelMediaDescriptions) {
-            if (TransportDirectionEnum.SEND.getName().equals(mediaDescription.getDirection()))
+            if (TransportDirectionEnum.SEND.getName().equals(mediaDescription.getDirection())) {
                 channels = reverseChannel;
-            else
+            } else {
                 channels = forwardChannel;
+            }
 
             for (DetailMediaResouce detailMediaResouce : channels) {
-                if (!mediaDescription.getMediaType().equals(detailMediaResouce.getType()))
+                if (!mediaDescription.getMediaType().equals(detailMediaResouce.getType())) {
                     continue;
+                }
 
-                if (mediaDescription.getStreamIndex() != detailMediaResouce.getStreamIndex())
+                if (mediaDescription.getStreamIndex() != detailMediaResouce.getStreamIndex()) {
                     continue;
+                }
 
                 MediaDescription localMediaDescription;
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "constructAckMediaDescription, detailMediaResouce: " + detailMediaResouce.toString());
@@ -1893,12 +1939,14 @@ public abstract class TerminalService {
 
     protected static String getIpProtocolType(String strIp){
         //判断是否是IPV4
-        if (isIPv4(strIp))
+        if (isIPv4(strIp)) {
             return "IP4";
+        }
 
         //判断是否为IPV6
-        if (isIPv6(strIp))
+        if (isIPv6(strIp)) {
             return "IP6";
+        }
 
         return null;
     }
@@ -1907,24 +1955,29 @@ public abstract class TerminalService {
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"[isIPv4] strIp : " + strIp);
         System.out.println("[isIPv4] strIp : " + strIp);
 
-        if (!strIp.contains("."))
+        if (!strIp.contains(".")) {
             return false;
+        }
 
-        if (strIp.startsWith(".") || strIp.endsWith("."))
+        if (strIp.startsWith(".") || strIp.endsWith(".")) {
             return false;
+        }
 
         //注意，. 为特殊字符，如果要使用split进行切分，必须进行转义!!!!!!
         String[] ipParts = strIp.split("\\.");
-        if (ipParts.length != 4)
+        if (ipParts.length != 4) {
             return false;
+        }
 
         Pattern pattern = Pattern.compile("[0-9]*");
         for (String ipPart : ipParts){
-            if (!pattern.matcher(ipPart).matches())
+            if (!pattern.matcher(ipPart).matches()) {
                 return false;
+            }
 
-            if (Integer.valueOf(ipPart) > 255)
+            if (Integer.valueOf(ipPart) > 255) {
                 return false;
+            }
         }
 
         return true;
@@ -1938,37 +1991,44 @@ public abstract class TerminalService {
             return true;
         }
 
-        if (!strIp.contains(":"))
+        if (!strIp.contains(":")) {
             return false;
+        }
 
-        if (strIp.endsWith(":") && !strIp.endsWith("::") || strIp.startsWith(":") && !strIp.startsWith("::"))
+        if (strIp.endsWith(":") && !strIp.endsWith("::") || strIp.startsWith(":") && !strIp.startsWith("::")) {
             return false;
+        }
 
         //ipv6只能包含一个::
         int pos = strIp.indexOf("::");
-        if (pos != -1 && strIp.indexOf("::", pos + 2) != -1)
+        if (pos != -1 && strIp.indexOf("::", pos + 2) != -1) {
             return false;
+        }
 
         Pattern pattern = Pattern.compile("[0-9a-fA-F]*");
         String[] ipParts = strIp.split(":");
 
         //如果包含::，则长度必定小于8，如果不包含::，则长度一定是8
-        if (-1 != pos && (ipParts.length > 7 || ipParts.length < 1) || -1 == pos && ipParts.length != 8)
+        if (-1 != pos && (ipParts.length > 7 || ipParts.length < 1) || -1 == pos && ipParts.length != 8) {
             return false;
+        }
 
         for (String ipPart : ipParts) {
             if (ipPart.isEmpty()) {
-                if (-1 != pos)
+                if (-1 != pos) {
                     continue;
-                else
+                } else {
                     return false;
+                }
             }
 
-            if (ipPart.length() > 4)
+            if (ipPart.length() > 4) {
                 return false;
+            }
 
-            if (!pattern.matcher(ipPart).matches())
+            if (!pattern.matcher(ipPart).matches()) {
                 return false;
+            }
         }
 
         return true;
