@@ -62,6 +62,10 @@ public class ConfInterfaceService {
         return terminalMediaSourceService.getGroups();
     }
 
+    public Map<String, String> getConfCreateTypeHashs() {
+        return terminalMediaSourceService.getConfCreateTypeHash();
+    }
+
     public ConcurrentHashMap<String, MonitorsMember> getMonitorsMembers(String confId) {
         return terminalMediaSourceService.getMonitorsMembers(confId);
     }
@@ -272,6 +276,7 @@ public class ConfInterfaceService {
             System.out.println("Join conference OK, start addGroupMtMembers and addGroup.............");
             terminalMediaSourceService.addGroupMtMembers(groupId, joinConfMts);
             terminalMediaSourceService.setGroup(groupId, confId);
+            terminalMediaSourceService.setConfCreateType(confId, "confinterface");
             joinConferenceRequest.makeSuccessResponseMsg();
 
             //与终端无关的订阅信息在此全部订阅掉
@@ -1523,8 +1528,8 @@ public class ConfInterfaceService {
             ConcurrentHashMap<String, TerminalService> callMap = callGroup.getCallMap();
             for (String mtAccounts : callMap.keySet()) {
                 if (mtAccount.equals(mtAccounts)) {
-                    LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50025 : " + " Error: The terminal has been called in the current group : " + groupId);
-                    System.out.println("50025 : " + " Error: The terminal has been called in the current group : " + groupId);
+                    LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50026 : " + " Error: The terminal has been called in the current group : " + groupId);
+                    System.out.println("50026 : " + " Error: The terminal has been called in the current group : " + groupId);
                     p2PCallRequest.makeErrorResponseMsg(ConfInterfaceResult.TERMINAL_HAS_BEEN_CALLED.getCode(), HttpStatus.OK, ConfInterfaceResult.TERMINAL_HAS_BEEN_CALLED.getMessage());
                     return;
                 }
@@ -2231,6 +2236,7 @@ public class ConfInterfaceService {
                 groupConfInfo.setCreatedConf("mcu");
                 addGroupConfInfo(groupConfInfo);
                 terminalMediaSourceService.setGroup(groupID, conf_id);
+                terminalMediaSourceService.setConfCreateType(conf_id, "mcu");
                 mcuRestClientService.subscribeConfInfo(conf_id);
                 //mcuRestClientService.subscribeConfCascadesInfo(confsDetailRspInfo.getConf_id());
                 mcuRestClientService.subscribeInspection(conf_id);
@@ -2272,6 +2278,7 @@ public class ConfInterfaceService {
             //与终端无关的订阅信息在此全部订阅掉
             //mcuRestClientService.subscribeConfCascadesInfo(confsDetailRspInfo.getConf_id());
             terminalMediaSourceService.setGroup(groupID, confId);
+            terminalMediaSourceService.setConfCreateType(confId, "mcu");
             mcuRestClientService.subscribeConfInfo(confId);
             mcuRestClientService.subscribeInspection(confId);
             mcuRestClientService.subscribeSpeaker(confId);
@@ -3343,7 +3350,7 @@ public class ConfInterfaceService {
 
         if (mode == 1) {
             audioFormat.setFormat(4);
-            audioFormat.setChn_num(2);
+            audioFormat.setChn_num(1);
             MediaDescription audioMediaDescription = new AudioMediaDescription();
             audioMediaDescription.setPayload(8);
             audioMediaDescription.setEncodingFormat(EncodingFormatEnum.PCMA);

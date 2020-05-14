@@ -72,4 +72,10 @@ public interface TerminalMediaSourceDao {
     Map<String, String> deletePublishUrl(String groupId);
 
     Map<String, String> getPublishUrl();
+
+    Map<String, String> getConfIdHash();
+
+    Map<String, String> setConfId(String confId, String createdConf);
+
+    Map<String, String> delConfId(String confId);
 }

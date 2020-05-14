@@ -1,4 +1,5 @@
 package com.kedacom.confinterface.service;
+
 import com.kedacom.confadapter.*;
 import com.kedacom.confinterface.LogService.LogOutputTypeEnum;
 import com.kedacom.confinterface.LogService.LogTools;
@@ -73,34 +74,27 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
         Map<String, String> groups = confInterfaceService.getGroups();
         Map<String, String> publishUrls = confInterfaceService.getPublishUrl();
         if (publishUrls != null && !publishUrls.isEmpty()) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"publishUrls is not null and not empty ******");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "publishUrls is not null and not empty ******");
             System.out.println("publishUrls is not null and not empty ******");
             for (Map.Entry<String, String> publishUrl : publishUrls.entrySet()) {
                 confInterfacePublishService.addSubscribeMessage(SubscribeMsgTypeEnum.TERMINAL_STATUS.getType(), publishUrl.getKey(), publishUrl.getValue());
             }
         }
-		
-		 Map<String, String> mtPublishs = confInterfaceService.getMtPublishs();
-		             if (null == mtPublishs || mtPublishs.isEmpty()) {
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "mtPublishs is null or empty ******");
-                System.out.println("mtPublishs is null or empty ******");
-            } else {
-                for (Map.Entry<String, String> mtPublish : mtPublishs.entrySet()) {
-                    TerminalStatusNotify terminalStatusNotify = new TerminalStatusNotify();
-                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "account : " + mtPublish.getKey() + "publishUrl : " + mtPublish.getValue());
-                    System.out.println("account : " + mtPublish.getKey() + "publishUrl : " + mtPublish.getValue());
-                    /*String[] split = mtPublish.getValue().split("/");
-                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"split[7] : " + split[7] + " ,split[6] "+ split[6] + " , split[0] : " +split[0] + " ,split[1]"+split[1]);
-                    System.out.println("split[7] : " + split[7] + " ,split[6] "+ split[6] + " , split[0] : " +split[0] + " ,split[1]"+split[1]);
-                    confInterfacePublishService.addSubscribeMessage(SubscribeMsgTypeEnum.TERMINAL_STATUS.getType(), split[7], mtPublish.getValue());*/
-                    TerminalStatus terminalStatus = new TerminalStatus(mtPublish.getKey(), "MT", TerminalOnlineStatusEnum.OFFLINE.getCode(), null, null);
-                    terminalStatusNotify.addMtStatus(terminalStatus);
-                    TerminalManageService.publishStatus(SubscribeMsgTypeEnum.TERMINAL_STATUS, mtPublish.getValue(), terminalStatusNotify);
 
-                }
+        Map<String, String> mtPublishs = confInterfaceService.getMtPublishs();
+        if (null == mtPublishs || mtPublishs.isEmpty()) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "mtPublishs is null or empty ******");
+            System.out.println("mtPublishs is null or empty ******");
+        } else {
+            for (Map.Entry<String, String> mtPublish : mtPublishs.entrySet()) {
+                TerminalStatusNotify terminalStatusNotify = new TerminalStatusNotify();
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "account : " + mtPublish.getKey() + "publishUrl : " + mtPublish.getValue());
+                System.out.println("account : " + mtPublish.getKey() + "publishUrl : " + mtPublish.getValue());
+                TerminalStatus terminalStatus = new TerminalStatus(mtPublish.getKey(), "MT", TerminalOnlineStatusEnum.OFFLINE.getCode(), null, null);
+                terminalStatusNotify.addMtStatus(terminalStatus);
+                TerminalManageService.publishStatus(SubscribeMsgTypeEnum.TERMINAL_STATUS, mtPublish.getValue(), terminalStatusNotify);
             }
-
-		 
+        }
 
         if (null == groups || groups.isEmpty()) {
             //启动终端注册Gk
@@ -119,6 +113,14 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
 
             GroupConfInfo groupConfInfo = new GroupConfInfo(groupId, confId);
             loadMonitorsInfo(groupConfInfo);
+            Map<String, String> confCreateTypeHashs = confInterfaceService.getConfCreateTypeHashs();
+            if(confCreateTypeHashs != null && !confCreateTypeHashs.isEmpty()){
+                if(confCreateTypeHashs.containsKey(confId)){
+                    groupConfInfo.setCreatedConf(confCreateTypeHashs.get(confId));
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "ConfInterfaceInitializingService confCreateTypeHashs exit confId : " + confId + ", createConfType : " + confCreateTypeHashs.get(confId));
+                    System.out.println("ConfInterfaceInitializingService confCreateTypeHashs exit confId : " + confId + ", createConfType : " + confCreateTypeHashs.get(confId));
+                }
+            }
             confInterfaceService.addGroupConfInfo(groupConfInfo);
             if ("mcu".equals(baseSysConfig.getMcuMode())) {
                 mcuRestClientService.subscribeConfInfo(confId);
@@ -148,7 +150,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "groupId(" + groupId + ") has no virtual terminal!!");
                 System.out.println("groupId(" + groupId + ") has no virtual terminal!!");
                 joinConfVmtNum = confMtMembers.size();
-            } else if ("mcu".equals(baseSysConfig.getMcuMode())){
+            } else if ("mcu".equals(baseSysConfig.getMcuMode())) {
                 //订阅设备上线信息
                 mcuRestClientService.subscribeConfMts(confId);
                 loadVmtInfo(groupConfInfo, confVmtMembers);
@@ -224,9 +226,9 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
                         String vmtE164 = GenerateE164Service.generateE164();
                         confInterfaceService.addVmt(vmtE164);
                     }
-                } else if (null != baseSysConfig.getProxyMTs()){
+                } else if (null != baseSysConfig.getProxyMTs()) {
                     ConcurrentHashMap<String, String> proxyMts = baseSysConfig.getMapProxyMTs();
-                    for (Map.Entry<String, String> proxyMt : proxyMts.entrySet()){
+                    for (Map.Entry<String, String> proxyMt : proxyMts.entrySet()) {
                         confInterfaceService.addVmt(proxyMt.getKey());
                     }
                 }
@@ -249,7 +251,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
             for (String vmtE164 : vmtList) {
                 TerminalService vmtService = terminalManageService.createTerminal(vmtE164, true);
 
-                if(null != proxyMts && proxyMts.containsKey(vmtE164)){
+                if (null != proxyMts && proxyMts.containsKey(vmtE164)) {
                     vmtService.setProxyMTE164(proxyMts.get(vmtE164));
                 }
 
@@ -314,8 +316,8 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
         String confId = groupConfInfo.getConfId();
         Map<String, CascadeTerminalInfo> terminalInfoMap = null;
 
-        if (null != mcuRestClientService){
-            terminalInfoMap =  mcuRestClientService.getCascadesTerminal(confId, "0", true);
+        if (null != mcuRestClientService) {
+            terminalInfoMap = mcuRestClientService.getCascadesTerminal(confId, "0", true);
         } else if (null != mcuSdkClientService) {
             //todo:增加 mcuSdkClientService的相关处理
         }
@@ -417,7 +419,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
         String confId = groupConfInfo.getConfId();
 
         ConcurrentHashMap<String, MonitorsMember> monitorsMembers = confInterfaceService.getMonitorsMembers(confId);
-        if(null == monitorsMembers || monitorsMembers.isEmpty()){
+        if (null == monitorsMembers || monitorsMembers.isEmpty()) {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "ConfInterfaceInitializingService loadMonitorsInfo monitorsMembers is null or empty !");
             System.out.println("ConfInterfaceInitializingService loadMonitorsInfo monitorsMembers is null or empty !");
             return;
@@ -437,9 +439,9 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
                 int type = monitorsMember.getType();
 
                 McuStatus getMonistors = mcuRestClientService.GetMonistors(confId, monitorsMember.getDstIp(), monitorsMember.getPort());
-                if(getMonistors.getValue() == 200){
-                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "ConfInterfaceInitializingService getMonistors is succeed confId : " + confId + ", Ip : " +monitorsMember.getDstIp() +", port : " +monitorsMember.getPort());
-                    System.out.println("ConfInterfaceInitializingService getMonistors is succeed confId : " + confId + ", Ip : " +monitorsMember.getDstIp() +", port : " +monitorsMember.getPort());
+                if (getMonistors.getValue() == 200) {
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "ConfInterfaceInitializingService getMonistors is succeed confId : " + confId + ", Ip : " + monitorsMember.getDstIp() + ", port : " + monitorsMember.getPort());
+                    System.out.println("ConfInterfaceInitializingService getMonistors is succeed confId : " + confId + ", Ip : " + monitorsMember.getDstIp() + ", port : " + monitorsMember.getPort());
                     continue;
                 }
 
@@ -449,8 +451,8 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
                 monitorsSrc.setType(type);
                 VideoFormat mcuVideoFormat = new VideoFormat();
                 AudioFormat audioFormat = new AudioFormat();
-                McuMonitorsDst mcuMonitorsDst = new McuMonitorsDst(monitorsMember.getDstIp(),monitorsMember.getPort());
-                if(type == 1 ){
+                McuMonitorsDst mcuMonitorsDst = new McuMonitorsDst(monitorsMember.getDstIp(), monitorsMember.getPort());
+                if (type == 1) {
                     LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "ConfInterfaceInitializingService loadMonitorsInfo  type is Mt mtID : " + monitorsMember.getMtId());
                     System.out.println("ConfInterfaceInitializingService loadMonitorsInfo  type is Mt mtID : " + monitorsMember.getMtId());
                     monitorsSrc.setMt_id(monitorsMember.getMtId());
@@ -477,7 +479,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
                 mcuStartMonitorsParam.setDst(mcuMonitorsDst);
 
                 McuStatus mcuStatus = mcuRestClientService.startMonitors(confId, mcuStartMonitorsParam);
-                if(mcuStatus.getValue() != 200){
+                if (mcuStatus.getValue() != 200) {
                     LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "ConfInterfaceInitializingService startMonitors is failed monitorsMember : " + monitorsMember.toString());
                     System.out.println("ConfInterfaceInitializingService startMonitors is failed monitorsMember : " + monitorsMember.toString());
                     monitorsMembers.remove(monitorsMemberMap.getKey());
@@ -485,15 +487,15 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
                 }
             }
         }
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"ConfInterfaceInitializingService loadMonitorsInfo monitorsMembers " + monitorsMembers.toString());
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "ConfInterfaceInitializingService loadMonitorsInfo monitorsMembers " + monitorsMembers.toString());
         System.out.println("ConfInterfaceInitializingService loadMonitorsInfo monitorsMembers " + monitorsMembers.toString());
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"ConfInterfaceInitializingService loadMonitorsInfo resourceIds  " + resourceIds.toString() );
-        System.out.println("ConfInterfaceInitializingService loadMonitorsInfo resourceIds  " + resourceIds.toString() );
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "ConfInterfaceInitializingService loadMonitorsInfo resourceIds  " + resourceIds.toString());
+        System.out.println("ConfInterfaceInitializingService loadMonitorsInfo resourceIds  " + resourceIds.toString());
         groupConfInfo.setMonitorsMembers(monitorsMembers);
         terminalMediaSourceService.setMonitorsMembers(confId, monitorsMembers);
-        ConfInterfaceService.monitorsMemberHearbeat.put(confId,monitorsMembers);
-        if(!resourceIds.isEmpty() || null != resourceIds){
-            confInterfaceService.removeExchange(resourceIds,groupId);
+        ConfInterfaceService.monitorsMemberHearbeat.put(confId, monitorsMembers);
+        if (!resourceIds.isEmpty() || null != resourceIds) {
+            confInterfaceService.removeExchange(resourceIds, groupId);
         }
 
     }
@@ -588,7 +590,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
 
     private static String getMACAddress(InetAddress ia) throws Exception {
         // 获得网络接口对象（即网卡），并得到mac地址，mac地址存在于一个byte数组中。
-        byte [] mac =  NetworkInterface.getByName("eno1").getHardwareAddress();
+        byte[] mac = NetworkInterface.getByName("eno1").getHardwareAddress();
 
         // 下面代码是把mac地址拼装成String
         StringBuffer sb = new StringBuffer();
@@ -606,6 +608,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
         // 把字符串所有小写字母改为大写成为正规的mac地址并返回
         return sb.toString().toUpperCase();
     }
+
     private static void PrintBuildTime() {
         String utcBuildTime = "2020-01-08 14:24:12";
         /*SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -617,9 +620,9 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
         }
         sdf.setTimeZone(TimeZone.getDefault());*/
 
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"confinterface Compile time:" + utcBuildTime);
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "confinterface Compile time:" + utcBuildTime);
         System.out.println("confinterface Compile time:" + utcBuildTime);
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"confinterface version " + VERSION);
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "confinterface version " + VERSION);
         System.out.println("confinterface version " + VERSION);
     }
 
@@ -691,7 +694,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
     @Autowired
     private TerminalManageService terminalManageService;
 
-    @Autowired(required=false)
+    @Autowired(required = false)
     private McuRestClientService mcuRestClientService;
 
     @Autowired
@@ -703,7 +706,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
     @Autowired
     private TerminalMediaSourceService terminalMediaSourceService;
 
-    @Autowired(required=false)
+    @Autowired(required = false)
     private McuSdkClientService mcuSdkClientService;
 
     @Autowired
@@ -713,7 +716,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
     @Autowired
     private McuRestConfig mcuRestConfig;
 
-    public static final String VERSION = "confinterface-V.1.1.1.051120";
+    public static final String VERSION = "confinterface-V.1.1.2.051420";
 
     //protected final org.slf4j.Logger logger = LoggerFactory.getLogger(this.getClass());
 

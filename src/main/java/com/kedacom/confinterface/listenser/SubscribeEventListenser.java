@@ -682,7 +682,10 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
                 return;
             }
             //处理会议被删除的情况
-            processConfDeleted(groupConfInfo);
+            synchronized (groupConfInfo){
+                processConfDeleted(groupConfInfo);
+            }
+
         } else if (channel.contains("vmps")) {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processSubscribeMsg get vmps info subscribe message, channel :" + channel + "method : " + method);
             System.out.println("processSubscribeMsg get vmps info subscribe message, channel :" + channel + "method : " + method);
@@ -753,7 +756,11 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
 
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processConfDeleted, groupId:" + groupId + ", confId:" + confId);
         System.out.println("processConfDeleted, groupId:" + groupId + ", confId:" + confId);
-
+        if(groupId == null || confId == null){
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processConfDeleted, groupId is null or confId is null");
+            System.out.println("processConfDeleted, groupId is null or confId is null");
+            return;
+        }
        /* if ("confinterface".equals(groupConfInfo.getCreatedConf())) {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "confinterface is confinterface create not endConference");
             System.out.println("confinterface is mcu create not endConference");
@@ -785,6 +792,7 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
         confInterfaceService.delGroupConfInfo(groupConfInfo);
         groupConfInfo.cancelGroup();
         terminalMediaSourceService.delGroup(groupId);
+        terminalMediaSourceService.delConfCreateType(confId);
         terminalMediaSourceService.delGroupMtMembers(groupId, null);
         terminalMediaSourceService.delGroupVmtMembers(groupId, null);
         terminalMediaSourceService.delBroadcastSrcInfo(groupId);

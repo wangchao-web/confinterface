@@ -25,6 +25,9 @@ public class RedisTerminalMediaSourceDao implements TerminalMediaSourceDao {
 	private final String confMtListPrefix = "confMtList_";
 	
     private final String publishUrlPrefix = "publishUrl_";
+
+    private final String confConfIdHashPrefix = "confConfIdHash_";
+
     private RedisClient redisClient;
     private String  srvToken;
 
@@ -369,8 +372,8 @@ public class RedisTerminalMediaSourceDao implements TerminalMediaSourceDao {
     public ConcurrentHashMap<String, MonitorsMember> getMonitorsMembers(String confId) {
         String key = keyGenernate(monitorsResourcePrefix, confId);
         if (!redisClient.keyExist(key)) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"gettMonitorsMembers, "+confId+", not found this confId!");
-            System.out.println("gettMonitorsMembers, "+confId+", not found this confId!");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"getMonitorsMembers, "+confId+", not found this confId!");
+            System.out.println("getMonitorsMembers, "+confId+", not found this confId!");
             return null;
         }
         return (ConcurrentHashMap<String, MonitorsMember>)redisClient.getValue(key);
@@ -401,6 +404,11 @@ public class RedisTerminalMediaSourceDao implements TerminalMediaSourceDao {
     @Override
     public Map<String, String> getMtPublish() {
         String key = keyGenernate(confMtListPrefix, srvToken);
+        if (!redisClient.keyExist(key)) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"getMtPublish , redisClient  not  Exist key : " + key);
+            System.out.println("getMtPublish , redisClient  not  Exist key : " + key);
+            return null;
+        }
         return (Map<String, String>) redisClient.hashGet(key);
     }
 
@@ -429,8 +437,44 @@ public class RedisTerminalMediaSourceDao implements TerminalMediaSourceDao {
     @Override
     public Map<String, String> getPublishUrl() {
         String key = keyGenernate(publishUrlPrefix, srvToken);
+        if (!redisClient.keyExist(key)) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"getPublishUrl , redisClient  not  Exist key : " + key);
+            System.out.println("getPublishUrl , redisClient  not  Exist key : " + key);
+            return null;
+        }
         return (Map<String, String>) redisClient.hashGet(key);
     }
+
+    @Override
+    public Map<String, String> getConfIdHash() {
+        String key = keyGenernate(confConfIdHashPrefix, srvToken);
+        if (!redisClient.keyExist(key)) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"getConfIdHash , redisClient  not  Exist key : " + key);
+            System.out.println("getConfIdHash , redisClient  not  Exist key : " + key);
+            return null;
+        }
+        return (Map<String, String>) redisClient.hashGet(key);
+    }
+
+    @Override
+    public Map<String, String> setConfId(String confId, String createdConf) {
+        String key = keyGenernate(confConfIdHashPrefix, srvToken);
+        redisClient.hashPut(key, confId, createdConf);
+        return (Map<String, String>)redisClient.hashGet(key);
+    }
+
+    @Override
+    public Map<String, String>  delConfId(String confId) {
+        String key = keyGenernate(confConfIdHashPrefix, srvToken);
+        if(null == confId){
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"delConfId, confId:"+ confId +" not exist confId !");
+            System.out.println("delConfId, confId:"+ confId +" not exist confId !");
+            return null;
+        }
+        redisClient.hashRemove(key, confId);
+        return (Map<String, String>)redisClient.hashGet(key);
+    }
+
 
     private String keyGenernate(String keyPrefix, String params) {
         StringBuilder keyResult = new StringBuilder(64);

@@ -174,22 +174,22 @@ public class TerminalMediaSourceService {
         return terminalMediaSourceDao.setMonitorsMembers(confId,monitorsMembers);
     }
 
-    @CachePut(value = "monitorsMembers", key = "#confId")
+    @CacheEvict(value = "monitorsMembers", key = "#confId")
     public ConcurrentHashMap<String, MonitorsMember> deleteMonitorsMembers(String confId) {
         return terminalMediaSourceDao.deleteMonitorsMembers(confId);
     }
 
-    @CachePut(value = "monitorsMembers", key = "#confId")
+    @Cacheable(value = "monitorsMembers", key = "#confId")
     public ConcurrentHashMap<String, MonitorsMember> getMonitorsMembers(String confId) {
         return terminalMediaSourceDao.getMonitorsMembers(confId);
     }
 	
-	  @CachePut(value = "MtHash", key = "caches[0].name + '_' + #root.target.getSrvToken()")
+    @CachePut(value = "MtHash", key = "caches[0].name + '_' + #root.target.getSrvToken()")
     public Map<String, String> setMtPublish(String E164, String publishUrl) {
         return terminalMediaSourceDao.setMtPublish(E164, publishUrl);
     }
 
-    @CachePut(value = "MtHash", key = "caches[0].name + '_' + #root.target.getSrvToken()")
+    @CacheEvict(value = "MtHash", key = "caches[0].name + '_' + #root.target.getSrvToken()")
     public Map<String, String> deleteMtPublish(String E164) {
         return terminalMediaSourceDao.deleteMtPublish(E164);
     }
@@ -204,13 +204,29 @@ public class TerminalMediaSourceService {
         return terminalMediaSourceDao.setPublishUrl(groupId, publishUrl);
     }
 
-    @CachePut(value = "publishUrl", key = "caches[0].name + '_' + #root.target.getSrvToken()")
+    @CacheEvict(value = "publishUrl", key = "caches[0].name + '_' + #root.target.getSrvToken()")
     public Map<String, String> deletePublishUrl(String groupId) {
         return terminalMediaSourceDao.deletePublishUrl(groupId);
     }
 
-    @CachePut(value = "publishUrl", key = "caches[0].name + '_' + #root.target.getSrvToken()")
+    @Cacheable(value = "publishUrl", key = "caches[0].name + '_' + #root.target.getSrvToken()")
     public Map<String, String> getPublishUrl() {
         return terminalMediaSourceDao.getPublishUrl();
+    }
+
+
+    @Cacheable(value = "confIdHash", key = "caches[0].name + '_' + #root.target.getSrvToken()")
+    public Map<String, String> getConfCreateTypeHash() {
+        return terminalMediaSourceDao.getConfIdHash();
+    }
+
+    @CachePut(value = "confIdHash", key = "caches[0].name + '_' + #root.target.getSrvToken()")
+    public Map<String,String> setConfCreateType(String confId, String createdConf) {
+        return terminalMediaSourceDao.setConfId(confId, createdConf);
+    }
+
+    @CacheEvict(value = "confIdHash", key = "caches[0].name + '_' + #root.target.getSrvToken()")
+    public Map<String,String> delConfCreateType(String confId) {
+        return terminalMediaSourceDao.delConfId(confId);
     }
 }
