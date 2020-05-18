@@ -47,7 +47,8 @@ public enum ConfInterfaceResult {
     GET_MIXS_INFO_FAILED(50040,"get mixs info failed"),
     MONITORS_MEMBERS_NOT_EXIST(50041,"monitors Members not exist"),
     END_MONITORS(50042,"end monitors failed"),
-    QUERY_CONFS_CASCADES_INFO_IS_NULL(50043,"query confs cascades  info is null");
+    QUERY_CONFS_CASCADES_INFO_IS_NULL(50043,"query confs cascades  info is null"),
+    QUERY_CONF_INFO_IS_NULL(50044,"query conf  info is null");
 
     public int getCode(){
         return code;

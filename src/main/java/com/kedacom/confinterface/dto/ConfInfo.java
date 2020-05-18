@@ -7,7 +7,7 @@ import java.util.List;
 
 public class ConfInfo  {
     
-    public ConfInfo(String name, String meetingRoomName, String confId, int confLevel, int confType, String startTime, String endTime, int duration, int bitrate, int closedConf, int safeConf, int encryptedType, int mute, int muteFilter, int sndVolume, int silence, int videoQuality, String encryptedKey, int dualMode, int publicConf, int autoEnd, int preoccupyResource, int maxJoinMt, int forceBroadcast, int fecMode, int voiceActivityDetection, int vacinterval, int callTimes, int callInterval, int callMode, int cascadeMode, int cascadeReturn, int cascadeReturnPara, int vmpEnable, int mixEnable, int pollEnable, int needPassword, int oneReforming, int doubleflow, int platformId, List<VideoFormat> videoFormats, Creator creator) {
+    public ConfInfo(String name, String meetingRoomName, String confId, int confLevel, int confType, String startTime, String endTime, int duration, int bitrate, int closedConf, int safeConf, int encryptedType, int mute, int muteFilter,  int silence, int videoQuality, String encryptedKey, int dualMode, int publicConf, int autoEnd, int preoccupyResource, int maxJoinMt, int forceBroadcast, int fecMode, int voiceActivityDetection, int vacinterval, int callTimes, int callInterval, int callMode, int cascadeMode, int cascadeReturn, int cascadeReturnPara, int vmpEnable, int mixEnable, int pollEnable, int needPassword, int oneReforming, int doubleflow, String platformId) {
         this.name = name;
         this.meetingRoomName = meetingRoomName;
         this.confId = confId;
@@ -22,7 +22,6 @@ public class ConfInfo  {
         this.encryptedType = encryptedType;
         this.mute = mute;
         this.muteFilter = muteFilter;
-        this.sndVolume = sndVolume;
         this.silence = silence;
         this.videoQuality = videoQuality;
         this.encryptedKey = encryptedKey;
@@ -48,8 +47,6 @@ public class ConfInfo  {
         this.oneReforming = oneReforming;
         this.doubleflow = doubleflow;
         this.platformId = platformId;
-        this.videoFormats = videoFormats;
-        this.creator = creator;
     }
 
     public ConfInfo() {
@@ -167,13 +164,6 @@ public class ConfInfo  {
         this.muteFilter = muteFilter;
     }
 
-    public int getSndVolume() {
-        return sndVolume;
-    }
-
-    public void setSndVolume(int sndVolume) {
-        this.sndVolume = sndVolume;
-    }
 
     public int getSilence() {
         return silence;
@@ -367,11 +357,11 @@ public class ConfInfo  {
         this.doubleflow = doubleflow;
     }
 
-    public int getPlatformId() {
+    public String getPlatformId() {
         return platformId;
     }
 
-    public void setPlatformId(int platformId) {
+    public void setPlatformId(String platformId) {
         this.platformId = platformId;
     }
 
@@ -406,22 +396,15 @@ public class ConfInfo  {
                 .append(", closedConf:").append(closedConf)
                 .append(", safeConf:").append(safeConf)
                 .append(", encryptedType:").append(encryptedType)
-                .append(", sndVolume:").append(sndVolume)
                 .append(", mute:").append(mute)
                 .append(", muteFilter:").append(muteFilter)
-                .append(", sndVolume:").append(sndVolume)
-                .append(", sndVolume:").append(sndVolume)
                 .append(", silence:").append(silence)
-                .append(", sndVolume:").append(sndVolume)
                 .append(", videoQuality:").append(videoQuality)
                 .append(", encryptedKey:").append(encryptedKey)
-                .append(", sndVolume:").append(sndVolume)
                 .append(", dualMode:").append(dualMode)
                 .append(", publicConf:").append(publicConf)
-                .append(", sndVolume:").append(sndVolume)
                 .append(", preoccupyResource:").append(preoccupyResource)
                 .append(", autoEnd:").append(autoEnd)
-                .append(", sndVolume:").append(sndVolume)
                 .append(", maxJoinMt:").append(maxJoinMt)
                 .append(", forceBroadcast:").append(forceBroadcast)
                 .append(", fecMode:").append(fecMode)
@@ -459,7 +442,6 @@ public class ConfInfo  {
     private int encryptedType; //传输加密类型0-不加密；2-AES加密；
     private int mute; //初始化哑音0-否；1-是；
     private int muteFilter;  //全场哑音例外，参数为1时，若执行全场哑音操作，主席和发言人不会被哑音，若执行单个哑音操作时可以被哑音0-否；1-是；
-    private int sndVolume;  //发送音量
     private int silence;  //初始化静音0-否；1-是；
     private int videoQuality;  //视频质量0-质量优先；1-速度优先；
     private String encryptedKey;  //传输加密AES加密密钥 最大字符长度：16字节
@@ -484,7 +466,7 @@ public class ConfInfo  {
     private int needPassword; //是否需要密码0-否；1-是；
     private int oneReforming; //归一重整，开启该功能后可增强对外厂商终端的兼容，但会使丢包重传失效0-不启用；1-启用；
     private int doubleflow;  //成为发言人后立即发起内容共享0-否；1-是；
-    private int platformId; //创会平台moid
+    private String platformId; //创会平台moid
     private List<VideoFormat> videoFormats;
     private Creator creator;
 

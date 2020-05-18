@@ -1,5 +1,6 @@
 package com.kedacom.confinterface.service;
 
+import com.kedacom.confadapter.common.CallDisconnectReasonEnum;
 import com.kedacom.confadapter.media.*;
 import com.kedacom.confinterface.LogService.LogOutputTypeEnum;
 import com.kedacom.confinterface.LogService.LogTools;
@@ -174,6 +175,10 @@ public class ConfInterfaceService {
             System.out.println("create conference OK, confId : " + confId);
             groupConfInfo.setConfId(confId);
             groupConfInfo.setCreatedConf("confinterface");
+            VideoFormat videoFormat = setVideoFormats();
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"joinConference videoFormat : " +videoFormat.toString());
+            System.out.println("joinConference videoFormat : " +videoFormat.toString());
+            groupConfInfo.setVideoFormat(videoFormat);
             addGroupConfInfo(groupConfInfo);
 
             endConf = true;
@@ -2292,75 +2297,66 @@ public class ConfInterfaceService {
 
     @Async("confTaskExecutor")
     public void queryConfInfo(QueryConfInfoRequest queryConfInfoRequest) {
-       /* if (!baseSysConfig.isUseMcu()) {
+        if (!baseSysConfig.isUseMcu()) {
             queryConfInfoRequest.makeErrorResponseMsg(ConfInterfaceResult.NOT_SUPPORT_METHOD.getCode(), HttpStatus.OK, ConfInterfaceResult.NOT_SUPPORT_METHOD.getMessage());
             return;
         }
-        List<ConfsDetailRspInfo> confsDetailRspInfos = mcuRestClientService.queryConfs();
-        if (confsDetailRspInfos == null) {
-            queryConfInfoRequest.makeErrorResponseMsg(ConfInterfaceResult.QUERY_CONFS_INFO_IS_NULL.getCode(), HttpStatus.OK, ConfInterfaceResult.QUERY_CONFS_INFO_IS_NULL.getMessage());
-            return;
-        }
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "confGroupMap : " + confGroupMap);
-        System.out.println("confGroupMap : " + confGroupMap);
         if (confGroupMap == null || confGroupMap.isEmpty()) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "confGroupMap is null or empty  ****************   ");
-            System.out.println("confGroupMap is null or empty  ****************   ");
-            for (ConfsDetailRspInfo confsDetailRspInfo : confsDetailRspInfos) {
-                String conf_id = confsDetailRspInfo.getConf_id();
-                String groupID = UUID.randomUUID().toString().replaceAll("\\-", "");
-                ConfsDetailInfo confsDetailInfo = new ConfsDetailInfo(confsDetailRspInfo.getName(), conf_id, groupID, confsDetailRspInfo.getConf_level(), confsDetailRspInfo.getStart_time(), confsDetailRspInfo.getEnd_time(), mcuRestConfig.getMcuIp());
-                queryAllConfsRequest.addConfDetailInfos(confsDetailInfo);
-                GroupConfInfo groupConfInfo = new GroupConfInfo(groupID, conf_id);
-                groupConfInfo.setCreatedConf("mcu");
-                addGroupConfInfo(groupConfInfo);
-                terminalMediaSourceService.setGroup(groupID, conf_id);
-                //mcuRestClientService.subscribeConfCascadesInfo(confsDetailRspInfo.getConf_id());
-                mcuRestClientService.subscribeInspection(conf_id);
-                mcuRestClientService.subscribeSpeaker(conf_id);
-                mcuRestClientService.subscribeDual(conf_id);
-                mcuRestClientService.subscribeConfMts(conf_id);
-                mcuRestClientService.subscribeMixs(conf_id);
-                mcuRestClientService.subscribeVmps(conf_id);
-            }
-            //mcuRestClientService.subscribeAllConfInfo();
-            queryAllConfsRequest.makeSuccessResponseMsg();
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "queryConfInfoRequest confGroupMap is null or empty ********");
+            System.out.println("queryConfInfoRequest confGroupMap is null or empty ********");
+            queryConfInfoRequest.makeErrorResponseMsg(ConfInterfaceResult.GROUP_NOT_EXIST.getCode(), HttpStatus.OK, ConfInterfaceResult.GROUP_NOT_EXIST.getMessage());
             return;
         }
-        for (ConfsDetailRspInfo confsDetailRspInfo : confsDetailRspInfos) {
-            String confId = confsDetailRspInfo.getConf_id();
-            String groupID = "";
-            if (confGroupMap.containsKey(confId)) {
-                groupID = confGroupMap.get(confId);
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "confGroupMap contains confId : " + confId + " groupId : " + groupID);
-                System.out.println("confGroupMap contains confId : " + confId + " groupId : " + groupID);
-                if ("confinterface".equals(groupConfInfoMap.get(groupID).getCreatedConf())) {
-                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "confGroupMap is confinterface  created confinterface confId : " + confId + ", groupId : " + groupID);
-                    System.out.println("confGroupMap is confinterface  created confinterface confId : " + confId + ", groupId : " + groupID);
-                    continue;
-                }
-            } else {
-                groupID = UUID.randomUUID().toString().replaceAll("\\-", "");
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "confGroupMap not contains confId : " + confId + " groupId : " + groupID);
-                System.out.println("confGroupMap not contains confId : " + confId + " groupId : " + groupID);
-                GroupConfInfo groupConfInfo = new GroupConfInfo(groupID, confId);
-                groupConfInfo.setCreatedConf("mcu");
-                addGroupConfInfo(groupConfInfo);
-                //terminalMediaSourceService.setGroup(groupID, confsDetailRspInfo.getConf_id());
-            }
-            ConfsDetailInfo confsDetailInfo = new ConfsDetailInfo(confsDetailRspInfo.getName(), confsDetailRspInfo.getConf_id(), groupID, confsDetailRspInfo.getConf_level(), confsDetailRspInfo.getStart_time(), confsDetailRspInfo.getEnd_time(), mcuRestConfig.getMcuIp());
-            queryAllConfsRequest.addConfDetailInfos(confsDetailInfo);
-            //与终端无关的订阅信息在此全部订阅掉
-            //mcuRestClientService.subscribeConfCascadesInfo(confsDetailRspInfo.getConf_id());
-            terminalMediaSourceService.setGroup(groupID, confId);
-            mcuRestClientService.subscribeInspection(confId);
-            mcuRestClientService.subscribeSpeaker(confId);
-            mcuRestClientService.subscribeDual(confId);
-            mcuRestClientService.subscribeConfMts(confId);
-            mcuRestClientService.subscribeMixs(confId);
-            mcuRestClientService.subscribeVmps(confId);
+        String groupId = queryConfInfoRequest.getGroupId();
+        GroupConfInfo groupConfInfo = groupConfInfoMap.get(groupId);
+        if (null == groupConfInfo) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "queryConfInfoRequest, not found groupId : " + queryConfInfoRequest.getGroupId());
+            System.out.println("queryConfInfoRequest, not found groupId : " + queryConfInfoRequest.getGroupId());
+            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50002 : group not exist!");
+            queryConfInfoRequest.makeErrorResponseMsg(ConfInterfaceResult.GROUP_NOT_EXIST.getCode(), HttpStatus.OK, ConfInterfaceResult.GROUP_NOT_EXIST.getMessage());
+            return;
         }
-        queryAllConfsRequest.makeSuccessResponseMsg();*/
+        String confId = groupConfInfo.getConfId();
+        if (confId.isEmpty()) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "queryConfInfoRequest confId is empty confid :　" + confId);
+            System.out.println("queryConfInfoRequest confId is empty  confid :　" + confId);
+            queryConfInfoRequest.makeErrorResponseMsg(ConfInterfaceResult.CONF_NOT_EXIT.getCode(), HttpStatus.OK, ConfInterfaceResult.CONF_NOT_EXIT.getMessage());
+            return;
+        }
+
+        ConfInfoResponse confInfoResponse = mcuRestClientService.queryConf(confId);
+        if (confInfoResponse == null) {
+            queryConfInfoRequest.makeErrorResponseMsg(ConfInterfaceResult.QUERY_CONF_INFO_IS_NULL.getCode(), HttpStatus.OK, ConfInterfaceResult.QUERY_CONF_INFO_IS_NULL.getMessage());
+            return;
+        }
+        ConfInfo confInfo = new ConfInfo(confInfoResponse.getName(), confInfoResponse.getMeeting_room_name(),
+                confInfoResponse.getConf_id(), confInfoResponse.getConf_level(), confInfoResponse.getConf_type(),
+                confInfoResponse.getStart_time(), confInfoResponse.getEnd_time(), confInfoResponse.getDuration(),
+                confInfoResponse.getBitrate(), confInfoResponse.getClosed_conf(), confInfoResponse.getSafe_conf(),
+                confInfoResponse.getEncrypted_type(), confInfoResponse.getMute(), confInfoResponse.getMute_filter(),
+                confInfoResponse.getSilence(), confInfoResponse.getVideo_quality(), confInfoResponse.getEncrypted_key(),
+                confInfoResponse.getDual_mode(), confInfoResponse.getPublic_conf(), confInfoResponse.getAuto_end(),
+                confInfoResponse.getPreoccupy_resource(), confInfoResponse.getMax_join_mt(), confInfoResponse.getForce_broadcast(),
+                confInfoResponse.getFec_mode(), confInfoResponse.getVoice_activity_detection(), confInfoResponse.getVacinterval(),
+                confInfoResponse.getCall_times(), confInfoResponse.getCall_interval(), confInfoResponse.getCall_mode(),
+                confInfoResponse.getCascade_mode(), confInfoResponse.getCascade_return(), confInfoResponse.getCascade_return_para(),
+                confInfoResponse.getVmp_enable(), confInfoResponse.getMix_enable(), confInfoResponse.getPoll_enable(),
+                confInfoResponse.getNeed_password(), confInfoResponse.getOne_reforming(), confInfoResponse.getDoubleflow(),
+                confInfoResponse.getPlatform_id());
+        Creator creator = confInfoResponse.getCreator();
+        if(creator != null){
+            confInfo.setCreator(creator);
+        }
+
+        List<VideoFormat> video_formats = confInfoResponse.getVideo_formats();
+        if(video_formats != null || !video_formats.isEmpty()){
+            confInfo.setVideoFormats(video_formats);
+        }
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "queryConfInfo confInfo : " + confInfo.toString());
+        System.out.println("queryConfInfo confInfo : " + confInfo.toString());
+
+        queryConfInfoRequest.addConfInfo(confInfo);
+        queryConfInfoRequest.makeSuccessResponseMsg();
     }
 
     @Async("confTaskExecutor")
@@ -3237,6 +3233,7 @@ public class ConfInterfaceService {
             return;
         }
         String confId = groupConfInfo.getConfId();
+        VideoFormat videoFormat = groupConfInfo.getVideoFormat();
         if ("".equals(confId)) {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, " start Monitors confId is empty confid :　" + confId);
             System.out.println(" start Monitors confId is empty  confid :　" + confId);
@@ -3253,6 +3250,25 @@ public class ConfInterfaceService {
             startMonitorsRequest.makeErrorResponseMsg(ConfInterfaceResult.INVALID_PARAM.getCode(), HttpStatus.OK, ConfInterfaceResult.INVALID_PARAM.getMessage());
             return;
         }
+
+        if(videoFormat == null){
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "start Monitors videoFormat is null " );
+            System.out.println("start Monitors videoFormat is null " );
+            ConfInfoResponse confInfoResponse = mcuRestClientService.queryConf(confId);
+            if(confInfoResponse == null){
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, " videoFormat1 start Monitors confId is empty confid :　" + confId);
+                System.out.println(" videoFormat1 start Monitors confId is empty  confid :　" + confId);
+                startMonitorsRequest.makeErrorResponseMsg(ConfInterfaceResult.CONF_NOT_EXIT.getCode(), HttpStatus.OK, ConfInterfaceResult.CONF_NOT_EXIT.getMessage());
+                return;
+            }
+            List<VideoFormat> video_formats = confInfoResponse.getVideo_formats();
+            groupConfInfo.setVideoFormat(video_formats.get(0));
+            videoFormat = video_formats.get(0);
+        }
+
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "start Monitors videoFormat : " + videoFormat.toString());
+        System.out.println("start Monitors videoFormat : " + videoFormat.toString());
+
         if (type == 1) {
             if (mode == 0) {
                 E164 = startMonitorsRequest.getMonitorsParams().getE164() + "video";
@@ -3326,7 +3342,7 @@ public class ConfInterfaceService {
         MediaDescription mediaDescription = new MediaDescription();
         mediaDescription.setDirection("send");
         if (mode == 0) {
-            String videoFormat = mcuRestConfig.getVideoFormat();
+            /*String videoFormat = mcuRestConfig.getVideoFormat();
             String[] videoformats = videoFormat.split(",");
             for (String videoformat : videoformats) {
                 String[] result = videoformat.split("/");
@@ -3334,17 +3350,21 @@ public class ConfInterfaceService {
                 mcuVideoFormat.setResolution(Integer.valueOf(result[1]));
                 mcuVideoFormat.setFrame(Integer.valueOf(result[2]));
                 mcuVideoFormat.setBitrate(Integer.valueOf(result[3]));
-            }
+            }*/
+            mcuVideoFormat = videoFormat;
             MediaDescription videoMediaDescription = new VideoMediaDescription();
-            videoMediaDescription.setPayload(106);
+            videoMediaDescription.setPayload(127);
             videoMediaDescription.setBitrate(mcuVideoFormat.getBitrate());
-            ((VideoMediaDescription) videoMediaDescription).setFramerate(mcuVideoFormat.getBitrate());
-            videoMediaDescription.setEncodingFormat(EncodingFormatEnum.H264);
+            ((VideoMediaDescription) videoMediaDescription).setFramerate(mcuVideoFormat.getFrame());
+            EncodingFormatEnum encodingFormat = getEncodingFormat(mcuVideoFormat.getFormat());
+            videoMediaDescription.setEncodingFormat(encodingFormat);
             videoMediaDescription.setMediaType("video");
-            H264Description h264Description = new H264Description();
-            h264Description.setProfile(ProfileEnum.HIGH);
-            h264Description.setLevel(0);
-            ((VideoMediaDescription) videoMediaDescription).setH264Desc(h264Description);
+            if(encodingFormat == EncodingFormatEnum.H264){
+                H264Description h264Description = new H264Description();
+                h264Description.setProfile(ProfileEnum.HIGH);
+                h264Description.setLevel(0);
+                ((VideoMediaDescription) videoMediaDescription).setH264Desc(h264Description);
+            }
             mediaDescription = videoMediaDescription;
         }
 
@@ -3367,12 +3387,6 @@ public class ConfInterfaceService {
         if (null == createResourceResponse) {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, " 50038  CreateResource failed :　" + confId);
             System.out.println(" 50038  CreateResource failed : " + confId);
-           /* if (type == 2 || type == 3) {
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, " startMonitors  CreateResource failed   del Mt Member E164 : " + E164 + ", type :" + type);
-                System.out.println(" startMonitors  CreateResource failed   del Mt Member E164 : " + E164 + ", type :" + type);
-                terminalService.setRestClientService(null);
-                groupConfInfo.delMtMember(E164);
-            }*/
             startMonitorsRequest.makeErrorResponseMsg(ConfInterfaceResult.START_MONITORS.getCode(), HttpStatus.OK, ConfInterfaceResult.CONF_NOT_EXIT.getMessage());
             return;
         }
@@ -3570,6 +3584,48 @@ public class ConfInterfaceService {
         }
 
         return false;
+    }
+
+    public EncodingFormatEnum getEncodingFormat(int format){
+        switch (format) {
+            case 1:
+                //None 0 未知,协议栈未给理由
+                return EncodingFormatEnum.MPEG4_GENERIC;
+            case 2:
+                //Busy 1 终端正忙
+                return EncodingFormatEnum.H261;
+            case 3:
+                //Normal 2 终端正常挂断
+                return EncodingFormatEnum.H263;
+            case 4:
+                //Rejected 3 终端拒绝
+                return EncodingFormatEnum.H264;
+            case 5:
+                //Unreachable 4 对端不可达
+                return EncodingFormatEnum.H264;
+            case 6:
+                //Local 5 本地挂断
+                return EncodingFormatEnum.H265;
+            default:
+                //其余未知理由
+                return EncodingFormatEnum.H264;
+        }
+    }
+    public VideoFormat setVideoFormats() {
+        String videoFormats = mcuRestConfig.getVideoFormat();
+        String[] videoformats = videoFormats.split(",");
+
+        ArrayList<VideoFormat> mcuVideoFormats = new ArrayList<>();
+        for (String videoformat : videoformats) {
+            String[] result = videoformat.split("/");
+            VideoFormat videoFormat = new VideoFormat();
+            videoFormat.setFormat(Integer.valueOf(result[0]));
+            videoFormat.setResolution(Integer.valueOf(result[1]));
+            videoFormat.setFrame(Integer.valueOf(result[2]));
+            videoFormat.setBitrate(Integer.valueOf(result[3]));
+            mcuVideoFormats.add(videoFormat);
+        }
+        return mcuVideoFormats.get(0);
     }
 
 

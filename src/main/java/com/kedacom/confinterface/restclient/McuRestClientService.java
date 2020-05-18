@@ -1224,6 +1224,39 @@ public class McuRestClientService {
         return null;
     }
 
+    public ConfInfoResponse queryConf(String confId) {
+        if (!loginSuccess) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "[queryConf] has login out!!!");
+            System.out.println("[queryConf] has login out!!!");
+            return null;
+        }
+
+        StringBuilder url = new StringBuilder();
+        constructUrl(url, "/api/v1/vc/confs/{conf_id}?account_token={account_token}");
+        Map<String, String> args = new HashMap<>();
+        args.put("conf_id",confId);
+        args.put("account_token", accountToken);
+
+        ConfInfoResponse confInfoResponse = restClientService.exchange(url.toString(), HttpMethod.GET, null, urlencodeMediaType, args, ConfInfoResponse.class);
+        if (null == confInfoResponse) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "[queryConf] queryConf null!");
+            System.out.println("[queryConf] queryConf null!");
+            return null;
+        }
+
+        if (confInfoResponse.success()) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "[queryConf] queryConf success");
+            System.out.println("[queryConf] queryConf success");
+            return confInfoResponse;
+        } else {
+            int errorCode = confInfoResponse.getError_code();
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "[confInfoResponse] confInfoResponse failed! errcode : " + errorCode + ", errMsg : " + McuStatus.resolve(errorCode).getDescription());
+            System.out.println("[confInfoResponse] confInfoResponse failed! errcode : " + errorCode + ", errMsg : " + McuStatus.resolve(errorCode).getDescription());
+        }
+
+        return null;
+    }
+
     public ConfsCascadesResponse queryConfsCascades(String confId) {
         if (!loginSuccess) {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "queryConfsCascades, has login out!!!");

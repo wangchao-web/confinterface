@@ -87,6 +87,7 @@ public class H323TerminalService extends TerminalService {
         }
     }
 
+    @Override
     public boolean onOpenLogicalChannel(Vector<MediaDescription> mediaDescriptions) {
         /*1.判断是否存在反向通道资源，存在，则直接查询
           2. 不存在，则请求创建

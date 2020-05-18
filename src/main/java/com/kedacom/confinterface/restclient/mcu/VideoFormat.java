@@ -1,6 +1,16 @@
 package com.kedacom.confinterface.restclient.mcu;
 
 public class VideoFormat {
+    public VideoFormat(int format, int resolution, int frame, int bitrate) {
+        this.format = format;
+        this.resolution = resolution;
+        this.frame = frame;
+        this.bitrate = bitrate;
+    }
+
+    public VideoFormat() {
+    }
+
     public int getFormat() {
         return format;
     }

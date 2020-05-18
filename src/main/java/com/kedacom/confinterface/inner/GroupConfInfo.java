@@ -7,6 +7,7 @@ import com.kedacom.confinterface.dao.Terminal;
 import com.kedacom.confinterface.dto.BaseRequestMsg;
 import com.kedacom.confinterface.dto.BaseResponseMsg;
 import com.kedacom.confinterface.dto.MonitorsMember;
+import com.kedacom.confinterface.restclient.mcu.VideoFormat;
 import com.kedacom.confinterface.service.TerminalService;
 
 import java.util.List;
@@ -28,6 +29,7 @@ public class GroupConfInfo {
         this.mtIdMap = new ConcurrentHashMap<>();
         this.waitDealTask = null;
         this.monitorsMembers = new ConcurrentHashMap<>();
+        this.videoFormat = null;
     }
 
 
@@ -482,6 +484,7 @@ public class GroupConfInfo {
         }
         this.createdConf = "";
         this.monitorsMembers = null;
+        this.videoFormat = null;
     }
 
     public boolean isConfinterface() {
@@ -545,6 +548,14 @@ public class GroupConfInfo {
         return monitorsMembers;
     }
 
+    public VideoFormat getVideoFormat() {
+        return videoFormat;
+    }
+
+    public void setVideoFormat(VideoFormat videoFormat) {
+        this.videoFormat = videoFormat;
+    }
+
     private String groupId;
     private String confId;
     private int broadcastType;   //0-未知，1-终端，2-其他
@@ -558,6 +569,8 @@ public class GroupConfInfo {
     private boolean confinterface = false;
     private String createdConf; //用来判断是会议服务自己创建的会议还是mcu创建的会议 confinterface为会议自己创建,mcu为mcu创建的会议
     private int delay = 0; //用于判断mcu自己创建会议时,第一次设置广播源时,等待虚拟终端先呼叫起来 0,初始值,1在设置广播员是设置,2在虚拟终端入会时设置
+    private VideoFormat videoFormat;
+
 
     private ConcurrentHashMap<String, MonitorsMember> monitorsMembers;
 
