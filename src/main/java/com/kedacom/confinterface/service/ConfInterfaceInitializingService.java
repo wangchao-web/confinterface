@@ -28,12 +28,8 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Service;
 import redis.clients.jedis.Jedis;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -716,7 +712,8 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
     @Autowired
     private McuRestConfig mcuRestConfig;
 
-    public static final String VERSION = "confinterface-V.1.1.3.051820";
+    /* V.1.1.4.052020 change by linlifen 修复redis连接不释放的问题 */
+    public static final String VERSION = "confinterface-V.1.1.4.052020";
 
     //protected final org.slf4j.Logger logger = LoggerFactory.getLogger(this.getClass());
 
