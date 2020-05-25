@@ -115,7 +115,9 @@ public class RedisTerminalMediaSourceDaoAutoConfig {
         redisTemplate.setHashValueSerializer(new GenericJackson2JsonRedisSerializer());
         redisTemplate.setValueSerializer(new GenericJackson2JsonRedisSerializer());
 
-        redisTemplate.setEnableTransactionSupport(true);
+        //2020.5.20 change 设置支持了事务，则必须配合@Transactional注解使用，否则redis的连接不会自动释放
+        //目前代码中并未使用到事务特性，因此注释掉该代码
+        //redisTemplate.setEnableTransactionSupport(true);
         redisTemplate.setConnectionFactory(factory);
     }
 
