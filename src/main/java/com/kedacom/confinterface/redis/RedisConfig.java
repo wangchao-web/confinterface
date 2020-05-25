@@ -158,7 +158,8 @@ public class RedisConfig {
     //每次逐出检查时，逐出的最大连接数目
     private int numTestsPerEvictionRun = 3;
     //逐出扫描的时间间隔，负数不执行逐出扫描
-    private long timeBetweenEvictionRunsMillis = -1;
+    //private long timeBetweenEvictionRunsMillis = -1;
+    private long timeBetweenEvictionRunsMillis = 60000;
     //从连接池中取出连接前是否检查，如果检验失败,则从连接池中去除连接并尝试取出另一个
     private boolean testOnBorrow = true;
     //是否在空闲时候检查有效性

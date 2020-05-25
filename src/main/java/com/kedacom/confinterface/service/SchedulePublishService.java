@@ -187,12 +187,12 @@ public class SchedulePublishService extends ConfInterfacePublishService {
         if (publishResponse.getStatusCode().is2xxSuccessful() && publishResponse.getBody().getCode() == 0) {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "publishMessage OK! type : " + type.getName() + ", publishUrl : " + publishUrl);
             System.out.println("publishMessage OK! type : " + type.getName() + ", publishUrl : " + publishUrl);
-            TerminalStatusNotify terminalStatusNotify1 = (TerminalStatusNotify) publishMsg;
+           /* TerminalStatusNotify terminalStatusNotify1 = (TerminalStatusNotify) publishMsg;
             if (terminalStatusNotify1.getMtStatusNotify().get(0).getStatus() == 1 && terminalStatusNotify1.getMtStatusNotify().get(0).getCallMode().equals("p2p")) {
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"terminalStatusNotify1  DeviceId : " + terminalStatusNotify1.getMtStatusNotify().get(0).getDeviceId() + ", terminalStatusNotify1 Status :" + terminalStatusNotify1.getMtStatusNotify().get(0).getStatus() +", terminalStatusNotify1 callMode : "+terminalStatusNotify1.getMtStatusNotify().get(0).getCallMode());
                 System.out.println("terminalStatusNotify1  DeviceId : " + terminalStatusNotify1.getMtStatusNotify().get(0).getDeviceId() + ", terminalStatusNotify1 Status :" + terminalStatusNotify1.getMtStatusNotify().get(0).getStatus() +", terminalStatusNotify1 callMode : "+terminalStatusNotify1.getMtStatusNotify().get(0).getCallMode());
                 terminalMediaSourceService.setMtPublish(terminalStatusNotify1.getMtStatusNotify().get(0).getDeviceId(), publishUrl);
-            }
+            }*/
             return;
         }
 
@@ -232,9 +232,9 @@ public class SchedulePublishService extends ConfInterfacePublishService {
         if (publishResponse.getStatusCode().is2xxSuccessful() && publishResponse.getBody().getCode() == 0) {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "serviceRestartPublishMessage OK! type:" + type.getName() + ", publishUrl:" + publishUrl);
             System.out.println("serviceRestartPublishMessage OK! type:" + type.getName() + ", publishUrl:" + publishUrl);
-            TerminalStatusNotify terminalStatusNotify = (TerminalStatusNotify) publishMsg;
+            /*TerminalStatusNotify terminalStatusNotify = (TerminalStatusNotify) publishMsg;
             System.out.println("newTerminalStatusNotify.getMtStatusNotify().get(0).getDeviceId() : " + terminalStatusNotify.getMtStatusNotify().get(0).getDeviceId());
-            terminalMediaSourceService.deleteMtPublish(terminalStatusNotify.getMtStatusNotify().get(0).getDeviceId());
+            terminalMediaSourceService.deleteMtPublish(terminalStatusNotify.getMtStatusNotify().get(0).getDeviceId());*/
             return;
         }
 
@@ -295,6 +295,6 @@ public class SchedulePublishService extends ConfInterfacePublishService {
     @Autowired
     TerminalMediaSourceService terminalMediaSourceService;
 
-    @Autowired
+    @Autowired(required = false)
     private McuRestClientService mcuRestClientService;
 }

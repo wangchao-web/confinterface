@@ -12,6 +12,7 @@ import com.kedacom.confinterface.exchange.*;
 import com.kedacom.confinterface.inner.*;
 import com.kedacom.confinterface.restclient.RestClientService;
 import com.kedacom.confinterface.restclient.mcu.InspectionStatusEnum;
+import com.kedacom.confinterface.syssetting.BaseSysConfig;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 import net.sf.json.JsonConfig;
@@ -1047,10 +1048,12 @@ public abstract class TerminalService {
         synchronized (this) {
             boolean bOk = conferenceParticipant.LeaveConference();
             if (bOk) {
+                terminalMediaSourceService.delP2PMtMember(groupId,remoteMtAccount);
+                terminalMediaSourceService.delP2PVmtMember(groupId,e164);
                 terminalManageService.freeVmt(e164);
                 clearExchange();
                 terminalMediaSourceService.delTerminalMediaResource(e164);
-                terminalMediaSourceService.deleteMtPublish(remoteMtAccount);
+                //terminalMediaSourceService.deleteMtPublish(remoteMtAccount);
                 groupId = null;
                 confId = null;
                 remoteMtAccount = null;
@@ -1336,6 +1339,7 @@ public abstract class TerminalService {
         int payLoad = mediaDescription.getPayload();
         if (isExternalDocking && (mediaDescription.getPayload() >= 96 && mediaDescription.getPayload() <= 127)) {
             payLoad = 127;
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"payload set to 127");
             System.out.println("payload set to 127");
         }
 
@@ -2198,7 +2202,7 @@ public abstract class TerminalService {
     protected static String scheduleSrvHttpAddress;
     protected static String localIp;
     protected static int localPort;
-    protected static Boolean isExternalDocking = false;
+    protected static Boolean isExternalDocking =BaseSysConfig.isExternalDocking;
     protected static StringBuilder scheduleP2PCallURL = null;
     protected static StringBuilder notifyURL = null;
     //protected Boolean isTerminalRepeat = false; //判断mcu自己创建的会议时,在同一个组里新增终端相同的问题
@@ -2221,5 +2225,7 @@ public abstract class TerminalService {
 
     @Autowired
     private TerminalManageService terminalManageService;
+
+
 
 }

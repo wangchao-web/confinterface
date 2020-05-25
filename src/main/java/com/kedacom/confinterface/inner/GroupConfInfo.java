@@ -571,7 +571,6 @@ public class GroupConfInfo {
     private int delay = 0; //用于判断mcu自己创建会议时,第一次设置广播源时,等待虚拟终端先呼叫起来 0,初始值,1在设置广播员是设置,2在虚拟终端入会时设置
     private VideoFormat videoFormat;
 
-
     private ConcurrentHashMap<String, MonitorsMember> monitorsMembers;
 
 }

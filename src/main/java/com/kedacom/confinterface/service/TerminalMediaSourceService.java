@@ -183,6 +183,7 @@ public class TerminalMediaSourceService {
     public ConcurrentHashMap<String, MonitorsMember> getMonitorsMembers(String confId) {
         return terminalMediaSourceDao.getMonitorsMembers(confId);
     }
+
 	
     @CachePut(value = "MtHash", key = "caches[0].name + '_' + #root.target.getSrvToken()")
     public Map<String, String> setMtPublish(String E164, String publishUrl) {
@@ -198,6 +199,8 @@ public class TerminalMediaSourceService {
     public Map<String, String> getMtPublish() {
         return terminalMediaSourceDao.getMtPublish();
     }
+
+
 
     @CachePut(value = "publishUrl", key = "caches[0].name + '_' + #root.target.getSrvToken()")
     public Map<String, String> setPublishUrl(String groupId, String publishUrl) {
@@ -228,5 +231,48 @@ public class TerminalMediaSourceService {
     @CacheEvict(value = "confIdHash", key = "caches[0].name + '_' + #root.target.getSrvToken()")
     public Map<String,String> delConfCreateType(String confId) {
         return terminalMediaSourceDao.delConfId(confId);
+    }
+
+
+    @Cacheable(value = "P2PMtMembers", key = "#groupId")
+    public List<String> getP2PMtMembers(String groupId) {
+        return terminalMediaSourceDao.getP2PMtMembers(groupId);
+    }
+
+    @CachePut(value = "P2PMtMembers", key = "#groupId")
+    public List<String> addP2PMtMembers(String groupId, String account) {
+        return terminalMediaSourceDao.addP2PMtMembers(groupId, account);
+    }
+
+    @CacheEvict(value = "P2PMtMembers", key = "#groupId")
+    public List<String> delP2PMtMember(String groupId, String account) {
+        return terminalMediaSourceDao.delP2PMtMember(groupId, account);
+    }
+
+    @CacheEvict(value = "P2PMtMembers", key = "#groupId")
+    public List<String> delP2PMtMembers(String groupId) {
+        return terminalMediaSourceDao.delP2PMtMembers(groupId);
+    }
+
+
+
+    @Cacheable(value = "P2PVmtMembers", key = "#groupId")
+    public List<String> getP2PVmtMembers(String groupId) {
+        return terminalMediaSourceDao.getP2PVmtMembers(groupId);
+    }
+
+    @CachePut(value = "P2PVmtMembers", key = "#groupId")
+    public List<String> addP2PVmtMembers(String groupId, String account) {
+        return terminalMediaSourceDao.addP2PVmtMembers(groupId, account);
+    }
+
+    @CacheEvict(value = "P2PVmtMembers", key = "#groupId")
+    public List<String> delP2PVmtMember(String groupId, String account) {
+        return terminalMediaSourceDao.delP2PVmtMember(groupId, account);
+    }
+
+    @CacheEvict(value = "P2PVmtMembers", key = "#groupId")
+    public List<String> delP2PVmtMembers(String groupId) {
+        return terminalMediaSourceDao.delP2PVmtMembers(groupId);
     }
 }

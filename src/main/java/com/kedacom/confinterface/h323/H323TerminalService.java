@@ -74,11 +74,11 @@ public class H323TerminalService extends TerminalService {
             regGK = conferenceParticipant.RegisterToConfSys(registerInfo);
             if (regGK) {
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "register gk ok, time : " + System.currentTimeMillis());
-                System.out.println("register gk ok, time : " + System.currentTimeMillis());
+                System.out.println("e164(" + e164 + ") register gk ok, time : " + System.currentTimeMillis());
                 return new AsyncResult<>(true);
             } else {
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "register gk failed, time : " + System.currentTimeMillis());
-                System.out.println("register gk failed, time : " + System.currentTimeMillis());
+                System.out.println("e164(" + e164 + ") register gk failed, time : " + System.currentTimeMillis());
                 return new AsyncResult<>(false);
             }
         } catch (Exception e) {

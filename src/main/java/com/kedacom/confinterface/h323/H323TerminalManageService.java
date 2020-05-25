@@ -288,6 +288,8 @@ public class H323TerminalManageService extends TerminalManageService implements 
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "OnKickedOff, mtAccount: " + mtAccount);
             System.out.println("OnKickedOff, mtAccount " + mtAccount);
             if (null != mtAccount) {
+                terminalMediaSourceService.delP2PMtMember(groupId,mtAccount);
+                terminalMediaSourceService.delP2PVmtMember(groupId,participantid);
                 p2PCallGroup.removeCallMember(mtAccount);
                 if (p2PCallGroup.getCallMap().isEmpty()) {
                     LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "OnKickedOff, remove p2pCallGroup : " + groupId);
@@ -321,7 +323,7 @@ public class H323TerminalManageService extends TerminalManageService implements 
             terminalMediaSourceService.delGroupVmtMember(terminalService.getGroupId(), participantid);
 
             ////用于会议服务断开之后服务再启动时给上层业务推送失败的状态
-            terminalMediaSourceService.deleteMtPublish(terminalService.getRemoteMtAccount());
+            //terminalMediaSourceService.deleteMtPublish(terminalService.getRemoteMtAccount());
             terminalService.leftConference();
         }
     }

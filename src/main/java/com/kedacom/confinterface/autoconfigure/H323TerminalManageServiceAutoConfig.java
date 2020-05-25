@@ -18,6 +18,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
 @ConditionalOnProperty(name = "confinterface.sys.protocalType", havingValue = "h323", matchIfMissing = false)
 @EnableAsync(proxyTargetClass=true)
 public class H323TerminalManageServiceAutoConfig {
+   
 
     @Autowired
     private H323ProtocalConfig h323ProtocalConfig;

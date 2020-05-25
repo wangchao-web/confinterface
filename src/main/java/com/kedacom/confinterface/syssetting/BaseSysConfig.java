@@ -5,11 +5,13 @@ import com.kedacom.confinterface.util.VideoCap;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.stereotype.Component;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Configuration
+@Component
 @ConfigurationProperties(prefix = "confinterface.sys")
 public class BaseSysConfig {
 
@@ -227,6 +229,18 @@ public class BaseSysConfig {
         this.logPath = logPath;
     }
 
+    public static Boolean getIsExternalDocking() {
+        return isExternalDocking;
+    }
+
+    @Value("${confinterface.sys.isExternalDocking:false}")
+    public  void setIsExternalDocking(Boolean isExternalDocking) {
+        this.isExternalDocking = isExternalDocking;
+    }
+
+
+
+
     @Override
     public String toString() {
         return new StringBuffer()
@@ -319,4 +333,7 @@ public class BaseSysConfig {
     private List<AudioCap> audioCapList;
 
     private Boolean isCalled = false;  //是否被叫
+
+    //@Value("${confinterface.sys.isExternalDocking}")
+    public static Boolean isExternalDocking = false;  //适应外厂商paload
 }

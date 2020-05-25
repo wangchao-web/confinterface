@@ -44,6 +44,8 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "baseSysConfig : " + BaseSysConfig.getIsExternalDocking());
+        System.out.println("baseSysConfig : " + BaseSysConfig.getIsExternalDocking());
         Integer redisIsOk = getRedisIsOk();
         if (redisIsOk == 1) {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Read configuration filed faile or connection redis failed ! End the service process !");
@@ -77,11 +79,70 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "publishUrls is not null and not empty ******");
             System.out.println("publishUrls is not null and not empty ******");
             for (Map.Entry<String, String> publishUrl : publishUrls.entrySet()) {
-                confInterfacePublishService.addSubscribeMessage(SubscribeMsgTypeEnum.TERMINAL_STATUS.getType(), publishUrl.getKey(), publishUrl.getValue());
+                String groupId = publishUrl.getKey();
+                confInterfacePublishService.addSubscribeMessage(SubscribeMsgTypeEnum.TERMINAL_STATUS.getType(), groupId, publishUrl.getValue());
+                List<String> p2PMtMembers = confInterfaceService.getP2PMtMembers(groupId);
+                List<String> p2PVmtMembers = confInterfaceService.getP2PVmtMembers(groupId);
+
+                if (p2PVmtMembers != null && !p2PVmtMembers.isEmpty()) {
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "p2PVmtMembers is not null and not p2PVmtMembers  : " + p2PVmtMembers.toString());
+                    System.out.println("p2PVmtMembers is not null and not empty p2PVmtMembers  : " + p2PVmtMembers.toString());
+                    ArrayList<String> resourceIds = new ArrayList<>();
+                    for (String p2PVmtMembe : p2PVmtMembers) {
+                        TerminalMediaResource terminalMediaResource = terminalMediaSourceService.getTerminalMediaResource(p2PVmtMembe);
+                        if (terminalMediaResource != null) {
+                            List<MediaResource> forwardResources = terminalMediaResource.getForwardResources();
+                            List<MediaResource> reverseResources = terminalMediaResource.getReverseResources();
+                            if (forwardResources != null && !reverseResources.isEmpty()) {
+                                for (MediaResource forwardResource : forwardResources) {
+                                    String resourceId = forwardResource.getId();
+                                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "forwardResources account : " + p2PVmtMembe + ", resourceId : " + resourceId);
+                                    System.out.println("forwardResources account : " + p2PVmtMembe + ", resourceId : " + resourceId);
+                                    if (resourceId != null || !resourceId.isEmpty()) {
+                                        resourceIds.add(resourceId);
+                                    }
+                                }
+                            }
+
+                            if (reverseResources != null && !reverseResources.isEmpty()) {
+                                for (MediaResource reverseResource : reverseResources) {
+                                    String resourceId = reverseResource.getId();
+                                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "reverseResources account : " + p2PVmtMembe + ", resourceId : " + resourceId);
+                                    System.out.println("reverseResources account : " + p2PVmtMembe + ", resourceId : " + resourceId);
+                                    if (resourceId != null || !resourceId.isEmpty()) {
+                                        resourceIds.add(resourceId);
+                                    }
+                                }
+                            }
+                            terminalMediaSourceService.delTerminalMediaResource(p2PVmtMembe);
+                        }
+
+                    }
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "remove all resouredIds :  " + resourceIds );
+                    System.out.println("remove all resouredIds :  " + resourceIds );
+                    if(!resourceIds.isEmpty() || resourceIds !=null){
+                        confInterfaceService.removeExchange(resourceIds,groupId);
+                    }
+                    terminalMediaSourceService.delP2PVmtMembers(groupId);
+                }
+
+                if (p2PMtMembers != null && !p2PMtMembers.isEmpty()) {
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "p2PMtMembers is not null and not p2PMtMembers  : " + p2PMtMembers.toString());
+                    System.out.println("p2PMtMembers is not null and not empty p2PMtMembers  : " + p2PMtMembers.toString());
+                    for (String p2PMtMember : p2PMtMembers) {
+                        TerminalStatusNotify terminalStatusNotify = new TerminalStatusNotify();
+                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "account : " + p2PMtMember + ", publishUrl : " + publishUrl.getValue());
+                        System.out.println("account : " + p2PMtMember + ", publishUrl : " + publishUrl.getValue());
+                        TerminalStatus terminalStatus = new TerminalStatus(p2PMtMember, "MT", TerminalOnlineStatusEnum.OFFLINE.getCode(), null, null);
+                        terminalStatusNotify.addMtStatus(terminalStatus);
+                        TerminalManageService.publishStatus(SubscribeMsgTypeEnum.TERMINAL_STATUS, publishUrl.getValue(), terminalStatusNotify);
+                    }
+                    terminalMediaSourceService.delP2PMtMembers(groupId);
+                }
             }
         }
 
-        Map<String, String> mtPublishs = confInterfaceService.getMtPublishs();
+       /* Map<String, String> mtPublishs = confInterfaceService.getMtPublishs();
         if (null == mtPublishs || mtPublishs.isEmpty()) {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "mtPublishs is null or empty ******");
             System.out.println("mtPublishs is null or empty ******");
@@ -94,7 +155,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
                 terminalStatusNotify.addMtStatus(terminalStatus);
                 TerminalManageService.publishStatus(SubscribeMsgTypeEnum.TERMINAL_STATUS, mtPublish.getValue(), terminalStatusNotify);
             }
-        }
+        }*/
 
         if (null == groups || groups.isEmpty()) {
             //启动终端注册Gk
@@ -114,8 +175,8 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
             GroupConfInfo groupConfInfo = new GroupConfInfo(groupId, confId);
             loadMonitorsInfo(groupConfInfo);
             Map<String, String> confCreateTypeHashs = confInterfaceService.getConfCreateTypeHashs();
-            if(confCreateTypeHashs != null && !confCreateTypeHashs.isEmpty()){
-                if(confCreateTypeHashs.containsKey(confId)){
+            if (confCreateTypeHashs != null && !confCreateTypeHashs.isEmpty()) {
+                if (confCreateTypeHashs.containsKey(confId)) {
                     groupConfInfo.setCreatedConf(confCreateTypeHashs.get(confId));
                     LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "ConfInterfaceInitializingService confCreateTypeHashs exit confId : " + confId + ", createConfType : " + confCreateTypeHashs.get(confId));
                     System.out.println("ConfInterfaceInitializingService confCreateTypeHashs exit confId : " + confId + ", createConfType : " + confCreateTypeHashs.get(confId));
@@ -713,10 +774,10 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
     private ConfInterfacePublishService confInterfacePublishService;
 
 
-    @Autowired
+    @Autowired(required = false)
     private McuRestConfig mcuRestConfig;
 
-    public static final String VERSION = "confinterface-V.1.1.3.051820";
+    public static final String VERSION = "confinterface-V.1.1.5.052520";
 
     //protected final org.slf4j.Logger logger = LoggerFactory.getLogger(this.getClass());
 

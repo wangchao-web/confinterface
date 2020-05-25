@@ -331,7 +331,7 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
 
                 terminalService.setOnline(TerminalOnlineStatusEnum.OFFLINE.getCode());
                 ConcurrentHashMap<String, MonitorsMember> monitorsMembers = groupConfInfo.getMonitorsMembers();
-                if (monitorsMembers != null || !monitorsMembers.isEmpty()) {
+                if (monitorsMembers != null && !monitorsMembers.isEmpty()) {
                     String groupId = groupConfInfo.getGroupId();
                     String video = terminalService.getE164() + "video";
                     String audio = terminalService.getE164() + "audio";
@@ -422,6 +422,7 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
                 }
 
                 if (terminalService.isOnline() && !terminalService.isVmt()) {
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"terminal is online and not vmt, publishStatus!! e164:" + e164);
                     System.out.println("terminal is online and not vmt, publishStatus!! e164:" + e164);
                     TerminalManageService.publishStatus(e164, groupConfInfo.getGroupId(), TerminalOnlineStatusEnum.ONLINE.getCode());
                 }
@@ -579,7 +580,7 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
                         return;
                     }
                     ConcurrentHashMap<String, MonitorsMember> monitorsMembers = groupConfInfo.getMonitorsMembers();
-                    if (monitorsMembers != null || !monitorsMembers.isEmpty()) {
+                    if (monitorsMembers != null && !monitorsMembers.isEmpty()) {
                         String video = member.getE164() + "video";
                         String audio = member.getE164() + "audio";
                         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processSubscribeMsg method(delete) monitorsMembers is not null or empty + videoE164 : " + video + ", audioE164 : " + audio);
@@ -773,7 +774,7 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
 
         ConcurrentHashMap<String, MonitorsMember> monitorsMembers = groupConfInfo.getMonitorsMembers();
         synchronized (this) {
-            if (monitorsMembers != null || !monitorsMembers.isEmpty()) {
+            if (monitorsMembers != null && !monitorsMembers.isEmpty()) {
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processConfDeleted get  monitorsMember not null");
                 System.out.println("processConfDeleted get monitorsMember not null");
                 ArrayList<String> resourceIDs = new ArrayList<>();
@@ -1575,7 +1576,7 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
     @Autowired
     private ConfInterfaceService confInterfaceService;
 
-    @Autowired
+    @Autowired(required = false)
     private McuRestClientService mcuRestClientService;
 
     @Autowired

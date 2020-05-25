@@ -129,7 +129,12 @@ public class ConfInterfaceService {
    public Map<String, String> getMtPublishs() {
         return terminalMediaSourceService.getMtPublish();
     }
-
+    public List<String> getP2PMtMembers(String groupId) {
+        return terminalMediaSourceService.getP2PMtMembers(groupId);
+    }
+    public List<String> getP2PVmtMembers(String groupId) {
+        return terminalMediaSourceService.getP2PVmtMembers(groupId);
+    }
 
     public GroupConfInfo getGroupConfInfo(String groupId) {
         return groupConfInfoMap.get(groupId);
@@ -137,10 +142,6 @@ public class ConfInterfaceService {
 
     public Map<String, P2PCallGroup> getP2pCallGroupMap() {
         return p2pCallGroupMap;
-    }
-
-    public void setP2pCallGroupMap(Map<String, P2PCallGroup> p2pCallGroupMap) {
-        this.p2pCallGroupMap = p2pCallGroupMap;
     }
 
     @Async("confTaskExecutor")
@@ -1574,14 +1575,10 @@ public class ConfInterfaceService {
             if (terminalOfflineReasonEnum.getCode() == 200) {
                 vmtService.setDualStream(true);
                 p2PCallGroup.addCallMember(mtAccount, vmtService);
+                terminalMediaSourceService.addP2PMtMembers(groupId,mtAccount);
+                terminalMediaSourceService.addP2PVmtMembers(groupId,vmtService.getE164());
             } else {
                 vmtService.delWaitMsg(waitMsg);
-                //vmtService.publishStatus(mtAccount, TerminalOnlineStatusEnum.OFFLINE.getCode());
-                //加上终端呼叫失败的错误码
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "mtAccount : " + mtAccount + ", callRemoteCap faileCode : " + terminalOfflineReasonEnum.getCode());
-                System.out.println("mtAccount : " + mtAccount + ", callRemoteCap faileCode : " + terminalOfflineReasonEnum.getCode());
-                TerminalManageService.publishStatus(mtAccount, groupId, TerminalOnlineStatusEnum.OFFLINE.getCode(), terminalOfflineReasonEnum.getCode());
-                //vmtService.publishStatus(mtAccount, TerminalOnlineStatusEnum.OFFLINE.getCode(),callRemoteCap.getTerminalOnlineStatusEnum().getCode());
                 terminalManageService.freeVmt(vmtService.getE164());
                 vmtService.setGroupId(null);
 
@@ -1590,6 +1587,10 @@ public class ConfInterfaceService {
                     p2pCallGroupMap.remove(groupId);
                 }
 
+                //加上终端呼叫失败的错误码
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "mtAccount : " + mtAccount + ", callRemoteCap faileCode : " + terminalOfflineReasonEnum.getCode());
+                System.out.println("mtAccount : " + mtAccount + ", callRemoteCap faileCode : " + terminalOfflineReasonEnum.getCode());
+                TerminalManageService.publishStatus(mtAccount, groupId, TerminalOnlineStatusEnum.OFFLINE.getCode(), terminalOfflineReasonEnum.getCode());
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "p2pCall, callMt failed, mtAccount: " + mtAccount + ", groupId : " + groupId);
                 System.out.println("p2pCall, callMt failed, mtAccount: " + mtAccount + ", groupId : " + groupId);
             }
@@ -1629,6 +1630,7 @@ public class ConfInterfaceService {
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "bOk : " + bOk);
         System.out.println("bOk : " + bOk);
         if (bOk) {
+
             vmtService.setGroupId(null);
             if (vmtService.dualSource.size() > 0) {
                 System.out.println("cancelP2PCall, vmtService.dualSource.size() : " + vmtService.dualSource.size());
@@ -3657,7 +3659,7 @@ public class ConfInterfaceService {
     @Autowired
     private BaseSysConfig baseSysConfig;
 
-    @Autowired
+    @Autowired(required = false)
     private McuRestConfig mcuRestConfig;
 
     @Autowired

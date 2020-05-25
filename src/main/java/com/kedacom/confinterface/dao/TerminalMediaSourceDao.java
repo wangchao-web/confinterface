@@ -78,4 +78,20 @@ public interface TerminalMediaSourceDao {
     Map<String, String> setConfId(String confId, String createdConf);
 
     Map<String, String> delConfId(String confId);
+
+    List<String> addP2PMtMembers(String groupId, String account);
+
+    List<String> delP2PMtMember(String groupId, String account);
+
+    List<String> delP2PMtMembers(String groupId);
+
+    List<String> getP2PMtMembers(String groupId);
+
+    List<String> addP2PVmtMembers(String groupId, String account);
+
+    List<String> delP2PVmtMembers(String groupId);
+
+    List<String> delP2PVmtMember(String groupId, String account);
+
+    List<String> getP2PVmtMembers(String groupId);
 }
