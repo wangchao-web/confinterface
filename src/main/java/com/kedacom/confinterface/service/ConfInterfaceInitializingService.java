@@ -777,6 +777,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
     @Autowired(required = false)
     private McuRestConfig mcuRestConfig;
 
+    //版本号修复
     public static final String VERSION = "confinterface-V.1.1.5.052520";
 
     //protected final org.slf4j.Logger logger = LoggerFactory.getLogger(this.getClass());
