@@ -474,6 +474,30 @@ public class ConfInterfaceController {
         return deleteMonitorsRequest.getResponseMsg();
     }
 
+
+    @GetMapping(value = "/probe/readiness")
+    public ResponseEntity<BaseResponseMsg> probeReadiness(){
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now in probeReadiness  time : " + System.currentTimeMillis());
+        System.out.println("now in probeReadiness  time : " + System.currentTimeMillis());
+        BaseResponseMsg baseResponseMsg = new BaseResponseMsg(ConfInterfaceResult.OK.getCode(), HttpStatus.OK.value(), ConfInterfaceResult.OK.getMessage());
+        return new ResponseEntity<>(baseResponseMsg, HttpStatus.OK);
+    }
+
+    @GetMapping(value = "/probe/liveness")
+    public ResponseEntity<BaseResponseMsg> probeLiveness(){
+        if(ConfInterfaceInitializingService.probe){
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now in probeLiveness success time : " + System.currentTimeMillis());
+            System.out.println("now in probeLiveness success time : " + System.currentTimeMillis());
+            BaseResponseMsg baseResponseMsg = new BaseResponseMsg(ConfInterfaceResult.PROBE_SUCCESS.getCode(), HttpStatus.OK.value(), ConfInterfaceResult.PROBE_SUCCESS.getMessage());
+            return new ResponseEntity<>(baseResponseMsg, HttpStatus.OK);
+        }
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now in probeLiveness failed time : " + System.currentTimeMillis());
+        System.out.println("now in probeLiveness failed time : " + System.currentTimeMillis());
+        BaseResponseMsg baseResponseMsg = new BaseResponseMsg(ConfInterfaceResult.PROBE_FAILED.getCode(), HttpStatus.INTERNAL_SERVER_ERROR.value(), ConfInterfaceResult.PROBE_FAILED.getMessage());
+        return new ResponseEntity<>(baseResponseMsg, HttpStatus.INTERNAL_SERVER_ERROR);
+
+    }
+
     @ExceptionHandler
     @ResponseBody
     public ResponseEntity<BaseResponseMsg> handleArgumentNotValidException(MethodArgumentNotValidException exception) {

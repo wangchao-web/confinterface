@@ -118,10 +118,10 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
                         }
 
                     }
-                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "remove all resouredIds :  " + resourceIds );
-                    System.out.println("remove all resouredIds :  " + resourceIds );
-                    if(!resourceIds.isEmpty() || resourceIds !=null){
-                        confInterfaceService.removeExchange(resourceIds,groupId);
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "remove all resouredIds :  " + resourceIds);
+                    System.out.println("remove all resouredIds :  " + resourceIds);
+                    if (!resourceIds.isEmpty() || resourceIds != null) {
+                        confInterfaceService.removeExchange(resourceIds, groupId);
                     }
                     terminalMediaSourceService.delP2PVmtMembers(groupId);
                 }
@@ -160,8 +160,9 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
         if (null == groups || groups.isEmpty()) {
             //启动终端注册Gk
             terminalManageService.StartUp();
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "no groups in db, init OK! current time : " + System.currentTimeMillis());
-            System.out.println("no groups in db, init OK! current time : " + System.currentTimeMillis());
+            probe = true;
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "no groups in db, init OK! current time : " + System.currentTimeMillis() + ", probe : " + probe);
+            System.out.println("no groups in db, init OK! current time : " + System.currentTimeMillis() + ", probe : " + probe);
             return;
         }
 
@@ -234,8 +235,9 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
 
         //启动终端注册Gk
         terminalManageService.StartUp();
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "no groups in db, init OK! current time : " + System.currentTimeMillis());
-        System.out.println("no groups in db, init OK! current time : " + System.currentTimeMillis());
+        probe = true;
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "no groups in db, init OK! current time : " + System.currentTimeMillis() + ", probe : " + probe);
+        System.out.println("no groups in db, init OK! current time : " + System.currentTimeMillis() + ", probe : " + probe);
     }
 
     private void createConferenceManage() {
@@ -743,6 +745,40 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
         return result;
     }
 
+    private void probeRedis() {
+        String url = redisConfig.getHostName();
+        int port = redisConfig.getPort();
+        if (url == null || port == 0) {
+            probe = false;
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "probeRedis failed ,probe : " + probe);
+            System.out.println("probeRedis failed ,probe : " + probe);
+            return;
+        }
+        //连接本地Redis服务
+        Jedis jedis = new Jedis(url, port);
+        if (redisConfig.getPassword() != null && !redisConfig.getPassword().isEmpty()) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "probeRedis redisConfig.getPassword() : " + redisConfig.getPassword());
+            System.out.println("probeRedis redisConfig.getPassword() : " + redisConfig.getPassword());
+            jedis.auth(redisConfig.getPassword());//密码
+        }
+        String ping = jedis.ping();
+        jedis.close(); // 释放连接资源
+        if ("PONG".equalsIgnoreCase(ping)) {
+            probe = true;
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "probeRedis  Connection to redis successful ！" + ping + ", probeRedis : " + probe);
+            System.out.println("probeRedis Connection to redis successful ！" + ping + ", probeRedis : " + probe);
+            return;
+        }
+        probe = false;
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "probeRedis  Connection to redis failed ！" + ping + ", probeRedis : " + probe);
+        System.out.println("probeRedis Connection to redis failed ！" + ping + ", probeRedis : " + probe);
+    }
+
+    private void probeMedia() {
+
+    }
+
+
     @Autowired
     private BaseSysConfig baseSysConfig;
 
@@ -778,7 +814,9 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
     private McuRestConfig mcuRestConfig;
 
     //版本号修复
-    public static final String VERSION = "confinterface-V.1.1.5.052520";
+    public static final String VERSION = "confinterface-V.1.2.0.052520";
+
+    public static Boolean probe = false;
 
     //protected final org.slf4j.Logger logger = LoggerFactory.getLogger(this.getClass());
 
