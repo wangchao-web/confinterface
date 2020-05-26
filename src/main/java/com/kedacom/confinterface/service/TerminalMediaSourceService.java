@@ -32,6 +32,8 @@ public class TerminalMediaSourceService {
         terminalMediaSourceDao.setSrvToken(srvToken);
     }
 
+    public boolean checkDBConnStatus(){ return terminalMediaSourceDao.ping(); }
+
     @Cacheable(value = "vmtList", key = "caches[0].name + '_' + #root.target.getSrvToken()")
     public List<String> getVmtList() {
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"getVmtList in TerminalMediaSourceService");

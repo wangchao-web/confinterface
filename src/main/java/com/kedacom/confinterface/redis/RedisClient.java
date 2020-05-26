@@ -1,6 +1,6 @@
 package com.kedacom.confinterface.redis;
-
 import org.springframework.data.redis.core.RedisTemplate;
+import redis.clients.jedis.Jedis;
 
 import java.util.*;
 
@@ -10,6 +10,24 @@ public class RedisClient {
 
     public void setRedisTemplate(RedisTemplate<String, Object> redisTemplate) {
         this.redisTemplate = redisTemplate;
+    }
+
+    public boolean ping(){
+        try {
+            Jedis jedis = (Jedis) redisTemplate.getConnectionFactory().getConnection().getNativeConnection();
+            String pingRsp = jedis.ping();
+            if ("PONG".equalsIgnoreCase(pingRsp)) {
+                jedis.close();
+                return true;
+            }
+
+            jedis.close();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return false;
     }
 
     public boolean keyExist(String key) {

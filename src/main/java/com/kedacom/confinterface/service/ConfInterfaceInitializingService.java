@@ -9,7 +9,6 @@ import com.kedacom.confinterface.dao.Terminal;
 import com.kedacom.confinterface.dto.*;
 import com.kedacom.confinterface.h323.H323TerminalManageService;
 import com.kedacom.confinterface.inner.*;
-import com.kedacom.confinterface.redis.RedisConfig;
 import com.kedacom.confinterface.restclient.McuRestClientService;
 import com.kedacom.confinterface.restclient.McuRestConfig;
 import com.kedacom.confinterface.restclient.McuSdkClientService;
@@ -26,14 +25,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Service;
-import redis.clients.jedis.Jedis;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -46,10 +40,10 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
     public void run(String... args) {
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "baseSysConfig : " + BaseSysConfig.getIsExternalDocking());
         System.out.println("baseSysConfig : " + BaseSysConfig.getIsExternalDocking());
-        Integer redisIsOk = getRedisIsOk();
-        if (redisIsOk == 1) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Read configuration filed faile or connection redis failed ! End the service process !");
-            System.out.println("Read configuration failed  or connection redis failed ! End the service process !");
+        boolean status = checkDBConn();
+        if (false == status) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Read configuration file fail or connect to redis failed ! End the service process !");
+            System.out.println("Read configuration file fail  or connect to redis failed ! End the service process !");
             System.exit(0);
         }
 
@@ -69,8 +63,6 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, " loginMcuSrv *************** ");
             System.out.println(" loginMcuSrv ***************");
             loginMcuSrv();
-            /*//订阅mcu上所有会议信息  放到来媒体调度来订阅的时候处理
-            mcuRestClientService.subscribeAllConfInfo();*/
         }
 
         Map<String, String> groups = confInterfaceService.getGroups();
@@ -160,9 +152,9 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
         if (null == groups || groups.isEmpty()) {
             //启动终端注册Gk
             terminalManageService.StartUp();
-            probe = true;
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "no groups in db, init OK! current time : " + System.currentTimeMillis() + ", probe : " + probe);
-            System.out.println("no groups in db, init OK! current time : " + System.currentTimeMillis() + ", probe : " + probe);
+            initialized = true;
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "no groups in db, init OK! current time : " + System.currentTimeMillis() + ", initialized : " + initialized);
+            System.out.println("no groups in db, init OK! current time : " + System.currentTimeMillis() + ", initialized : " + initialized);
             return;
         }
 
@@ -235,9 +227,9 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
 
         //启动终端注册Gk
         terminalManageService.StartUp();
-        probe = true;
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "no groups in db, init OK! current time : " + System.currentTimeMillis() + ", probe : " + probe);
-        System.out.println("no groups in db, init OK! current time : " + System.currentTimeMillis() + ", probe : " + probe);
+        initialized = true;
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "no groups in db, init OK! current time : " + System.currentTimeMillis() + ", initialized : " + initialized);
+        System.out.println("no groups in db, init OK! current time : " + System.currentTimeMillis() + ", initialized : " + initialized);
     }
 
     private void createConferenceManage() {
@@ -690,88 +682,25 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
     }
 
     /**
-     * 检查redisn能否连接
-     * url 服务器地址
-     * port 端口
-     * password redis的密码
+     * 检查redis能否连接
      *
      * @return
      */
-    private Integer getRedisIsOk() {
-        int result = 1;
-        do {
-            if (result == 1) {
-                String url = redisConfig.getHostName();
-                int port = redisConfig.getPort();
-                if (url == null || port == 0) {
-                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Read configuration failed ,The end of the method");
-                    System.out.println("Read configuration failed ,The end of the method");
-                    return 1;
-                }
-                //连接本地Redis服务
-                for (int i = 0; i < 5; i++) {
-                    try {
-                        Jedis jedis = new Jedis(url, port);
-                        if (redisConfig.getPassword() != null && !redisConfig.getPassword().isEmpty()) {
-                            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "redisConfig.getPassword() : " + redisConfig.getPassword());
-                            System.out.println("redisConfig.getPassword() : " + redisConfig.getPassword());
-                            jedis.auth(redisConfig.getPassword());//密码
-                        }
-                        String ping = jedis.ping();
-                        if ("PONG".equalsIgnoreCase(ping)) {
-                            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Connection to redis successful ！" + ping);
-                            System.out.println("Connection to redis successful ！" + ping);
-                            result = 0;
-                            break;
-                        }
-                        jedis.close(); // 释放连接资源
-                    } catch (Exception e) {
-                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Connection to redis failed **********！");
-                        System.out.println("Connection to redis failed **********！");
-                        e.printStackTrace();
-                        try {
-                            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Thread sleep 30 second ！");
-                            System.out.println("Thread sleep 30 second ！");
-                            Thread.sleep(30000);
-                        } catch (InterruptedException e1) {
-                            e1.printStackTrace();
-                        }
-                        result = 1;
-                    }
-                }
-                break;
-            }
-        } while (true);
-        return result;
-    }
+    private boolean checkDBConn() {
 
-    private void probeRedis() {
-        String url = redisConfig.getHostName();
-        int port = redisConfig.getPort();
-        if (url == null || port == 0) {
-            probe = false;
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "probeRedis failed ,probe : " + probe);
-            System.out.println("probeRedis failed ,probe : " + probe);
-            return;
+        for (int i = 0; i < 12; i++) {
+            if (terminalMediaSourceService.checkDBConnStatus()) {
+                return true;
+            }
+
+            try {
+                Thread.sleep(5000);
+            } catch (InterruptedException e){
+                e.printStackTrace();
+            }
         }
-        //连接本地Redis服务
-        Jedis jedis = new Jedis(url, port);
-        if (redisConfig.getPassword() != null && !redisConfig.getPassword().isEmpty()) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "probeRedis redisConfig.getPassword() : " + redisConfig.getPassword());
-            System.out.println("probeRedis redisConfig.getPassword() : " + redisConfig.getPassword());
-            jedis.auth(redisConfig.getPassword());//密码
-        }
-        String ping = jedis.ping();
-        jedis.close(); // 释放连接资源
-        if ("PONG".equalsIgnoreCase(ping)) {
-            probe = true;
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "probeRedis  Connection to redis successful ！" + ping + ", probeRedis : " + probe);
-            System.out.println("probeRedis Connection to redis successful ！" + ping + ", probeRedis : " + probe);
-            return;
-        }
-        probe = false;
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "probeRedis  Connection to redis failed ！" + ping + ", probeRedis : " + probe);
-        System.out.println("probeRedis Connection to redis failed ！" + ping + ", probeRedis : " + probe);
+
+        return false;
     }
 
     private void probeMedia() {
@@ -784,9 +713,6 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
 
     @Autowired
     private AppDefaultConfig appDefaultConfig;
-
-    @Autowired
-    private RedisConfig redisConfig;
 
     @Autowired
     private TerminalManageService terminalManageService;
@@ -816,7 +742,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
     //版本号修复
     public static final String VERSION = "confinterface-V.1.2.0.052520";
 
-    public static Boolean probe = false;
+    public static Boolean initialized = false;
 
     //protected final org.slf4j.Logger logger = LoggerFactory.getLogger(this.getClass());
 

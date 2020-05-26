@@ -1,6 +1,5 @@
 package com.kedacom.confinterface.service;
 
-import com.kedacom.confadapter.common.CallDisconnectReasonEnum;
 import com.kedacom.confadapter.media.*;
 import com.kedacom.confinterface.LogService.LogOutputTypeEnum;
 import com.kedacom.confinterface.LogService.LogTools;
@@ -38,6 +37,10 @@ import java.util.concurrent.TimeUnit;
 public class ConfInterfaceService {
     private final org.slf4j.Logger logger = LoggerFactory.getLogger(this.getClass());
     private final int maxVmtNum = 17;
+
+    public boolean checkDBConnStatus(){
+        return terminalMediaSourceService.checkDBConnStatus();
+    }
 
     public List<String> getVmts() {
         String srvToken = terminalMediaSourceService.getSrvToken();

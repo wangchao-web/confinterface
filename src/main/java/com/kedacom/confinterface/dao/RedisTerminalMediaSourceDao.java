@@ -42,6 +42,11 @@ public class RedisTerminalMediaSourceDao implements TerminalMediaSourceDao {
     }
 
     @Override
+    public boolean ping(){
+        return redisClient.ping();
+    }
+
+    @Override
     public String getSrvToken() {
         return srvToken;
     }

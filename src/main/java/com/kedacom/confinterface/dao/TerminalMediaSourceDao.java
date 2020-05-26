@@ -12,6 +12,8 @@ public interface TerminalMediaSourceDao {
     String getSrvToken();
     void setSrvToken(String srvToken);
 
+    boolean ping();
+
     List<String> getVmtList();
 
     List<String> addVmt(String e164);
