@@ -17,6 +17,10 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.async.DeferredResult;
 
 import javax.validation.Valid;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.jar.JarFile;
+import java.util.zip.ZipEntry;
 
 @RestController
 @RequestMapping("/services/confinterface/v1")
@@ -28,10 +32,11 @@ public class ConfInterfaceController {
     @Autowired
     private ConfInterfacePublishService confInterfacePublishService;
 
+    private final String version = "version:" + ConfInterfaceInitializingService.VERSION + ", build: " + getBuildTime();
+
     private final org.slf4j.Logger logger = LoggerFactory.getLogger(this.getClass());
 
     public ConfInterfaceController(ConfInterfaceService confInterfaceService) {
-
         this.confInterfaceService = confInterfaceService;
     }
 
@@ -267,7 +272,7 @@ public class ConfInterfaceController {
 
     @GetMapping(value = "/version")
     public String queryVersion(){
-        return ConfInterfaceInitializingService.VERSION;
+        return version;
     }
 
     private DeferredResult<ResponseEntity<BaseResponseMsg>> silenceOrMute(String groupId, String mtE164, boolean silence, SilenceOrMuteParam silenceOrMuteParam){
@@ -509,5 +514,23 @@ public class ConfInterfaceController {
         errorResponse.setMessage(exception.getMessage());
 
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    }
+
+    private static String getBuildTime() {
+        try {
+            JarFile confJarFile = new JarFile("confinterface-0.0.1-SNAPSHOT.jar");
+            ZipEntry manifest = confJarFile.getEntry("META-INF/MANIFEST.MF");
+            long manifestTime = manifest.getTime();  //millis
+
+            Date buildDate = new Date(manifestTime);
+            SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+            String buildTime = formatter.format(buildDate);
+            return buildTime;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "";
+        }
     }
 }

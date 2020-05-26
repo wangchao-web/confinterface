@@ -50,7 +50,8 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "now in ConfInterfaceInitializingService, protocalType:" + baseSysConfig.getProtocalType());
         System.out.println("now in ConfInterfaceInitializingService, protocalType:" + baseSysConfig.getProtocalType());
 
-        PrintBuildTime();
+        System.out.println("confinterface version: " + VERSION);
+
         createConferenceManage();
         //初始化协议栈
         initConfAdapter();
@@ -664,23 +665,6 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
         return sb.toString().toUpperCase();
     }
 
-    private static void PrintBuildTime() {
-        String utcBuildTime = "2020-01-08 14:24:12";
-        /*SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
-        try {
-            Date utcBuildDate = sdf.parse(utcBuildTime);
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
-        sdf.setTimeZone(TimeZone.getDefault());*/
-
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "confinterface Compile time:" + utcBuildTime);
-        System.out.println("confinterface Compile time:" + utcBuildTime);
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "confinterface version " + VERSION);
-        System.out.println("confinterface version " + VERSION);
-    }
-
     /**
      * 检查redis能否连接
      *
@@ -706,7 +690,6 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
     private void probeMedia() {
 
     }
-
 
     @Autowired
     private BaseSysConfig baseSysConfig;
@@ -740,7 +723,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
     private McuRestConfig mcuRestConfig;
 
     //版本号修复
-    public static final String VERSION = "confinterface-V.1.2.0.052520";
+    public static final String VERSION = "1.2.0.0";
 
     public static Boolean initialized = false;
 
