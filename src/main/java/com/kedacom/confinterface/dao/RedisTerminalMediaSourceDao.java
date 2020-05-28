@@ -500,8 +500,12 @@ public class RedisTerminalMediaSourceDao implements TerminalMediaSourceDao {
     @Override
     public List<String> delP2PVmtMember(String groupId, String account) {
         String key = keyGenernate(p2PVmtMembersPrefix, groupId);
+        if (!redisClient.keyExist(key)) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "delP2PVmtMember , redisClient  not  Exist key : " + key);
+            System.out.println("delP2PVmtMember , redisClient  not  Exist key : " + key);
+            return null;
+        }
         if (null == account || account.isEmpty()) {
-            //删除group下的所有mt
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "p2PVmtMembersPrefix, groupId:" + groupId + " vmt account is null!");
             System.out.println("p2PVmtMembersPrefix, groupId:" + groupId + " vmt account is null !");
             return null;
@@ -553,13 +557,18 @@ public class RedisTerminalMediaSourceDao implements TerminalMediaSourceDao {
     @Override
     public List<String> delP2PMtMember(String groupId, String account) {
         String key = keyGenernate(p2PMtMembersPrefix, groupId);
-        if (null == account || account.isEmpty()) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "delP2PMtMembers, groupId:" + groupId + "mt account is null !");
-            System.out.println("delP2PMtMembers, groupId:" + groupId + "mt account is null !");
+        if (!redisClient.keyExist(key)) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "delP2PMtMember , redisClient  not  Exist key : " + key);
+            System.out.println("delP2PMtMember , redisClient  not  Exist key : " + key);
             return null;
         }
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "delP2PMtMembers, groupId:" + groupId + " remove mt account : " + account);
-        System.out.println("delP2PMtMembers, groupId:" + groupId + " remove mt account : " + account);
+        if (null == account || account.isEmpty()) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "delP2PMtMember, groupId:" + groupId + "mt account is null !");
+            System.out.println("delP2PMtMember, groupId:" + groupId + "mt account is null !");
+            return null;
+        }
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "delP2PMtMember, groupId:" + groupId + " remove mt account : " + account);
+        System.out.println("delP2PMtMember, groupId:" + groupId + " remove mt account : " + account);
         redisClient.listRemove(key, 0, account);
         return (List<String>) redisClient.listGet(key, 0, -1);
     }

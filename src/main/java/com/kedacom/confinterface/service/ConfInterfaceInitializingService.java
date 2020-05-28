@@ -21,6 +21,8 @@ import com.kedacom.mcuadapter.IMcuClientManager;
 import com.kedacom.mcuadapter.McuClientManagerFactory;
 import com.kedacom.mcuadapter.McuClientManagerTypeEnum;
 
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.text.StrBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.boot.CommandLineRunner;
@@ -38,8 +40,10 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "baseSysConfig : " + BaseSysConfig.getIsExternalDocking());
-        System.out.println("baseSysConfig : " + BaseSysConfig.getIsExternalDocking());
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "whether to use IsExternalDocking : " + BaseSysConfig.getIsExternalDocking());
+        System.out.println("whether to use IsExternalDocking : " + BaseSysConfig.getIsExternalDocking());
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "confinterface version: " + VERSION);
+        System.out.println("confinterface version: " + VERSION);
         boolean status = checkDBConn();
         if (false == status) {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Read configuration file fail or connect to redis failed ! End the service process !");
@@ -49,8 +53,6 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
 
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "now in ConfInterfaceInitializingService, protocalType:" + baseSysConfig.getProtocalType());
         System.out.println("now in ConfInterfaceInitializingService, protocalType:" + baseSysConfig.getProtocalType());
-
-        System.out.println("confinterface version: " + VERSION);
 
         createConferenceManage();
         //初始化协议栈
@@ -679,7 +681,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
 
             try {
                 Thread.sleep(5000);
-            } catch (InterruptedException e){
+            } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
@@ -723,7 +725,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
     private McuRestConfig mcuRestConfig;
 
     //版本号修复
-    public static final String VERSION = "1.2.0.0";
+    public static final String VERSION = "confinterface-V.1.2.0.1";
 
     public static Boolean initialized = false;
 

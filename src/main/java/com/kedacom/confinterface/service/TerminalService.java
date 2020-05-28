@@ -606,7 +606,7 @@ public abstract class TerminalService {
         Map<String, String> args = new HashMap<>();
         args.put("groupId", groupId);
 
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "restClientService : " + restClientService);
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "addExchange createResourceParam : " + createResourceParam.toString());
         ResponseEntity<CreateResourceResponse> responseEntity = restClientService.exchangeJson(url.toString(), HttpMethod.POST, createResourceParam, args, CreateResourceResponse.class);
         if (null == responseEntity) {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "addExchange, null == responseEntity!");
@@ -1198,7 +1198,7 @@ public abstract class TerminalService {
 
             System.out.println("mediaDescription.getEncodingFormat()1.name() : " +mediaDescription.getEncodingFormat().name());
             if (mediaDescription.getEncodingFormat() == EncodingFormatEnum.H264) {
-                constructH264Fmtp(sdp, mediaDescription.getPayload(), videoMediaDescription.getH264Desc());
+                constructH264Fmtp(sdp, mediaDescription.getPayload(), videoMediaDescription.getH264Desc(),mediaDescription.getDirection() );
             }
         } else {
             sdp.append("m=audio 0 RTP/AVP ");
@@ -1337,7 +1337,7 @@ public abstract class TerminalService {
         sdp.append("\r\n");
 
         int payLoad = mediaDescription.getPayload();
-        if (isExternalDocking && (mediaDescription.getPayload() >= 96 && mediaDescription.getPayload() <= 127)) {
+        if (mediaDescription.getDirection().equals(TransportDirectionEnum.SEND.getName())&&isExternalDocking && (mediaDescription.getPayload() >= 96 && mediaDescription.getPayload() <= 127)) {
             payLoad = 127;
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"payload set to 127");
             System.out.println("payload set to 127");
@@ -1360,7 +1360,7 @@ public abstract class TerminalService {
             sdp.append("/90000\r\n");
 
             if (mediaDescription.getEncodingFormat() == (EncodingFormatEnum.H264)) {
-                constructH264Fmtp(sdp, mediaDescription.getPayload(), videoMediaDescription.getH264Desc());
+                constructH264Fmtp(sdp, mediaDescription.getPayload(), videoMediaDescription.getH264Desc(),mediaDescription.getDirection());
             }
         } else {
             AudioMediaDescription audioMediaDescription = (AudioMediaDescription) mediaDescription;
@@ -1489,7 +1489,7 @@ public abstract class TerminalService {
         }
     }
     //监看使用,改成static
-    protected static void constructH264Fmtp(StringBuilder sdp, int payload, H264Description h264Description) {
+    protected static void constructH264Fmtp(StringBuilder sdp, int payload, H264Description h264Description,String direction) {
         if (null == h264Description) {
             return;
         }
@@ -1506,7 +1506,7 @@ public abstract class TerminalService {
         System.out.println("constructH264Fmtp, profile : " + profile);
 
         sdp.append("a=fmtp:");
-        if (isExternalDocking && (payload >= 96 && payload <= 127)) {
+        if (direction.equals(TransportDirectionEnum.SEND.getName())&&isExternalDocking && (payload >= 96 && payload <= 127)) {
             System.out.println("a=fmtp:127");
             payload = 127;
         }

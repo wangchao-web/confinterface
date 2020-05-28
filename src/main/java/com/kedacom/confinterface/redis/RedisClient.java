@@ -20,7 +20,6 @@ public class RedisClient {
                 jedis.close();
                 return true;
             }
-
             jedis.close();
 
         } catch (Exception e) {

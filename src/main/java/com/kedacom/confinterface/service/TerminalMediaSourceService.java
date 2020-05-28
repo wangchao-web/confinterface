@@ -257,7 +257,6 @@ public class TerminalMediaSourceService {
     }
 
 
-
     @Cacheable(value = "P2PVmtMembers", key = "#groupId")
     public List<String> getP2PVmtMembers(String groupId) {
         return terminalMediaSourceDao.getP2PVmtMembers(groupId);
