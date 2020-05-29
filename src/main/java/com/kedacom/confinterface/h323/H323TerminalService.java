@@ -73,11 +73,11 @@ public class H323TerminalService extends TerminalService {
 
             regGK = conferenceParticipant.RegisterToConfSys(registerInfo);
             if (regGK) {
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "register gk ok, time : " + System.currentTimeMillis());
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "e164(" + e164 + ") register gk ok, time : " + System.currentTimeMillis());
                 System.out.println("e164(" + e164 + ") register gk ok, time : " + System.currentTimeMillis());
                 return new AsyncResult<>(true);
             } else {
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "register gk failed, time : " + System.currentTimeMillis());
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "e164(" + e164 + ") register gk failed, time : " + System.currentTimeMillis());
                 System.out.println("e164(" + e164 + ") register gk failed, time : " + System.currentTimeMillis());
                 return new AsyncResult<>(false);
             }
@@ -177,6 +177,7 @@ public class H323TerminalService extends TerminalService {
                 System.out.println("mediaDescription:" + mediaDescription.toString());
                 if (dualSource.size() == 0 || !mediaDescription.getDual()) {
                     CreateResourceParam createResourceParam = new CreateResourceParam();
+                    createResourceParam.setDeviceID(deviceID);
                     createResourceParam.setSdp(constructSdp(mediaDescription));
                     CreateResourceResponse resourceResponse = addExchange(createResourceParam);
                     if (null == resourceResponse) {
@@ -295,6 +296,7 @@ public class H323TerminalService extends TerminalService {
             System.out.println("H323, openLogicalChannel, start add exchange info!!! threadName:" + Thread.currentThread().getName());
 
             CreateResourceParam createResourceParam = new CreateResourceParam();
+            createResourceParam.setDeviceID(deviceID);
             createResourceParam.setSdp(constructCreateSdp(mediaDescriptions.get(0)));
             resourceResponse = addExchange(createResourceParam);
             if (null == resourceResponse) {
@@ -346,6 +348,7 @@ public class H323TerminalService extends TerminalService {
         videoDualStreamMediaDesc.setStreamIndex(-1);
         videoDualStreamMediaDesc.setDual(true);
         CreateResourceParam createResourceParam = new CreateResourceParam();
+        createResourceParam.setDeviceID(deviceID);
         createResourceParam.setSdp(constructCreateSdp(videoDualStreamMediaDesc));
         CreateResourceResponse resourceResponse = addExchange(createResourceParam);
         if (null == resourceResponse) {
@@ -513,6 +516,7 @@ public class H323TerminalService extends TerminalService {
     @Override
     public CreateResourceResponse monitorsAddExchange(MediaDescription mediaDescription){
         CreateResourceParam createResourceParam = new CreateResourceParam();
+        createResourceParam.setDeviceID(deviceID);
         createResourceParam.setSdp(constructSdp(mediaDescription));
         CreateResourceResponse resourceResponse = addExchange(createResourceParam);
         return resourceResponse;

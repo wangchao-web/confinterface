@@ -13,10 +13,20 @@ public class CreateResourceParam {
         return sdp;
     }
 
-    @Override
-    public String toString() {
-        return new StringBuilder().append(", sdp:").append(sdp).toString();
+    public String getDeviceID() {
+        return deviceID;
     }
 
+    public void setDeviceID(String deviceID) {
+        this.deviceID = deviceID;
+    }
+
+    @Override
+    public String toString() {
+        return new StringBuilder().append(", sdp:").append(sdp)
+                .append(", deviceID:").append(deviceID).toString().toString();
+    }
+
+    private String deviceID;
     private String sdp;
 }

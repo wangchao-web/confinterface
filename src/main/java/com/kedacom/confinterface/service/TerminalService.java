@@ -64,6 +64,7 @@ public abstract class TerminalService {
         this.reverseChannel = null;
         this.conferenceParticipant = null;
         this.waitMsg = null;
+        this.deviceID = null;
     }
 
     public TerminalService(String groupId, String e164, String ip, String name, String confId, String mtId, int online,boolean bVmt) {
@@ -2160,6 +2161,13 @@ public abstract class TerminalService {
        this.restClientService =  restClientService;
     }
 
+    public String getDeviceID() {
+        return deviceID;
+    }
+
+    public void setDeviceID(String deviceID) {
+        this.deviceID = deviceID;
+    }
 
     @Override
     public String toString() {
@@ -2207,7 +2215,7 @@ public abstract class TerminalService {
     protected static StringBuilder notifyURL = null;
     //protected Boolean isTerminalRepeat = false; //判断mcu自己创建的会议时,在同一个组里新增终端相同的问题
     public Map<String, MediaResource> dualSource = new HashMap<>();
-
+    protected String deviceID ; //流媒体音视频同步设备Id
 
 
     //显控双向选看

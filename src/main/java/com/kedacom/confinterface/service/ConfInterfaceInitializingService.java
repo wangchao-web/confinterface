@@ -308,7 +308,8 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
             ConcurrentHashMap<String, String> proxyMts = baseSysConfig.getMapProxyMTs();
             for (String vmtE164 : vmtList) {
                 TerminalService vmtService = terminalManageService.createTerminal(vmtE164, true);
-
+                String deviceID = constructorDeviceID(vmtE164);
+                vmtService.setDeviceID(deviceID);
                 if (null != proxyMts && proxyMts.containsKey(vmtE164)) {
                     vmtService.setProxyMTE164(proxyMts.get(vmtE164));
                 }
@@ -667,6 +668,37 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
         return sb.toString().toUpperCase();
     }
 
+    private String constructorDeviceID(String E164){
+        String deviceID = "";
+        StrBuilder strBuilder = new StrBuilder();
+        strBuilder.append(baseSysConfig.getMediaSrvIp());
+        strBuilder.append(":");
+        strBuilder.append(baseSysConfig.getMediaSrvPort());
+        strBuilder.append(":");
+        strBuilder.append(E164);
+        int code = strBuilder.hashCode();
+        String value = String.valueOf(code);
+        deviceID = value.replaceAll("-", "0");
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "constructorDeviceID, strBuilder : " + strBuilder.toString()+ ", code : " + code +", deviceID : " + deviceID);
+        System.out.println("constructorDeviceID, strBuilder : " + strBuilder.toString() + ", code : " + code +", deviceID : " + deviceID);
+        if (deviceID.length() == 8){
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "deviceID length equal to 8 constructorDeviceID, deviceID : " + deviceID);
+            System.out.println("deviceID length equal to 8 constructorDeviceID, deviceID : " + deviceID);
+            return deviceID;
+        }
+        if (deviceID.length() > 8){
+            deviceID = deviceID.substring(0, 8);
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "deviceID length greater than 8 constructorDeviceID, deviceID : " + deviceID);
+            System.out.println("deviceID length greater than 8 constructorDeviceID, deviceID : " + deviceID);
+            return deviceID;
+        }
+
+        deviceID = StringUtils.leftPad(deviceID, 8, "0");
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "deviceID length less than 8 constructorDeviceID, deviceID : " + deviceID);
+        System.out.println("deviceID length less than 8 constructorDeviceID, deviceID : " + deviceID);
+        return deviceID;
+    }
+
     /**
      * 检查redis能否连接
      *
@@ -725,7 +757,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
     private McuRestConfig mcuRestConfig;
 
     //版本号修复
-    public static final String VERSION = "confinterface-V.1.2.0.1";
+    public static final String VERSION = "confinterface-V.1.2.0.2";
 
     public static Boolean initialized = false;
 
