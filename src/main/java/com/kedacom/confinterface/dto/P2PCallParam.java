@@ -3,21 +3,29 @@ package com.kedacom.confinterface.dto;
 import org.hibernate.validator.constraints.Range;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Null;
+import java.util.ArrayList;
 
 public class P2PCallParam {
-    public P2PCallParam(int accountType, String account, int dual ,P2PCallMediaCap videoCodec){
+    public P2PCallParam(int accountType, String account, int dual){
         this.accountType = accountType;
         this.account = account;
         this.dual = dual;
-        this.videoCodec = videoCodec;
     }
 
-    public P2PCallMediaCap getVideoCodec() {
+    public P2PVideoCallMediaCap getVideoCodec() {
         return videoCodec;
     }
 
-    public void setVideoCodec(P2PCallMediaCap videoCodec) {
+    public void setVideoCodec(P2PVideoCallMediaCap videoCodec) {
         this.videoCodec = videoCodec;
+    }
+
+    public P2PAudioCallMediaCap getAudioCodec() {
+        return audioCodec;
+    }
+
+    public void setAudioCodec(P2PAudioCallMediaCap audioCodec) {
+        this.audioCodec = audioCodec;
     }
 
     public int getAccountType() {
@@ -58,6 +66,8 @@ public class P2PCallParam {
         return new StringBuilder().append("accountType:").append(accountType)
                 .append(", account:").append(account)
                 .append(", dual:").append(dual)
+                .append(", videoCodec:").append(videoCodec)
+                .append(", audioCodec:").append(audioCodec)
                 .toString();
     }
 
@@ -70,5 +80,6 @@ public class P2PCallParam {
     @Range(min = 0, max = 1)
     private int dual;
 
-    private P2PCallMediaCap videoCodec;
+    private P2PVideoCallMediaCap videoCodec;
+    private P2PAudioCallMediaCap audioCodec;
 }

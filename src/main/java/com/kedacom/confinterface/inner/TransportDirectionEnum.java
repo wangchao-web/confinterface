@@ -1,7 +1,7 @@
 package com.kedacom.confinterface.inner;
 
 public enum TransportDirectionEnum {
-    SEND(1, "send"), RECV(2, "recv");
+    SEND(1, "send"), RECV(2, "recv"), SENDRECV(3, "sendrecv");
 
     public int getCode() {
         return code;

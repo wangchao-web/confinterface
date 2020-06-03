@@ -10,7 +10,6 @@ import com.kedacom.confinterface.inner.SubscribeMsgTypeEnum;
 import com.kedacom.confinterface.inner.TerminalOnlineStatusEnum;
 import com.kedacom.confinterface.restclient.McuRestClientService;
 import com.kedacom.confinterface.restclient.RestClientService;
-import com.kedacom.confinterface.restclient.mcu.McuStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpMethod;
@@ -33,7 +32,7 @@ public class SchedulePublishService extends ConfInterfacePublishService {
 
     @Override
     public void publishStatus(String account, String groupId, int status) {
-        publishStatus(account, groupId, status, null, null,"");
+        publishStatus(account, groupId, status, null, null);
     }
 
     @Override
@@ -53,7 +52,7 @@ public class SchedulePublishService extends ConfInterfacePublishService {
     }
 
     @Override
-    public void publishStatus(String account, String groupId, int status, List<MediaResource> forwardResources, List<MediaResource> reverseResources,String callMode) {
+    public void publishStatus(String account, String groupId, int status, List<MediaResource> forwardResources, List<MediaResource> reverseResources) {
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "account : " + account + " now in confInterfacePublishService publishStatus!!");
         System.out.println("account : " + account + " now in confInterfacePublishService publishStatus!!");
         String accountType = "MT";
@@ -71,12 +70,6 @@ public class SchedulePublishService extends ConfInterfacePublishService {
 
         TerminalStatusNotify terminalStatusNotify = new TerminalStatusNotify();
         TerminalStatus terminalStatus = new TerminalStatus(account, accountType, status, forwardResources, reverseResources);
-		if("p2p".equals(callMode)){
-            //用于点对点呼叫终端时,服务挂断之后服务重新启动,告知上层服务终端下线
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"publishStatus callMode is p2p");
-            System.out.println("publishStatus callMode is p2p");
-            terminalStatus.setCallMode(callMode);
-        }
         terminalStatusNotify.addMtStatus(terminalStatus);
         if ("Conference".equals(accountType)) {
             Map<String, String> groupUrls = subscribeMsgs.get(SubscribeMsgTypeEnum.TERMINAL_STATUS.getType());

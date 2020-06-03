@@ -60,14 +60,6 @@ public class TerminalStatus {
         this.type = type;
     }
 
-    public String getCallMode() {
-        return callMode;
-    }
-
-    public void setCallMode(String callMode) {
-        this.callMode = callMode;
-    }
-
     public List<MediaResource> getForwardResources() {
         return forwardResources;
     }
@@ -90,6 +82,5 @@ public class TerminalStatus {
     private List<MediaResource> forwardResources;
     private List<MediaResource> reverseResources;
 
-    private String callMode ;    //用于判断服务挂端之后再重新启动向上层业务推送终端下线状态通知,p2p是为需要
     private int callFailureCode;
 }

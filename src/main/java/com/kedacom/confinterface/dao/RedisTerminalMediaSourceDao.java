@@ -5,7 +5,6 @@ import com.kedacom.confinterface.LogService.LogTools;
 import com.kedacom.confinterface.dto.MonitorsMember;
 import com.kedacom.confinterface.dto.TerminalMediaResource;
 import com.kedacom.confinterface.redis.RedisClient;
-import com.sun.org.apache.xerces.internal.xs.StringList;
 import net.sf.json.JSONObject;
 
 import java.util.ArrayList;

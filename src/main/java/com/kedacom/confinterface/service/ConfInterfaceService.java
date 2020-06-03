@@ -17,6 +17,7 @@ import com.kedacom.confinterface.restclient.McuRestConfig;
 import com.kedacom.confinterface.restclient.RestClientService;
 import com.kedacom.confinterface.restclient.mcu.*;
 import com.kedacom.confinterface.restclient.mcu.ConfsCascadesMtsRspInfo;
+import com.kedacom.confinterface.sip.SipTerminalManageService;
 import com.kedacom.confinterface.syssetting.BaseSysConfig;
 import com.kedacom.confinterface.util.ConfInterfaceResult;
 import org.eclipse.jetty.util.ajax.JSON;
@@ -48,6 +49,9 @@ public class ConfInterfaceService {
             if (terminalManageService instanceof H323TerminalManageService) {
                 int localCallPort = ((H323TerminalManageService) terminalManageService).getProtocalConfig().getLocalCallPort();
                 terminalMediaSourceService.setSrvToken(String.valueOf(localCallPort));
+            } else if (terminalManageService instanceof SipTerminalManageService){
+                int localSipPort = ((SipTerminalManageService)terminalManageService).getSipProtocalConfig().getSipLocalPort();
+                terminalMediaSourceService.setSrvToken(String.valueOf(localSipPort));
             }
         }
 
@@ -487,7 +491,7 @@ public class ConfInterfaceService {
 
         boolean isTerminal = broadCastRequest.getBroadCastParam().isTerminalType();
         String broadcastE164 = broadCastRequest.getBroadCastParam().getMtE164();
-        TerminalService broadcastVmtService = groupConfInfo.getBroadcastVmtService();
+
         if (groupConfInfo.isConfinterface()) {
             if (!isTerminal || "".equals(broadcastE164)) {
                 LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "500012 : confinterface setBroadcastSrc invalid param!");
@@ -495,6 +499,8 @@ public class ConfInterfaceService {
                 return;
             }
         }
+
+        TerminalService broadcastVmtService = groupConfInfo.getBroadcastVmtService();
 
         if (groupConfInfo.getBroadcastType() != 0) {
             //如果广播类型不为0, 说明之前已经设置过广播
@@ -1525,7 +1531,7 @@ public class ConfInterfaceService {
     public void p2pCall(P2PCallRequest p2PCallRequest, P2PCallParam p2PCallParam) {
         final String groupId = p2PCallRequest.getGroupId();
         String mtAccount = p2PCallParam.getAccount();
-        if (p2PCallParam.getAccountType() == 2 && !h323ProtocalConfig.isUseGK()) {
+        if (p2PCallParam.getAccountType() == 2 && !terminalManageService.isSupportAliasCall()) {
             LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50027 : " + " Unused GK , Use E164 call failed : " + groupId);
             System.out.println("50027 : " + " Unused GK , Use E164 call failed : " + groupId);
             p2PCallRequest.makeErrorResponseMsg(ConfInterfaceResult.ACCOUNT_E164_INVALID.getCode(), HttpStatus.OK, ConfInterfaceResult.ACCOUNT_E164_INVALID.getMessage());
@@ -3345,17 +3351,8 @@ public class ConfInterfaceService {
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "start Monitors E164 : " + E164 + ", type : " + type + ", mode : " + mode);
         System.out.println("start Monitors E164 : " + E164 + ", type : " + type + ", mode : " + mode);
         MediaDescription mediaDescription = new MediaDescription();
-        mediaDescription.setDirection("send");
+        mediaDescription.setDirection(MediaDirectionEnum.Send);
         if (mode == 0) {
-            /*String videoFormat = mcuRestConfig.getVideoFormat();
-            String[] videoformats = videoFormat.split(",");
-            for (String videoformat : videoformats) {
-                String[] result = videoformat.split("/");
-                mcuVideoFormat.setFormat(Integer.valueOf(result[0]));
-                mcuVideoFormat.setResolution(Integer.valueOf(result[1]));
-                mcuVideoFormat.setFrame(Integer.valueOf(result[2]));
-                mcuVideoFormat.setBitrate(Integer.valueOf(result[3]));
-            }*/
             mcuVideoFormat = videoFormat;
             MediaDescription videoMediaDescription = new VideoMediaDescription();
             videoMediaDescription.setPayload(127);
@@ -3384,8 +3381,6 @@ public class ConfInterfaceService {
             mediaDescription = audioMediaDescription;
         }
 
-        //terminalService.setRestClientService(restClientService);
-        //LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, " terminalService : " + terminalService);
         CreateResourceParam createResourceParam = new CreateResourceParam();
         createResourceParam.setSdp(TerminalService.constructSdp(mediaDescription));
         CreateResourceResponse createResourceResponse = addExchange(groupId, createResourceParam);
@@ -3666,12 +3661,7 @@ public class ConfInterfaceService {
     private McuRestConfig mcuRestConfig;
 
     @Autowired
-    protected RestClientService restClientService; 
-	
-	@Autowired
-    private H323ProtocalConfig h323ProtocalConfig;
-	
-	
+    protected RestClientService restClientService;
 
     private Map<String, GroupConfInfo> groupConfInfoMap = new ConcurrentHashMap<>();
     private Map<String, String> confGroupMap = new ConcurrentHashMap<>(); //key为confID,value为groupId

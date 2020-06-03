@@ -28,7 +28,7 @@ import java.util.concurrent.LinkedBlockingDeque;
 public class UnifiedDevicePushService extends ConfInterfacePublishService{
 
     @Override
-    public void publishStatus(String account, String groupId, int status, List<MediaResource> forwardResources, List<MediaResource> reverseResources,String callMode) {
+    public void publishStatus(String account, String groupId, int status, List<MediaResource> forwardResources, List<MediaResource> reverseResources) {
         publishStatus(account, groupId, status);
     }
 

@@ -1,5 +1,6 @@
 package com.kedacom.confinterface.autoconfigure;
 
+import com.kedacom.confinterface.service.TerminalMediaSourceService;
 import com.kedacom.confinterface.sip.SipTerminalManageService;
 import com.kedacom.confinterface.service.TerminalManageService;
 import com.kedacom.confinterface.sip.SipProtocalConfig;
@@ -24,7 +25,7 @@ public class SipTerminalManageServiceAutoConfig {
 
     @Bean
     @ConditionalOnMissingBean(SipTerminalManageService.class)
-    public TerminalManageService sipTerminalManageService() {
-        return new SipTerminalManageService(sipProtocalConfig);
+    public TerminalManageService sipTerminalManageService(TerminalMediaSourceService terminalMediaSourceService) {
+        return new SipTerminalManageService(sipProtocalConfig, terminalMediaSourceService);
     }
 }

@@ -9,14 +9,14 @@ public class P2PCallResult {
         this.groupId = groupId;
     }
 
-    public P2PCallMediaCap getVidoeCodec() {
+    public P2PVideoCallMediaCap getVidoeCodec() {
         return vidoeCodec;
     }
 
-    public void setVidoeCodec(P2PCallMediaCap vidoeCodec) {
+    public void setVidoeCodec(P2PVideoCallMediaCap vidoeCodec) {
         this.vidoeCodec = vidoeCodec;
     }
 
     private String groupId;
-    private P2PCallMediaCap vidoeCodec;
+    private P2PVideoCallMediaCap vidoeCodec;
 }

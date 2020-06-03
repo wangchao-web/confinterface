@@ -7,7 +7,6 @@ import com.kedacom.confinterface.dao.BroadcastSrcMediaInfo;
 import com.kedacom.confinterface.dao.InspectionSrcParam;
 import com.kedacom.confinterface.dao.Terminal;
 import com.kedacom.confinterface.dto.*;
-import com.kedacom.confinterface.h323.H323TerminalManageService;
 import com.kedacom.confinterface.inner.*;
 import com.kedacom.confinterface.restclient.McuRestClientService;
 import com.kedacom.confinterface.restclient.McuRestConfig;
@@ -253,7 +252,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "now in initConfAdapter................");
         System.out.println("now in initConfAdapter................");
         IConferenceAdapterController conferenceAdapterController = terminalManageService.getConferenceManager().CreateAdapterController();
-        conferenceAdapterController.SetEventHandler((H323TerminalManageService) terminalManageService);
+        conferenceAdapterController.SetEventHandler((IConferenceEventHandler) terminalManageService);
         boolean bInitOk = conferenceAdapterController.Init("");
         if (bInitOk) {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "init conferenceAdapterController successfully");

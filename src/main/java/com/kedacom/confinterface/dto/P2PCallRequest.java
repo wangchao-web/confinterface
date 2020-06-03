@@ -104,12 +104,6 @@ public class P2PCallRequest extends BaseRequestMsg<BaseResponseMsg> {
 
     @Override
     public void makeSuccessResponseMsg() {
-        /*P2PCallResponse p2PCallResponse = new P2PCallResponse(ConfInterfaceResult.OK.getCode(), HttpStatus.OK.value(), ConfInterfaceResult.OK.getMessage());
-        p2PCallResponse.setAccount(account);
-        p2PCallResponse.setForwardResources(forwardResources);
-        p2PCallResponse.setReverseResources(reverseResources);
-        ResponseEntity<P2PCallResponse> responseEntity = new ResponseEntity<>(p2PCallResponse, HttpStatus.OK);
-        responseMsg.setResult(responseEntity);*/
         BaseResponseMsg p2PCallResponse = new BaseResponseMsg(ConfInterfaceResult.OK.getCode(), HttpStatus.OK.value(), ConfInterfaceResult.OK.getMessage());
         ResponseEntity<BaseResponseMsg> responseEntity = new ResponseEntity<>(p2PCallResponse, HttpStatus.OK);
         responseMsg.setResult(responseEntity);

@@ -55,6 +55,12 @@ public class DetailMediaResouce extends MediaResource {
         this.sdp = sdp;
     }
 
+    public void convertTo(MediaResource mediaResource){
+        mediaResource.setType(getType());
+        mediaResource.setDual(getDual() == 1);
+        mediaResource.setId(getId());
+    }
+
     @Override
     public String toString() {
         return new StringBuilder().append(super.toString())

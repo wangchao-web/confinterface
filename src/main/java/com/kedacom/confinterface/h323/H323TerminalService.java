@@ -1,16 +1,18 @@
 package com.kedacom.confinterface.h323;
 
 
-import com.kedacom.confadapter.common.ConferenceSysRegisterInfo;
-import com.kedacom.confadapter.common.NetAddress;
+import com.kedacom.confadapter.common.*;
 import com.kedacom.confadapter.media.MediaDescription;
 import com.kedacom.confinterface.LogService.LogOutputTypeEnum;
 import com.kedacom.confinterface.LogService.LogTools;
 import com.kedacom.confinterface.dto.BaseRequestMsg;
 import com.kedacom.confinterface.dto.MediaResource;
+import com.kedacom.confinterface.dto.P2PAudioCallMediaCap;
+import com.kedacom.confinterface.dto.P2PVideoCallMediaCap;
 import com.kedacom.confinterface.exchange.*;
 import com.kedacom.confinterface.inner.DetailMediaResouce;
 import com.kedacom.confinterface.inner.MediaTypeEnum;
+import com.kedacom.confinterface.inner.TerminalOfflineReasonEnum;
 import com.kedacom.confinterface.service.TerminalService;
 import com.kedacom.confinterface.util.ConfInterfaceResult;
 import org.springframework.http.HttpStatus;
@@ -113,62 +115,8 @@ public class H323TerminalService extends TerminalService {
             videoDualStreamMediaDesc = mediaDescriptions.get(0);
         }
 
-        List<String> resourceInfo = new ArrayList<>();
-        if (null != reverseChannel) {
-            List<UpdateResourceParam> updateResourceParams = new ArrayList<>();
-            for (DetailMediaResouce detailMediaResouce : reverseChannel) {
-                if (!mediaDescriptions.get(0).getMediaType().equals(detailMediaResouce.getType())) {
-                    continue;
-                }
-
-                if (mediaDescriptions.get(0).getDual() && detailMediaResouce.getDual() != 1
-                        || !mediaDescriptions.get(0).getDual() && detailMediaResouce.getDual() == 1) {
-                    continue;
-                }
-
-                int streamIndex = mediaDescriptions.get(0).getStreamIndex();
-                if (detailMediaResouce.compareAndSetStreamIndex(-1, streamIndex)) {
-                    //只有在异常重启后,回复上次的信息时,才会出现该情况
-                    resourceInfo.add(detailMediaResouce.getId());
-                    UpdateResourceParam updateResourceParam = new UpdateResourceParam(detailMediaResouce.getId());
-                    updateResourceParam.setSdp(constructSdp(mediaDescriptions.get(0)));
-                    updateResourceParams.add(updateResourceParam);
-                    break;
-                }
-            }
-
-            if (resourceInfo.size() > 0) {
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "H323, onOpenLogicalChannel, exist reverseChannel info, start query exchange info, resourceInfoSize:" + resourceInfo.size());
-                System.out.println("H323, onOpenLogicalChannel, exist reverseChannel info, start query exchange info, resourceInfoSize:" + resourceInfo.size());
-                bCreate = false;
-
-                List<ExchangeInfo> exchangeInfos = getExchange(resourceInfo);
-                if (null == exchangeInfos) {
-                    //如果查询不到资源节点，则清理相应的资源信息
-                    for (DetailMediaResouce detailMediaResouce : reverseChannel) {
-                        if (!detailMediaResouce.getId().equals(resourceInfo.get(0))) {
-                            continue;
-                        }
-                        reverseChannel.remove(detailMediaResouce);
-                        updateResourceParams.clear();
-                        resourceInfo.clear();
-                        break;
-                    }
-
-                    bCreate = true;
-                } else {
-                    boolean bOk = requestUpdateResource(updateResourceParams);
-                    if (!bOk) {
-                        removeMediaResource(false, resourceInfo);
-                        return false;
-                    }
-
-                    updateMediaResource(true, exchangeInfos);
-                }
-            }
-        }
-
-        if (bCreate) {
+        List<String> resourceInfo = isNeedCreateResource(true, mediaDescriptions);
+        if (resourceInfo.isEmpty()) {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "H323, onOpenLogicalChannel, start add exchange info!! threadName:" + Thread.currentThread().getName());
             System.out.println("H323, onOpenLogicalChannel, start add exchange info!! threadName:" + Thread.currentThread().getName());
 
@@ -390,6 +338,42 @@ public class H323TerminalService extends TerminalService {
 
     }
 
+    @Override
+    public TerminalOfflineReasonEnum callRemote(RemoteParticipantInfo remoteParticipantInfo, P2PVideoCallMediaCap videoCodec, P2PAudioCallMediaCap audioCodec) {
+        boolean bOK;
+        CallParameterEx callParameterEx = new CallParameterEx();
+
+        if(videoCodec == null){
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"callRemote, videoCodec is null ******");
+            System.out.println("callRemote, videoCodec is null ******");
+            bOK = conferenceParticipant.CallRemote(remoteParticipantInfo);
+        }else{
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"callRemote, videoCodec.getCodeFormat() : " + videoCodec.getCodecFormat() + " ,videoCodec.getResolution()" + videoCodec.getResolution() + " ,videoCodec.getBitrate() :" + videoCodec.getBitrate()+ " ,videoCodec.getFramerate()" + videoCodec.getFramerate());
+            System.out.println("callRemote, videoCodec.getCodeFormat() : " + videoCodec.getCodecFormat() + " ,videoCodec.getResolution()" + videoCodec.getResolution() + " ,videoCodec.getBitrate() :" + videoCodec.getBitrate() + " ,videoCodec.getFramerate()" + videoCodec.getFramerate());
+            MediaCodec mediaCodec = new MediaCodec();
+            constructMediaCodec(videoCodec, audioCodec, mediaCodec);
+            callParameterEx.setCodec(mediaCodec);
+            bOK = conferenceParticipant.CallRemote(remoteParticipantInfo,callParameterEx);
+        }
+
+        TerminalOfflineReasonEnum terminalOfflineReasonEnum = TerminalOfflineReasonEnum.OK;
+
+        if (bOK){
+            System.out.println("callRemote, CallRemote OK! terminalOfflineStatusEnum = " + terminalOfflineReasonEnum);
+            setDualStream(true);
+        } else {
+            terminalOfflineReasonEnum = callFailureCode(callParameterEx.getErrorReason());
+            LogTools.debug(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "callRemote(GroupID:" + groupId +
+                    " ,account: " + remoteParticipantInfo.getParticipantId() + ") failed errcode:" + terminalOfflineReasonEnum.getCode() +
+                    ", errMsg:"+ callParameterEx.getErrorReason().name());
+
+            System.out.println("callRemote(GroupID:" + groupId + " ,account: " + remoteParticipantInfo.getParticipantId() + ") failed errcode:"
+                    + terminalOfflineReasonEnum.getCode() + ", errMsg:"+ callParameterEx.getErrorReason().name());
+        }
+
+        return terminalOfflineReasonEnum;
+    }
+
     public boolean resumeDualStream() {
         videoDualStreamMediaDesc.setStreamIndex(-1);
         videoDualStreamMediaDesc.setDual(true);
@@ -511,15 +495,6 @@ public class H323TerminalService extends TerminalService {
 
     public AtomicInteger getForwardGenericStreamNum() {
         return forwardGenericStreamNum;
-    }
-
-    @Override
-    public CreateResourceResponse monitorsAddExchange(MediaDescription mediaDescription){
-        CreateResourceParam createResourceParam = new CreateResourceParam();
-        createResourceParam.setDeviceID(deviceID);
-        createResourceParam.setSdp(constructSdp(mediaDescription));
-        CreateResourceResponse resourceResponse = addExchange(createResourceParam);
-        return resourceResponse;
     }
 
     private boolean regGK;
