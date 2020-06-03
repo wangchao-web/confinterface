@@ -112,10 +112,12 @@ public class VideoCap {
     }
 
     public static void constructMediaDescription(VideoCap videoCap, VideoMediaDescription videoMediaDescription){
-        if (videoCap.getBitRateType() == 1)
+        if (videoCap.getBitRateType() == 1) {
             videoMediaDescription.setBitrateType("CBR");
-        else
+        }
+        else {
             videoMediaDescription.setBitrateType("VBR");
+        }
 
         videoMediaDescription.setBitrate(videoCap.getBitRate());
         videoMediaDescription.setFramerate(videoCap.getFrameRate());

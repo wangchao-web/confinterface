@@ -163,6 +163,7 @@ public class SipTerminalService extends TerminalService {
         TerminalOfflineReasonEnum terminalOfflineReasonEnum = TerminalOfflineReasonEnum.OK;
 
         if (bOK){
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"SIP, callRemote OK! write redis!!");
             System.out.println("SIP, callRemote OK! write redis!!");
             TerminalMediaResource terminalMediaResource = new TerminalMediaResource();
             terminalMediaResource.setMtE164(e164);

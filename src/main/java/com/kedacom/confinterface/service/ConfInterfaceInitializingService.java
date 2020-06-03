@@ -136,21 +136,6 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
             }
         }
 
-       /* Map<String, String> mtPublishs = confInterfaceService.getMtPublishs();
-        if (null == mtPublishs || mtPublishs.isEmpty()) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "mtPublishs is null or empty ******");
-            System.out.println("mtPublishs is null or empty ******");
-        } else {
-            for (Map.Entry<String, String> mtPublish : mtPublishs.entrySet()) {
-                TerminalStatusNotify terminalStatusNotify = new TerminalStatusNotify();
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "account : " + mtPublish.getKey() + "publishUrl : " + mtPublish.getValue());
-                System.out.println("account : " + mtPublish.getKey() + "publishUrl : " + mtPublish.getValue());
-                TerminalStatus terminalStatus = new TerminalStatus(mtPublish.getKey(), "MT", TerminalOnlineStatusEnum.OFFLINE.getCode(), null, null);
-                terminalStatusNotify.addMtStatus(terminalStatus);
-                TerminalManageService.publishStatus(SubscribeMsgTypeEnum.TERMINAL_STATUS, mtPublish.getValue(), terminalStatusNotify);
-            }
-        }*/
-
         if (null == groups || groups.isEmpty()) {
             //启动终端注册Gk
             terminalManageService.StartUp();
@@ -667,7 +652,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
         return sb.toString().toUpperCase();
     }
 
-    private String constructorDeviceID(String E164){
+    private String constructorDeviceID(String E164) {
         String deviceID = "";
         StrBuilder strBuilder = new StrBuilder();
         strBuilder.append(baseSysConfig.getMediaSrvIp());
@@ -678,14 +663,14 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
         int code = strBuilder.hashCode();
         String value = String.valueOf(code);
         deviceID = value.replaceAll("-", "0");
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "constructorDeviceID, strBuilder : " + strBuilder.toString()+ ", code : " + code +", deviceID : " + deviceID);
-        System.out.println("constructorDeviceID, strBuilder : " + strBuilder.toString() + ", code : " + code +", deviceID : " + deviceID);
-        if (deviceID.length() == 8){
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "constructorDeviceID, strBuilder : " + strBuilder.toString() + ", code : " + code + ", deviceID : " + deviceID);
+        System.out.println("constructorDeviceID, strBuilder : " + strBuilder.toString() + ", code : " + code + ", deviceID : " + deviceID);
+        if (deviceID.length() == 8) {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "deviceID length equal to 8 constructorDeviceID, deviceID : " + deviceID);
             System.out.println("deviceID length equal to 8 constructorDeviceID, deviceID : " + deviceID);
             return deviceID;
         }
-        if (deviceID.length() > 8){
+        if (deviceID.length() > 8) {
             deviceID = deviceID.substring(0, 8);
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "deviceID length greater than 8 constructorDeviceID, deviceID : " + deviceID);
             System.out.println("deviceID length greater than 8 constructorDeviceID, deviceID : " + deviceID);
@@ -756,7 +741,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
     private McuRestConfig mcuRestConfig;
 
     //版本号修复
-    public static final String VERSION = "confinterface-V.1.2.0.2";
+    public static final String VERSION = "confinterface-V.1.2.0.3";
 
     public static Boolean initialized = false;
 
