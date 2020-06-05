@@ -292,8 +292,11 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
             ConcurrentHashMap<String, String> proxyMts = baseSysConfig.getMapProxyMTs();
             for (String vmtE164 : vmtList) {
                 TerminalService vmtService = terminalManageService.createTerminal(vmtE164, true);
-                String deviceID = constructorDeviceID(vmtE164);
-                vmtService.setDeviceID(deviceID);
+                if(baseSysConfig.isUseDeviceId()){
+                    String deviceID = constructorDeviceID(vmtE164);
+                    vmtService.setDeviceID(deviceID);
+                }
+
                 if (null != proxyMts && proxyMts.containsKey(vmtE164)) {
                     vmtService.setProxyMTE164(proxyMts.get(vmtE164));
                 }
@@ -741,7 +744,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
     private McuRestConfig mcuRestConfig;
 
     //版本号修复
-    public static final String VERSION = "confinterface-V.1.2.0.3";
+    public static final String VERSION = "confinterface-V.1.2.0.4";
 
     public static Boolean initialized = false;
 

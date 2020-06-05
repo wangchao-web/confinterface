@@ -31,6 +31,7 @@ public class SipTerminalManageService extends TerminalManageService implements I
         return sipProtocalConfig;
     }
 
+    @Override
     public void StartUp() {
     }
 
@@ -49,9 +50,9 @@ public class SipTerminalManageService extends TerminalManageService implements I
         SipTerminalService sipTerminalService = new SipTerminalService(e164, name.toString(), bVmt, sipProtocalConfig);
         createConfParticipant(sipTerminalService);
 
-        if (bVmt)
+        if (bVmt) {
             freeVmtServiceMap.put(e164, sipTerminalService);
-
+        }
         return sipTerminalService;
     }
 
@@ -92,13 +93,13 @@ public class SipTerminalManageService extends TerminalManageService implements I
             return;
         }
 
-        if (null == mediaDescriptions){
+        if (null == mediaDescriptions) {
             //说明是mcu使用sip协议呼叫虚拟终端,此时需要使用配置文件中的音视频格式做为媒体格式，向流媒体发起资源节点请求
             //需要考虑是否支持双流并配置双流的音视频格式
             mediaDescriptions = new Vector<>();
         }
 
-        if (mediaDescriptions.isEmpty()){
+        if (mediaDescriptions.isEmpty()) {
             //使用配置文件中配置的音视频格式填充mediaDescriptions
             constructMediaDescriptions(sipProtocalConfig.getBaseSysConfig().getVideoCapSetList(),
                     sipProtocalConfig.getBaseSysConfig().getAudioCapSetList(), mediaDescriptions);
@@ -174,11 +175,11 @@ public class SipTerminalManageService extends TerminalManageService implements I
             return;
         }
 
-        if (null == mediaDescriptions || mediaDescriptions.isEmpty()){
+        if (null == mediaDescriptions || mediaDescriptions.isEmpty()) {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "SIP, OnRemoteMediaReponsed, request terminal: " + participantid + " no mediaDescriptions!");
             System.out.println("SIP, OnRemoteMediaReponsed, request terminal: " + participantid + "  no mediaDescriptions!");
 
-            if (null != terminalService.getProxyMTE164()){
+            if (null != terminalService.getProxyMTE164()) {
                 //处理被叫
                 ProcessProxyCall(terminalService);
             }
@@ -191,7 +192,7 @@ public class SipTerminalManageService extends TerminalManageService implements I
         System.out.println("SIP, OnRemoteMediaReponsed, updateExchange result : " + bOk);
 
         if (null != terminalService.getRemoteMtAccount()) {
-            if (!bOk){
+            if (!bOk) {
                 P2PCallRequestFail(terminalService);
             } else {
                 for (MediaDescription mediaDescription : mediaDescriptions) {
@@ -203,12 +204,12 @@ public class SipTerminalManageService extends TerminalManageService implements I
 
     @Override
     public void OnKeyFrameRequested(String participantid, Vector<MediaDescription> mediaDescriptions) {
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Sip, OnKeyFrameRequested, terminal: " + participantid + " is on key frameRequest, threadName: " + Thread.currentThread().getName()+ "mediaDescriptions : " + mediaDescriptions.toString());
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Sip, OnKeyFrameRequested, terminal: " + participantid + " is on key frameRequest, threadName: " + Thread.currentThread().getName() + "mediaDescriptions : " + mediaDescriptions.toString());
         System.out.println("Sip, OnKeyFrameRequested, terminal: " + participantid + " is on key frameRequest  conference,threadName:" + Thread.currentThread().getName() + "mediaDescriptions : " + mediaDescriptions.toString());
         ProcessKeyFrameRequested(participantid, mediaDescriptions);
     }
 
-    private void ProcessProxyCall(TerminalService terminalService){
+    private void ProcessProxyCall(TerminalService terminalService) {
         P2PCallRequest p2PCallRequest = (P2PCallRequest) terminalService.getWaitMsg(P2PCallRequest.class.getName());
         if (null == p2PCallRequest) {
             System.out.println("Sip, ProcessProxyCall, no p2pCallRequest need deal!");

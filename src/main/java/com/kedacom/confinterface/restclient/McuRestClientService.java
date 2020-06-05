@@ -598,6 +598,8 @@ public class McuRestClientService {
         args.put("conf_id", confId);
         args.put("mt_id", mtId);
 
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "ctrlCamera, confId :" + confId + ", mtId :" + mtId +", cameraCtrlParam : " + cameraCtrlParam.toString());
+        System.out.println("ctrlCamera, confId :" + confId + ", mtId :" + mtId +", cameraCtrlParam : " + cameraCtrlParam.toString());
         McuPostMsg mcuPostMsg = new McuPostMsg(accountToken);
         mcuPostMsg.setParams(cameraCtrlParam);
         McuBaseResponse response = restClientService.exchange(url.toString(), HttpMethod.POST, mcuPostMsg.getMsg(), urlencodeMediaType, args, McuBaseResponse.class);

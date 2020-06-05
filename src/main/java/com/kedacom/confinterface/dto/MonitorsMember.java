@@ -85,7 +85,7 @@ public class MonitorsMember implements Serializable {
     }
 
     private int mode;      //资源类型，"0-video","1-audio"
-    private int type;   //监控类型 1-终端；2-画面合成；3-混音；
+    private int type;   //监控类型 1-终端；2-画面合成；3-混音 4-双流；
     private String id;      //资源号，由流媒体返回
     private String E164;   //终端E164,
     private String dstIp;    //监控终端发流的目的ip

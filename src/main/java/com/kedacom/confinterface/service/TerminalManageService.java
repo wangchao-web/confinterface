@@ -214,8 +214,9 @@ public abstract class TerminalManageService {
         if (terminalService.isInspected()) {
             //是否被下线的终端选看
             InspectedParam inspectedParam = terminalService.getInspectedParam(offlineMtE164);
-            if (null == inspectedParam)
+            if (null == inspectedParam) {
                 return;
+            }
 
             terminalService.delInspentedTerminal(offlineMtE164);
         }
@@ -241,8 +242,9 @@ public abstract class TerminalManageService {
 
     public List<TerminalService> getFreeVmts(int vmtNum){
         synchronized (freeVmtServiceMap) {
-            if (freeVmtServiceMap.isEmpty() || freeVmtServiceMap.size() < vmtNum)
+            if (freeVmtServiceMap.isEmpty() || freeVmtServiceMap.size() < vmtNum) {
                 return null;
+            }
 
             int chooseVmtNum = 0;
             List<TerminalService> terminals = new ArrayList<>();
@@ -253,8 +255,9 @@ public abstract class TerminalManageService {
                 terminals.add(terminalService);
 
                 chooseVmtNum++;
-                if (chooseVmtNum == vmtNum)
+                if (chooseVmtNum == vmtNum) {
                     break;
+                }
             }
 
             return terminals;
@@ -286,8 +289,9 @@ public abstract class TerminalManageService {
     }
 
     public List<TerminalService> queryAllUsedVmts(){
-        if (usedVmtServiceMap.isEmpty())
+        if (usedVmtServiceMap.isEmpty()) {
             return null;
+        }
 
         List<TerminalService> terminalServices = new ArrayList<>();
         for(Map.Entry<String, TerminalService> terminalServiceEntry : usedVmtServiceMap.entrySet()){
@@ -300,8 +304,9 @@ public abstract class TerminalManageService {
     public void freeVmt(String e164){
         synchronized (usedVmtServiceMap){
             TerminalService vmtService = usedVmtServiceMap.get(e164);
-            if (null == vmtService)
+            if (null == vmtService) {
                 return;
+            }
 
             usedVmtServiceMap.remove(e164);
             freeVmtServiceMap.put(e164, vmtService);
@@ -312,8 +317,9 @@ public abstract class TerminalManageService {
         synchronized (usedVmtServiceMap){
             for(Terminal vmt : vmts){
                 TerminalService vmtService = usedVmtServiceMap.get(vmt.getMtE164());
-                if (null == vmtService)
+                if (null == vmtService) {
                     return;
+                }
 
                 usedVmtServiceMap.remove(vmt.getMtE164());
                 freeVmtServiceMap.put(vmt.getMtE164(), vmtService);
@@ -338,8 +344,9 @@ public abstract class TerminalManageService {
     }
 
     public void createConfParticipant(TerminalService terminalService){
-        if (null == conferenceManager)
+        if (null == conferenceManager) {
             return;
+        }
 
         if (terminalService.isVmt()) {
             ILocalConferenceParticipant conferenceParticipant = conferenceManager.CreateLocalParticipant(terminalService.getE164());
@@ -412,8 +419,9 @@ public abstract class TerminalManageService {
 
         List<DetailMediaResouce> mediaResources = terminalService.getForwardChannel();
         for (DetailMediaResouce detailMediaResouce : mediaResources) {
-            if (detailMediaResouce.getStreamIndex() != streamIndex)
+            if (detailMediaResouce.getStreamIndex() != streamIndex) {
                 continue;
+            }
 
             MediaResource mediaResource = new MediaResource();
             detailMediaResouce.convertTo(mediaResource);
@@ -443,14 +451,16 @@ public abstract class TerminalManageService {
             break;
         }
 
-        if (p2PCallRequest.getWaitMsg().isEmpty())
+        if (p2PCallRequest.getWaitMsg().isEmpty()) {
             terminalService.delWaitMsg(P2PCallRequest.class.getName());
+        }
     }
 
     protected void P2PCallRequestFail(TerminalService terminalService) {
         P2PCallRequest p2PCallRequest = (P2PCallRequest) terminalService.getWaitMsg(P2PCallRequest.class.getName());
-        if (null == p2PCallRequest)
+        if (null == p2PCallRequest) {
             return;
+        }
 
         p2PCallRequest.getWaitMsg().clear();
         terminalService.delWaitMsg(P2PCallRequest.class.getName());
@@ -536,13 +546,14 @@ public abstract class TerminalManageService {
         List<String>  resourceIds = new ArrayList<>();
 
         for(DetailMediaResouce detailMediaResouce : forwardResources) {
-            if (!detailMediaResouce.getType().equals("video") ) {
+            if (!"video".equals(detailMediaResouce.getType())) {
                 continue;
             }
 
             for (MediaDescription mediaDescription: mediaDescriptions){
-                if (mediaDescription.getStreamIndex() != detailMediaResouce.getStreamIndex())
+                if (mediaDescription.getStreamIndex() != detailMediaResouce.getStreamIndex()) {
                     continue;
+                }
 
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "forwardResource type is video resourceId is : " + detailMediaResouce.getId() + ", mediaDescriptions : " + mediaDescription.toString() + ", detailMediaResouce : " + detailMediaResouce.toString());
                 System.out.println("forwardResource type is video resourceId is : " + detailMediaResouce.getId() + ", mediaDescriptions : " + mediaDescriptions.toString() + ", detailMediaResouce : " + detailMediaResouce.toString());

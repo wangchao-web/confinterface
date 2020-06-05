@@ -273,6 +273,15 @@ public class BaseSysConfig {
         this.logPath = logPath;
     }
 
+
+    public boolean isUseDeviceId() {
+        return useDeviceId;
+    }
+
+    public void setUseDeviceId(boolean useDeviceId) {
+        this.useDeviceId = useDeviceId;
+    }
+
     public static Boolean getIsExternalDocking() {
         return isExternalDocking;
     }
@@ -281,7 +290,6 @@ public class BaseSysConfig {
     public  void setIsExternalDocking(Boolean isExternalDocking) {
         this.isExternalDocking = isExternalDocking;
     }
-
     @Override
     public String toString() {
         return new StringBuffer()
@@ -367,7 +375,10 @@ public class BaseSysConfig {
 
     private List<VideoCap> videoCapList;
     private List<AudioCap> audioCapList;
+    private boolean useDeviceId = false;
 
     //@Value("${confinterface.sys.isExternalDocking}")
     public static Boolean isExternalDocking = false;  //适应外厂商paload
+
+
 }

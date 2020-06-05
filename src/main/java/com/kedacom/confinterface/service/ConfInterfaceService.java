@@ -39,7 +39,7 @@ public class ConfInterfaceService {
     private final org.slf4j.Logger logger = LoggerFactory.getLogger(this.getClass());
     private final int maxVmtNum = 17;
 
-    public boolean checkDBConnStatus(){
+    public boolean checkDBConnStatus() {
         return terminalMediaSourceService.checkDBConnStatus();
     }
 
@@ -130,12 +130,14 @@ public class ConfInterfaceService {
         groupConfInfoMap.remove(groupConfInfo.getGroupId());
     }
 
-   public Map<String, String> getMtPublishs() {
+    public Map<String, String> getMtPublishs() {
         return terminalMediaSourceService.getMtPublish();
     }
+
     public List<String> getP2PMtMembers(String groupId) {
         return terminalMediaSourceService.getP2PMtMembers(groupId);
     }
+
     public List<String> getP2PVmtMembers(String groupId) {
         return terminalMediaSourceService.getP2PVmtMembers(groupId);
     }
@@ -181,8 +183,8 @@ public class ConfInterfaceService {
             groupConfInfo.setConfId(confId);
             groupConfInfo.setCreatedConf("confinterface");
             VideoFormat videoFormat = setVideoFormats();
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"joinConference videoFormat : " +videoFormat.toString());
-            System.out.println("joinConference videoFormat : " +videoFormat.toString());
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "joinConference videoFormat : " + videoFormat.toString());
+            System.out.println("joinConference videoFormat : " + videoFormat.toString());
             groupConfInfo.setVideoFormat(videoFormat);
             addGroupConfInfo(groupConfInfo);
 
@@ -1224,21 +1226,54 @@ public class ConfInterfaceService {
         GroupConfInfo groupConfInfo = groupConfInfoMap.get(groupId);
         if (null != groupConfInfo) {
             TerminalService vmtService = groupConfInfo.getVmt(resourceId);
+            String confId = groupConfInfo.getConfId();
+            String mtId = "";
             if (null == vmtService) {
                 LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "ctrlCamera, has not found vmt by resourceId : " + resourceId);
+
+                ConcurrentHashMap<String, MonitorsMember> monitorsMembers = getMonitorsMembers(confId);
+                if (null == monitorsMembers || monitorsMembers.isEmpty()) {
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "ctrlCamera MonitorsInfo loadMonitorsInfo monitorsMembers is null or empty !");
+                    System.out.println("ctrlCamera MonitorsInfo monitorsMembers is null or empty !");
+                    cameraCtrlRequest.makeErrorResponseMsg(ConfInterfaceResult.INVALID_PARAM.getCode(), HttpStatus.OK, ConfInterfaceResult.INVALID_PARAM.getMessage());
+                    return;
+                }
+
+                for (Map.Entry<String, MonitorsMember> monitorsMemberMap : monitorsMembers.entrySet()) {
+                    MonitorsMember monitorsMember = monitorsMemberMap.getValue();
+                    if (null == monitorsMember) {
+                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "ctrlCamera MonitorsInfo is null or empty !");
+                        System.out.println("ctrlCamera MonitorsInfo is null or empty !");
+                        continue;
+                    }
+                    if (monitorsMember.getType() != 1) {
+                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "ctrlCamera MonitorsInfo mode not  mt !");
+                        System.out.println("ctrlCamera MonitorsInfo mode not  mt !");
+                        continue;
+                    }
+                    if (monitorsMember.getId().equals(resourceId)) {
+                        mtId = monitorsMember.getMtId();
+                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "ctrlCamera MonitorsInfo resourceId is : " + monitorsMember.getId() + ", mtId : " + mtId);
+                        System.out.println("ctrlCamera MonitorsInfo resourceId is : " + monitorsMember.getId() + ", mtId : " + mtId);
+                        break;
+                    }
+                }
+            } else {
+                TerminalService mtService = groupConfInfo.getSrcInspectionTerminal(vmtService);
+                if (null == mtService) {
+                    LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "ctrlCamera, vmt(" + vmtService.getE164() + ") not inspect mt!");
+                    cameraCtrlRequest.makeErrorResponseMsg(ConfInterfaceResult.TERMINAL_NOT_EXIST.getCode(), HttpStatus.OK, ConfInterfaceResult.TERMINAL_NOT_EXIST.getMessage());
+                    return;
+                }
+                mtId = mtService.getMtId();
+            }
+            if ("".equals(mtId)) {
+                LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"ctrlCamera mtId is null or empty !");
+                System.out.println("ctrlCamera mtId is null or empty !");
                 cameraCtrlRequest.makeErrorResponseMsg(ConfInterfaceResult.INVALID_PARAM.getCode(), HttpStatus.OK, ConfInterfaceResult.INVALID_PARAM.getMessage());
                 return;
             }
-
-            TerminalService mtService = groupConfInfo.getSrcInspectionTerminal(vmtService);
-            if (null == mtService) {
-                LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "ctrlCamera, vmt(" + vmtService.getE164() + ") not inspect mt!");
-                cameraCtrlRequest.makeErrorResponseMsg(ConfInterfaceResult.TERMINAL_NOT_EXIST.getCode(), HttpStatus.OK, ConfInterfaceResult.TERMINAL_NOT_EXIST.getMessage());
-                return;
-            }
-
-            String confId = groupConfInfo.getConfId();
-            McuStatus mcuStatus = mcuRestClientService.ctrlCamera(confId, mtService.getMtId(), cameraCtrlRequest.getCameraCtrlParam());
+            McuStatus mcuStatus = mcuRestClientService.ctrlCamera(confId, mtId, cameraCtrlRequest.getCameraCtrlParam());
             if (null == mcuStatus || mcuStatus.getValue() != 200) {
                 LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50007 : mcu control camera failed!");
                 cameraCtrlRequest.makeErrorResponseMsg(ConfInterfaceResult.CONTROL_CAMERA.getCode(), HttpStatus.OK, mcuStatus.getDescription());
@@ -1289,15 +1324,15 @@ public class ConfInterfaceService {
         if (null != groupConfInfo) {
             String confId = groupConfInfo.getConfId();
             ConcurrentHashMap<String, MonitorsMember> monitorsMembers = terminalMediaSourceService.getMonitorsMembers(confId);
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"monitorsMembers : " +monitorsMembers.toString());
-            System.out.println("monitorsMembers : " +monitorsMembers.toString());
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "monitorsMembers : " + monitorsMembers.toString());
+            System.out.println("monitorsMembers : " + monitorsMembers.toString());
             if (null != monitorsMembers || !monitorsMembers.isEmpty()) {
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "sendIFrame monitorsMembers is not null or empty : " + resourceId);
                 System.out.println("sendIFrame monitorsMembers is not null or empty : " + resourceId);
                 for (Map.Entry<String, MonitorsMember> monitorsMember : monitorsMembers.entrySet()) {
                     if (monitorsMember.getValue() != null && resourceId.equals(monitorsMember.getValue().getId())) {
-                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "sendIFrame monitorsMembers confId " + confId +", monitorsMember : " + monitorsMember.getValue().toString());
-                        System.out.println("sendIFrame monitorsMembers confId " + confId +", monitorsMember : " + monitorsMember.getValue().toString());
+                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "sendIFrame monitorsMembers confId " + confId + ", monitorsMember : " + monitorsMember.getValue().toString());
+                        System.out.println("sendIFrame monitorsMembers confId " + confId + ", monitorsMember : " + monitorsMember.getValue().toString());
                         McuStatus mcuStatus = mcuRestClientService.NeedMonistorsFrame(confId, monitorsMember.getValue().getDstIp(), monitorsMember.getValue().getPort());
                         if (mcuStatus.getValue() == 200) {
                             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "send frame success");
@@ -1528,7 +1563,7 @@ public class ConfInterfaceService {
     public void p2pCall(P2PCallRequest p2PCallRequest, P2PCallParam p2PCallParam) {
         final String groupId = p2PCallRequest.getGroupId();
         String mtAccount = p2PCallParam.getAccount();
-        if (p2PCallParam.getAccountType() == 2 && !terminalManageService.isSupportAliasCall()) {
+        if (p2PCallParam.getAccountType() == 2 && terminalManageService.isSupportAliasCall()) {
             LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50027 : " + " Unused GK , Use E164 call failed : " + groupId);
             System.out.println("50027 : " + " Unused GK , Use E164 call failed : " + groupId);
             p2PCallRequest.makeErrorResponseMsg(ConfInterfaceResult.ACCOUNT_E164_INVALID.getCode(), HttpStatus.OK, ConfInterfaceResult.ACCOUNT_E164_INVALID.getMessage());
@@ -1581,8 +1616,8 @@ public class ConfInterfaceService {
             if (terminalOfflineReasonEnum.getCode() == 200) {
                 vmtService.setDualStream(true);
                 p2PCallGroup.addCallMember(mtAccount, vmtService);
-                terminalMediaSourceService.addP2PMtMembers(groupId,mtAccount);
-                terminalMediaSourceService.addP2PVmtMembers(groupId,vmtService.getE164());
+                terminalMediaSourceService.addP2PMtMembers(groupId, mtAccount);
+                terminalMediaSourceService.addP2PVmtMembers(groupId, vmtService.getE164());
             } else {
                 vmtService.delWaitMsg(waitMsg);
                 terminalManageService.freeVmt(vmtService.getE164());
@@ -2352,12 +2387,12 @@ public class ConfInterfaceService {
                 confInfoResponse.getNeed_password(), confInfoResponse.getOne_reforming(), confInfoResponse.getDoubleflow(),
                 confInfoResponse.getPlatform_id());
         Creator creator = confInfoResponse.getCreator();
-        if(creator != null){
+        if (creator != null) {
             confInfo.setCreator(creator);
         }
 
         List<VideoFormat> video_formats = confInfoResponse.getVideo_formats();
-        if(video_formats != null || !video_formats.isEmpty()){
+        if (video_formats != null || !video_formats.isEmpty()) {
             confInfo.setVideoFormats(video_formats);
         }
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "queryConfInfo confInfo : " + confInfo.toString());
@@ -2547,16 +2582,16 @@ public class ConfInterfaceService {
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "sendSms mtIdMap E164 or ip : " + mt.getMtE164() + ", member mt_id : " + member.getMtId());
                 System.out.println("sendSms mtIdMap E164 or ip : " + mt.getMtE164() + ", member mt_id : " + member.getMtId());
 
-        }
-        McuStatus mcuStatus = mcuRestClientService.sendMsm(confId, sendSmsRequest.getSendSmsParam(), smsInfoMts);
-        if (mcuStatus.getValue() == 200) {
-            sendSmsRequest.makeSuccessResponseMsg();
-        } else {
-            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50031 send message failed! " + mcuStatus.getDescription());
-            sendSmsRequest.makeErrorResponseMsg(ConfInterfaceResult.SEND_SMS_FAILED.getCode(), HttpStatus.OK, mcuStatus.getDescription());
-        }
+            }
+            McuStatus mcuStatus = mcuRestClientService.sendMsm(confId, sendSmsRequest.getSendSmsParam(), smsInfoMts);
+            if (mcuStatus.getValue() == 200) {
+                sendSmsRequest.makeSuccessResponseMsg();
+            } else {
+                LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50031 send message failed! " + mcuStatus.getDescription());
+                sendSmsRequest.makeErrorResponseMsg(ConfInterfaceResult.SEND_SMS_FAILED.getCode(), HttpStatus.OK, mcuStatus.getDescription());
+            }
 
-    } else {
+        } else {
             //如果点对点呼叫，则通过H323协议栈进行控制
             P2PCallGroup p2PCallGroup = p2pCallGroupMap.get(groupId);
             if (null == p2PCallGroup) {
@@ -2568,18 +2603,18 @@ public class ConfInterfaceService {
             for (Terminal mt : mts) {
                 TerminalService vmt = p2PCallGroup.getVmt(mt.getMtE164());
                 if (vmt == null) {
-                    LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"sendSms vmt is null **********");
+                    LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "sendSms vmt is null **********");
                     System.out.println("sendSms vmt is null **********");
                     continue;
                 }
-                boolean boo = vmt.sendSms(sendSmsRequest.getSendSmsParam().getMessage(),sendSmsRequest.getSendSmsParam().getRollNum(),sendSmsRequest.getSendSmsParam().getRollSpeed());
-                if(boo){
+                boolean boo = vmt.sendSms(sendSmsRequest.getSendSmsParam().getMessage(), sendSmsRequest.getSendSmsParam().getRollNum(), sendSmsRequest.getSendSmsParam().getRollSpeed());
+                if (boo) {
                     Terminal terminal = new Terminal(mt.getMtE164());
                     sendSmsRequest.addMtE164(terminal);
                 }
                 bOk |= boo;
-                LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"mt : " + mt.getMtE164() + ", vmtAccount : " + vmt.getE164()  + ", sendSms bOK : " +bOk +", b : " +boo);
-                System.out.println("mt : " + mt.getMtE164() + ", vmtAccount : " + vmt.getE164()  + ", sendSms bOK : " +bOk +", b : " +boo);
+                LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "mt : " + mt.getMtE164() + ", vmtAccount : " + vmt.getE164() + ", sendSms bOK : " + bOk + ", b : " + boo);
+                System.out.println("mt : " + mt.getMtE164() + ", vmtAccount : " + vmt.getE164() + ", sendSms bOK : " + bOk + ", b : " + boo);
             }
             if (!bOk) {
                 //如果失败，则表明发送短消息均失败,直接回复失败
@@ -3259,11 +3294,11 @@ public class ConfInterfaceService {
             return;
         }
 
-        if(videoFormat == null){
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "start Monitors videoFormat is null " );
-            System.out.println("start Monitors videoFormat is null " );
+        if (videoFormat == null) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "start Monitors videoFormat is null ");
+            System.out.println("start Monitors videoFormat is null ");
             ConfInfoResponse confInfoResponse = mcuRestClientService.queryConf(confId);
-            if(confInfoResponse == null){
+            if (confInfoResponse == null) {
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, " videoFormat1 start Monitors confId is empty confid :　" + confId);
                 System.out.println(" videoFormat1 start Monitors confId is empty  confid :　" + confId);
                 startMonitorsRequest.makeErrorResponseMsg(ConfInterfaceResult.CONF_NOT_EXIT.getCode(), HttpStatus.OK, ConfInterfaceResult.CONF_NOT_EXIT.getMessage());
@@ -3358,7 +3393,7 @@ public class ConfInterfaceService {
             EncodingFormatEnum encodingFormat = getEncodingFormat(mcuVideoFormat.getFormat());
             videoMediaDescription.setEncodingFormat(encodingFormat);
             videoMediaDescription.setMediaType("video");
-            if(encodingFormat == EncodingFormatEnum.H264){
+            if (encodingFormat == EncodingFormatEnum.H264) {
                 H264Description h264Description = new H264Description();
                 h264Description.setProfile(ProfileEnum.HIGH);
                 h264Description.setLevel(0);
@@ -3583,7 +3618,7 @@ public class ConfInterfaceService {
         return false;
     }
 
-    public EncodingFormatEnum getEncodingFormat(int format){
+    public EncodingFormatEnum getEncodingFormat(int format) {
         switch (format) {
             case 1:
                 //None 0 未知,协议栈未给理由
@@ -3608,6 +3643,7 @@ public class ConfInterfaceService {
                 return EncodingFormatEnum.H264;
         }
     }
+
     public VideoFormat setVideoFormats() {
         String videoFormats = mcuRestConfig.getVideoFormat();
         String[] videoformats = videoFormats.split(",");
