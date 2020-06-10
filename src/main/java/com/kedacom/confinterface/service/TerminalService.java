@@ -565,8 +565,8 @@ public abstract class TerminalService {
         queryResourceParam.setResourceIDs(resourceInfo);
         ResponseEntity<JSONObject> responseEntity = restClientService.exchangeJson(url.toString(), HttpMethod.POST, queryResourceParam, args, JSONObject.class);
         if (null == responseEntity) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "getExchange, null == responseEntity, groupId:" + groupId);
-            System.out.println("getExchange, null == responseEntity, groupId:" + groupId);
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "getExchange, null == responseEntity, groupId:" + groupId + ", mediaUrl: " + url.toString());
+            System.out.println("getExchange, null == responseEntity, groupId:" + groupId + ", mediaUrl: " + url.toString());
             return null;
         }
 
@@ -608,8 +608,8 @@ public abstract class TerminalService {
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "addExchange createResourceParam : " + createResourceParam.toString());
         ResponseEntity<CreateResourceResponse> responseEntity = restClientService.exchangeJson(url.toString(), HttpMethod.POST, createResourceParam, args, CreateResourceResponse.class);
         if (null == responseEntity) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "addExchange, null == responseEntity!");
-            System.out.println("addExchange, null == responseEntity!");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "addExchange, null == responseEntity! mediaUrl: " + url.toString());
+            System.out.println("addExchange, null == responseEntity! mediaUrl: " + url.toString());
             return null;
         }
 
@@ -819,19 +819,24 @@ public abstract class TerminalService {
         args.put("groupId", groupId);
         ResponseEntity<BaseResponseMsg> keyFrame = restClientService.exchangeJson(url.toString(), HttpMethod.POST, keyframeParam, args, BaseResponseMsg.class);
         if (null == keyFrame) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "keyFrame, failed! null == removeResponse");
-            System.out.println("keyFrame, failed! null == removeResponse");
-        } else if (!keyFrame.getStatusCode().is2xxSuccessful()) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "keyFrame, failed! status:" + keyFrame.getStatusCodeValue());
-            System.out.println("keyFrame, failed! status:" + keyFrame.getStatusCodeValue());
-        } else if (keyFrame.getBody().getCode() != 0) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "keyFrame, failed! errmsg:" + keyFrame.getBody().getMessage());
-            System.out.println("keyFrame, failed! errmsg:" + keyFrame.getBody().getMessage());
-        } else {
-            return true;
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "keyFrame, failed! null == removeResponse, mediaUrl: " + url.toString());
+            System.out.println("keyFrame, failed! null == removeResponse, mediaUrl: " + url.toString());
+            return false;
         }
 
-        return false;
+        if (!keyFrame.getStatusCode().is2xxSuccessful()) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "keyFrame, failed! status:" + keyFrame.getStatusCodeValue());
+            System.out.println("keyFrame, failed! status:" + keyFrame.getStatusCodeValue());
+            return false;
+        }
+
+        if (keyFrame.getBody().getCode() != 0) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "keyFrame, failed! errmsg:" + keyFrame.getBody().getMessage());
+            System.out.println("keyFrame, failed! errmsg:" + keyFrame.getBody().getMessage());
+            return false;
+        }
+
+        return true;
     }
 
     public boolean removeExchange(List<String> resourceIds) {
@@ -849,19 +854,24 @@ public abstract class TerminalService {
 
         ResponseEntity<BaseResponseMsg> removeResponse = restClientService.exchangeJson(url.toString(), HttpMethod.POST, removeParam, args, BaseResponseMsg.class);
         if (null == removeResponse) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "removeExchange, failed! null == removeResponse");
-            System.out.println("removeExchange, failed! null == removeResponse");
-        } else if (!removeResponse.getStatusCode().is2xxSuccessful()) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "removeExchange, failed! status:" + removeResponse.getStatusCodeValue());
-            System.out.println("removeExchange, failed! status:" + removeResponse.getStatusCodeValue());
-        } else if (removeResponse.getBody().getCode() != 0) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "removeExchange, failed! errmsg:" + removeResponse.getBody().getMessage());
-            System.out.println("removeExchange, failed! errmsg:" + removeResponse.getBody().getMessage());
-        } else {
-            return true;
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "removeExchange, failed! null == removeResponse, mediaUrl: " + url.toString());
+            System.out.println("removeExchange, failed! null == removeResponse, mediaUrl: " + url.toString());
+            return false;
         }
 
-        return false;
+        if (!removeResponse.getStatusCode().is2xxSuccessful()) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "removeExchange, failed! status:" + removeResponse.getStatusCodeValue());
+            System.out.println("removeExchange, failed! status:" + removeResponse.getStatusCodeValue());
+            return false;
+        }
+
+        if (removeResponse.getBody().getCode() != 0) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "removeExchange, failed! errmsg:" + removeResponse.getBody().getMessage());
+            System.out.println("removeExchange, failed! errmsg:" + removeResponse.getBody().getMessage());
+            return false;
+        }
+
+        return true;
     }
 
     public boolean updateExchange(Vector<MediaDescription> mediaDescriptions) {
@@ -1190,6 +1200,12 @@ public abstract class TerminalService {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "requestUpdateResource, start update exchange, resourceId:" + updateResourceParam.getResourceID() + ", sdp:" + updateResourceParam.getSdp());
             System.out.println("requestUpdateResource, start update exchange, resourceId:" + updateResourceParam.getResourceID() + ", sdp:" + updateResourceParam.getSdp());
             ResponseEntity<BaseResponseMsg> updateResponse = restClientService.exchangeJson(url.toString(), HttpMethod.POST, updateResourceParam, args, BaseResponseMsg.class);
+            if (null == updateResponse){
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "requestUpdateResource, null == updateResponse, mediaUrl: " + url.toString());
+                System.out.println("requestUpdateResource, null == updateResponse, mediaUrl: " + url.toString());
+                return false;
+            }
+
             if (!updateResponse.getStatusCode().is2xxSuccessful()) {
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "requestUpdateResource, update node failed! , resourceId:" + updateResourceParam.getResourceID() + ", status : " + updateResponse.getStatusCodeValue() + ", url:" + url.toString());
                 System.out.println("requestUpdateResource, update node failed! , resourceId:" + updateResourceParam.getResourceID() + ", status : " + updateResponse.getStatusCodeValue() + ", url:" + url.toString());

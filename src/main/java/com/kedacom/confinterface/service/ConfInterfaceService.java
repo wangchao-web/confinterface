@@ -3567,8 +3567,8 @@ public class ConfInterfaceService {
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "monitors restClientService : " + restClientService);
         ResponseEntity<CreateResourceResponse> responseEntity = restClientService.exchangeJson(url.toString(), HttpMethod.POST, createResourceParam, args, CreateResourceResponse.class);
         if (null == responseEntity) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "monitors addExchange, null == responseEntity!");
-            System.out.println("monitors addExchange, null == responseEntity!");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "monitors addExchange, null == responseEntity! mediaUrl: " + url.toString());
+            System.out.println("monitors addExchange, null == responseEntity! mediaUrl: " + url.toString());
             return null;
         }
 
@@ -3603,8 +3603,8 @@ public class ConfInterfaceService {
 
         ResponseEntity<BaseResponseMsg> removeResponse = restClientService.exchangeJson(url.toString(), HttpMethod.POST, removeParam, args, BaseResponseMsg.class);
         if (null == removeResponse) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "removeExchange, failed! null == removeResponse");
-            System.out.println("removeExchange, failed! null == removeResponse");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "removeExchange, failed! null == removeResponse, mediaUrl: " + url.toString());
+            System.out.println("removeExchange, failed! null == removeResponse, mediaUrl: " + url.toString());
         } else if (!removeResponse.getStatusCode().is2xxSuccessful()) {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "removeExchange, failed! status:" + removeResponse.getStatusCodeValue());
             System.out.println("removeExchange, failed! status:" + removeResponse.getStatusCodeValue());
