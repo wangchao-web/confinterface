@@ -343,7 +343,7 @@ public class H323TerminalService extends TerminalService {
         boolean bOK;
         CallParameterEx callParameterEx = new CallParameterEx();
 
-        if(videoCodec == null || videoCodec.getCodecFormat().isEmpty()){
+        if(videoCodec == null || null == videoCodec.getCodecFormat() || videoCodec.getCodecFormat().isEmpty()){
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"callRemote, videoCodec is null ******");
             System.out.println("callRemote, videoCodec is null ******");
             bOK = conferenceParticipant.CallRemote(remoteParticipantInfo);

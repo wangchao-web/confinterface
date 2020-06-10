@@ -80,7 +80,7 @@ public class SipTerminalService extends TerminalService {
 
         Vector<MediaDescription> mediaDescriptions = new Vector<>();
         VideoMediaDescription videoMediaDescription = new VideoMediaDescription();
-        if(null == videoCodec || videoCodec.getCodecFormat().isEmpty()){
+        if(null == videoCodec ||  null == videoCodec.getCodecFormat() || videoCodec.getCodecFormat().isEmpty()){
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"SIP, callRemote, videoCodec is null or codec format is empty, read config file!");
             System.out.println("SIP, callRemote, videoCodec is null or codec format is empty, read config file!");
 
@@ -105,7 +105,7 @@ public class SipTerminalService extends TerminalService {
         mediaDescriptions.add(videoMediaDescription);
 
         AudioMediaDescription audioMediaDescription = new AudioMediaDescription();
-        if (null == audioCodec || audioCodec.getCodecFormat().isEmpty()){
+        if (null == audioCodec ||  null == audioCodec.getCodecFormat() || audioCodec.getCodecFormat().isEmpty()){
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"SIP, callRemote, audioCodec is null, read config file!");
             System.out.println("SIP, callRemote, audioCodec is null, read config file!");
 
