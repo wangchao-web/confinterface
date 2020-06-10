@@ -1248,6 +1248,7 @@ public abstract class TerminalService {
             sdp.append("/90000\r\n");
             sdp.append("a=framerate:");
             sdp.append(videoMediaDescription.getFramerate());
+            sdp.append("\r\n");
 
             System.out.println("mediaDescription.getEncodingFormat()1.name() : " + mediaDescription.getEncodingFormat().name());
             if (mediaDescription.getEncodingFormat() == EncodingFormatEnum.H264) {
