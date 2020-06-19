@@ -39,6 +39,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
+
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "whether to use IsExternalDocking : " + BaseSysConfig.getIsExternalDocking());
         System.out.println("whether to use IsExternalDocking : " + BaseSysConfig.getIsExternalDocking());
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "confinterface version: " + VERSION);
@@ -87,7 +88,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
                         if (terminalMediaResource != null) {
                             List<MediaResource> forwardResources = terminalMediaResource.getForwardResources();
                             List<MediaResource> reverseResources = terminalMediaResource.getReverseResources();
-                            if (forwardResources != null && !reverseResources.isEmpty()) {
+                            if (forwardResources != null && !forwardResources.isEmpty()) {
                                 for (MediaResource forwardResource : forwardResources) {
                                     String resourceId = forwardResource.getId();
                                     LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "forwardResources account : " + p2PVmtMembe + ", resourceId : " + resourceId);

@@ -28,6 +28,7 @@ public class TerminalMediaSourceService {
     public String getSrvToken(){
         return terminalMediaSourceDao.getSrvToken();
     }
+
     public void setSrvToken(String srvToken){
         terminalMediaSourceDao.setSrvToken(srvToken);
     }
