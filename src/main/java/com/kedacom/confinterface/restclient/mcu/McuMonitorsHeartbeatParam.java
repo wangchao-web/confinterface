@@ -1,5 +1,6 @@
 package com.kedacom.confinterface.restclient.mcu;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class McuMonitorsHeartbeatParam {
@@ -18,7 +19,13 @@ public class McuMonitorsHeartbeatParam {
         this.monitors = monitors;
     }
 
+    public void addMonitor(McuMonitorsDst monitor) {
+        if (null == monitors){
+            monitors = new ArrayList<>();
+        }
 
+        monitors.add(monitor);
+    }
 
     @Override
     public String toString() {

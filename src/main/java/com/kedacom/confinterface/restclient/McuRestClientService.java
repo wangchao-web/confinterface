@@ -827,7 +827,7 @@ public class McuRestClientService {
     }
 
     @Scheduled(initialDelay = heartbeatInterval, fixedRate = heartbeatInterval)
-    public void doHearbeat() {
+    public void doHeartbeat() {
         //每25分钟执行一次心跳检测 /api/v1/system/heartbeat
         StringBuilder url = new StringBuilder();
         constructUrl(url, "/api/v1/system/heartbeat");
@@ -875,16 +875,21 @@ public class McuRestClientService {
     }
 
     @Scheduled(initialDelay = monitorsHeartbeatInterval, fixedRate = monitorsHeartbeatInterval)
-    public void monitorsDoHearbeat() {
+    public void monitorsDoHeartbeat() {
         if (!loginSuccess) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "monitorsDoHearbeat, has login out!!!");
-            System.out.println("monitorsDoHearbeat, has login out!!!");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "monitorsDoHeartbeat, has login out!!!");
+            System.out.println("monitorsDoHeartbeat, has login out!!!");
             return;
         }
 
         if(ConfInterfaceService.monitorsMemberHearbeat == null || ConfInterfaceService.monitorsMemberHearbeat.isEmpty()){
             return;
         }
+
+        StringBuilder url = new StringBuilder();
+        constructUrl(url, "/api/v1/vc/confs/{conf_id}/monitors_heartbeat");
+        McuMonitorsHeartbeatParam mcuMonitorsHeartbeatParam = new McuMonitorsHeartbeatParam();
+        McuPostMsg mcuPostMsg = new McuPostMsg(accountToken);
 
         for (Map.Entry<String, Map<String, MonitorsMember>> monitorsMemberHearbeat : ConfInterfaceService.monitorsMemberHearbeat.entrySet()) {
             //获取所有组的监看信息
@@ -895,33 +900,34 @@ public class McuRestClientService {
                 continue;
             }
 
-            McuMonitorsHeartbeatParam mcuMonitorsHeartbeatParam = new McuMonitorsHeartbeatParam();
-            List<McuMonitorsDst> monitors = new ArrayList<>();
             for (Map.Entry<String, MonitorsMember> monitorsMembersMap : monitorsMembersMaps.entrySet()){
                 MonitorsMember monitorsMember = monitorsMembersMap.getValue();
                 if(monitorsMember == null){
-                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "monitorsDoHearbeat monitorsMember is null or empty  *****! + "+ ", confId : " + confId);
-                    System.out.println("monitorsDoHearbeat monitorsMember is null or empty  *****! + "+ ", confId : " + confId);
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "monitorsDoHeartbeat monitorsMember is null or empty  *****! + "+ ", confId : " + confId);
+                    System.out.println("monitorsDoHeartbeat monitorsMember is null or empty  *****! + "+ ", confId : " + confId);
                     continue;
                 }
                 McuMonitorsDst mcuMonitorsDst = new McuMonitorsDst(monitorsMember.getDstIp(), monitorsMember.getPort());
-                monitors.add(mcuMonitorsDst);
+                mcuMonitorsHeartbeatParam.addMonitor(mcuMonitorsDst);
             }
-            if (monitors.isEmpty()){
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "monitorsDoHearbeat monitors is null or empty  *****! + "+ ", confId : " + confId);
-                System.out.println("monitorsDoHearbeat monitors is null or empty  *****! + "+ ", confId : " + confId);
+
+            if (mcuMonitorsHeartbeatParam.getMonitors().isEmpty()){
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "monitorsDoHeartbeat monitors is null or empty  *****! + "+ ", confId : " + confId);
+                System.out.println("monitorsDoHeartbeat monitors is null or empty  *****! + "+ ", confId : " + confId);
                 continue;
             }
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"confId : " + confId + ", monitorsDoHearbeat monitors : " +  monitors.toString());
-            System.out.println("confId : " + confId + ", monitorsDoHearbeat monitors : " +  monitors.toString());
-            mcuMonitorsHeartbeatParam.setMonitors(monitors);
-            StringBuilder url = new StringBuilder();
-            constructUrl(url, "/api/v1/vc/confs/{conf_id}/monitors_heartbeat");
+
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"confId : " + confId + ", monitorsDoHeartbeat monitors : " +  mcuMonitorsHeartbeatParam.getMonitors().toString());
+            System.out.println("confId : " + confId + ", monitorsDoHeartbeat monitors : " +  mcuMonitorsHeartbeatParam.getMonitors().toString());
+
+            mcuPostMsg.setParams(mcuMonitorsHeartbeatParam);
+
             Map<String, String> args = new HashMap<>();
             args.put("conf_id", confId);
-            McuPostMsg mcuPostMsg = new McuPostMsg(accountToken);
-            mcuPostMsg.setParams(mcuMonitorsHeartbeatParam);
+
             McuBaseResponse MonitorsResponse = restClientService.exchange(url.toString(), HttpMethod.POST, mcuPostMsg.getMsg(), urlencodeMediaType, args, McuBaseResponse.class);
+
+            mcuMonitorsHeartbeatParam.getMonitors().clear();
 
             if (null == MonitorsResponse || MonitorsResponse.success()) {
                 continue;
