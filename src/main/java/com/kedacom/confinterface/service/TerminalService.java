@@ -2319,6 +2319,7 @@ public abstract class TerminalService {
     protected String deviceID; //流媒体音视频同步设备Id
 
 
+
     //显控双向选看
     protected Boolean isInspectionAndInspectioned = false;
 

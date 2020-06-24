@@ -506,4 +506,5 @@ public class H323TerminalService extends TerminalService {
     protected String dualStreamResourceId;
     protected AtomicBoolean resumeDualStream;
     protected AtomicInteger forwardGenericStreamNum;
+
 }

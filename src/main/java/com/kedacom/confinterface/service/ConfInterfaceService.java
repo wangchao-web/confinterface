@@ -48,9 +48,11 @@ public class ConfInterfaceService {
             if (terminalManageService instanceof H323TerminalManageService) {
                 int localCallPort = ((H323TerminalManageService) terminalManageService).getProtocalConfig().getLocalCallPort();
                 terminalMediaSourceService.setSrvToken(String.valueOf(localCallPort));
+            }else{
+                int localCallPort = ((SipTerminalManageService) terminalManageService).getProtocalConfig().getSipLocalPort();
+                terminalMediaSourceService.setSrvToken(String.valueOf(localCallPort));
             }
-            int localCallPort = ((SipTerminalManageService) terminalManageService).getProtocalConfig().getSipLocalPort();
-            terminalMediaSourceService.setSrvToken(String.valueOf(localCallPort));
+
         }
 
         return terminalMediaSourceService.getVmtList();
