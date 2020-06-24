@@ -26,6 +26,7 @@ public class SipTerminalManageService extends TerminalManageService implements I
         super();
         this.sipProtocalConfig = sipProtocalConfig;
         super.terminalMediaSourceService = terminalMediaSourceService;
+        setSupportAliasCall(sipProtocalConfig.isSupportAliasCall());
     }
 
     public SipProtocalConfig getSipProtocalConfig() {

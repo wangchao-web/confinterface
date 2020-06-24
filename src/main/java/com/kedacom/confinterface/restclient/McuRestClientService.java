@@ -881,21 +881,20 @@ public class McuRestClientService {
             System.out.println("monitorsDoHearbeat, has login out!!!");
             return;
         }
+
         if(ConfInterfaceService.monitorsMemberHearbeat == null || ConfInterfaceService.monitorsMemberHearbeat.isEmpty()){
-           /* LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "monitorsMemberHearbeat is null or empty  *****! current time : " + System.currentTimeMillis());
-            System.out.println("monitorsMemberHearbeat is null or empty  *****! current time : " + System.currentTimeMillis());*/
             return;
         }
+
         for (Map.Entry<String, Map<String, MonitorsMember>> monitorsMemberHearbeat : ConfInterfaceService.monitorsMemberHearbeat.entrySet()) {
             //获取所有组的监看信息
             String confId = monitorsMemberHearbeat.getKey();
             Map<String, MonitorsMember> monitorsMembersMaps = monitorsMemberHearbeat.getValue();
 
             if(monitorsMembersMaps.isEmpty() || monitorsMembersMaps == null){
-                /*LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "monitorsDoHearbeat monitorsMembersMaps is null or empty  *****! + "+ ", confId : " + confId);
-                System.out.println("monitorsDoHearbeat monitorsMembersMaps is null or empty  *****! + "+ ", confId : " + confId);*/
                 continue;
             }
+
             McuMonitorsHeartbeatParam mcuMonitorsHeartbeatParam = new McuMonitorsHeartbeatParam();
             List<McuMonitorsDst> monitors = new ArrayList<>();
             for (Map.Entry<String, MonitorsMember> monitorsMembersMap : monitorsMembersMaps.entrySet()){
@@ -906,14 +905,6 @@ public class McuRestClientService {
                     continue;
                 }
                 McuMonitorsDst mcuMonitorsDst = new McuMonitorsDst(monitorsMember.getDstIp(), monitorsMember.getPort());
-                McuStatus mcuStatus = NeedMonistorsFrame(confId, monitorsMember.getDstIp(), monitorsMember.getPort());
-                if(mcuStatus.getValue() == 200){
-                   /* LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Mcu monitorsDoHearbeat NeedMonistorsFrame is success " );
-                    System.out.println("Mcu monitorsDoHearbeat NeedMonistorsFrame is success " );*/
-                }else{
-                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Mcu monitorsDoHearbeat NeedMonistorsFrame is failed  errcode : " + mcuStatus.getValue() + ", confId : " + confId +", dstIP : "+monitorsMember.getDstIp()+", port : "+monitorsMember.getPort());
-                    System.out.println("Mcu monitorsDoHearbeat NeedMonistorsFrame is failed  errcode : " + mcuStatus.getValue() + ", confId : " + confId +", dstIP : "+monitorsMember.getDstIp()+", port : "+monitorsMember.getPort());
-                }
                 monitors.add(mcuMonitorsDst);
             }
             if (monitors.isEmpty()){
@@ -932,21 +923,14 @@ public class McuRestClientService {
             mcuPostMsg.setParams(mcuMonitorsHeartbeatParam);
             McuBaseResponse MonitorsResponse = restClientService.exchange(url.toString(), HttpMethod.POST, mcuPostMsg.getMsg(), urlencodeMediaType, args, McuBaseResponse.class);
 
-            if (null == MonitorsResponse) {
+            if (null == MonitorsResponse || MonitorsResponse.success()) {
                 continue;
-            }
-
-            if (MonitorsResponse.success()) {
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"confId : " + confId + ", monitorsDoHearbeat is success " );
-                System.out.println("confId : " + confId + ", monitorsDoHearbeat is success " );
-                continue ;
             }
 
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Mcu MonitorsResponse getError_code() :" + MonitorsResponse.getError_code());
             System.out.println("Mcu MonitorsResponse getError_code() :" + MonitorsResponse.getError_code());
-            continue ;
+            continue;
         }
-
     }
 
     private void constructUrl(StringBuilder url, String restApi) {

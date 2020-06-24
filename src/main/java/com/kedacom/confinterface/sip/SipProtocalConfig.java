@@ -11,28 +11,36 @@ public class SipProtocalConfig {
         return baseSysConfig;
     }
 
-    public int getSipLocalPort() {
-        return sipLocalPort;
+    public boolean isSupportAliasCall() {
+        return supportAliasCall;
     }
 
-    public int getSipServerPort() {
-        return sipServerPort;
+    public int getLocalPort() {
+        return localPort;
     }
 
-    public String getSipServerIp() {
-        return sipServerIp;
+    public int getServerPort() {
+        return serverPort;
     }
 
-    public void setSipLocalPort(int sipLocalPort) {
-        this.sipLocalPort = sipLocalPort;
+    public String getServerIp() {
+        return serverIp;
     }
 
-    public void setSipServerIp(String sipServerIp) {
-        this.sipServerIp = sipServerIp;
+    public void setSupportAliasCall(boolean supportAliasCall) {
+        this.supportAliasCall = supportAliasCall;
     }
 
-    public void setSipServerPort(int sipServerPort) {
-        this.sipServerPort = sipServerPort;
+    public void setLocalPort(int sipLocalPort) {
+        this.localPort = sipLocalPort;
+    }
+
+    public void setServerIp(String sipServerIp) {
+        this.serverIp = sipServerIp;
+    }
+
+    public void setServerPort(int sipServerPort) {
+        this.serverPort = sipServerPort;
     }
 
     public void setBaseSysConfig(BaseSysConfig baseSysConfig) {
@@ -42,7 +50,8 @@ public class SipProtocalConfig {
     @Autowired
     protected BaseSysConfig baseSysConfig;
 
-    private String sipServerIp;
-    private int sipServerPort;
-    private int sipLocalPort;
+    private boolean supportAliasCall = false;
+    private String serverIp;
+    private int serverPort = 5060;
+    private int localPort = 5060;
 }

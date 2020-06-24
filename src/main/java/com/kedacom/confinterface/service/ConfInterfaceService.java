@@ -49,7 +49,7 @@ public class ConfInterfaceService {
                 int localCallPort = ((H323TerminalManageService) terminalManageService).getProtocalConfig().getLocalCallPort();
                 terminalMediaSourceService.setSrvToken(String.valueOf(localCallPort));
             }else{
-                int localCallPort = ((SipTerminalManageService) terminalManageService).getProtocalConfig().getSipLocalPort();
+                int localCallPort = ((SipTerminalManageService) terminalManageService).getProtocalConfig().getLocalPort();
                 terminalMediaSourceService.setSrvToken(String.valueOf(localCallPort));
             }
 
