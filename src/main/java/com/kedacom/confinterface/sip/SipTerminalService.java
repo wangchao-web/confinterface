@@ -40,6 +40,7 @@ public class SipTerminalService extends TerminalService {
 
         if (resourceInfo.isEmpty()){
             //向流媒体发起请求创建资源节点
+            boolean bExistFalse = false;
             for (MediaDescription mediaDescription : mediaDescriptions) {
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "SIP, mediaDescription:" + mediaDescription.toString());
                 System.out.println("SIP, mediaDescription:" + mediaDescription.toString());
@@ -47,11 +48,19 @@ public class SipTerminalService extends TerminalService {
                 CreateResourceParam createResourceParam = new CreateResourceParam();
                 createResourceParam.setSdp(constructSdp(mediaDescription));
                 CreateResourceResponse resourceResponse = addExchange(createResourceParam);
-                if (null == resourceResponse)
-                    return false;
+                if (null == resourceResponse) {
+                    bExistFalse = true;
+                    break;
+                }
 
                 resourceInfo.add(resourceResponse.getResourceID());
                 addMediaResource(mediaDescription.getStreamIndex(), mediaDescription.getDual(), resourceResponse);
+            }
+
+            if (bExistFalse && !resourceInfo.isEmpty()){
+                removeMediaResource(true, resourceInfo);
+                resourceInfo.clear();
+                return false;
             }
         }
 
@@ -170,6 +179,8 @@ public class SipTerminalService extends TerminalService {
             terminalMediaResource.setForwardResources(TerminalMediaResource.convertToMediaResource(forwardChannel, "all"));
             terminalMediaSourceService.setTerminalMediaResource(terminalMediaResource);
         } else {
+            removeMediaResource(true, resourceInfo);
+
             terminalOfflineReasonEnum = TerminalOfflineReasonEnum.Unknown;
 
             LogTools.debug(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "SIP, callRemote(GroupID:" + groupId +

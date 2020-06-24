@@ -6,7 +6,6 @@ import com.kedacom.confinterface.LogService.LogTools;
 import com.kedacom.confinterface.dao.*;
 import com.kedacom.confinterface.dto.*;
 
-import com.kedacom.confinterface.h323.H323ProtocalConfig;
 import com.kedacom.confinterface.exchange.CreateResourceParam;
 import com.kedacom.confinterface.exchange.CreateResourceResponse;
 import com.kedacom.confinterface.exchange.QueryAndDelResourceParam;
@@ -17,7 +16,6 @@ import com.kedacom.confinterface.restclient.McuRestConfig;
 import com.kedacom.confinterface.restclient.RestClientService;
 import com.kedacom.confinterface.restclient.mcu.*;
 import com.kedacom.confinterface.restclient.mcu.ConfsCascadesMtsRspInfo;
-import com.kedacom.confinterface.sip.SipTerminalManageService;
 import com.kedacom.confinterface.syssetting.BaseSysConfig;
 import com.kedacom.confinterface.util.ConfInterfaceResult;
 import org.eclipse.jetty.util.ajax.JSON;
@@ -1583,17 +1581,6 @@ public class ConfInterfaceService {
             }
         }
         P2PCallGroup p2PCallGroup = p2pCallGroupMap.computeIfAbsent(groupId, k -> new P2PCallGroup(groupId));
-      /*  if (p2PCallParam.isDual()) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "mtAccount : " + mtAccount);
-            System.out.println("mtAccount : " + mtAccount);
-            TerminalService vmt = p2PCallGroup.getVmt(mtAccount);
-            if (null != vmt) {
-                ctrlVmtDualStream(vmt, true, p2PCallRequest);
-            } else {
-                LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50026 : mainstream doesn't exist");
-                p2PCallRequest.makeErrorResponseMsg(ConfInterfaceResult.MAINSTREAM_NOT_EXIST.getCode(), HttpStatus.OK, ConfInterfaceResult.MAINSTREAM_NOT_EXIST.getMessage());
-            }
-        } else {*/
         TerminalService vmtService = terminalManageService.getFreeVmt();
         if (null == vmtService) {
             LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "p2paCll, 50008 : reach max join terminal numbers!");
@@ -1671,7 +1658,6 @@ public class ConfInterfaceService {
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "bOk : " + bOk);
         System.out.println("bOk : " + bOk);
         if (bOk) {
-
             vmtService.setGroupId(null);
             if (vmtService.dualSource.size() > 0) {
                 System.out.println("cancelP2PCall, vmtService.dualSource.size() : " + vmtService.dualSource.size());
@@ -1686,14 +1672,11 @@ public class ConfInterfaceService {
                 p2pCallGroupMap.remove(groupId);
             }
 
-            //cancelP2PCallRequest.makeSuccessResponseMsg();
-
         } else {
             LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "cancelP2PCall, 50025 : p2p cancelCallMt failed!");
             System.out.println("cancelP2PCall, 50025 : p2p cancelCallMt failed!");
             cancelP2PCallRequest.makeErrorResponseMsg(ConfInterfaceResult.P2P_CANCEL_CALL.getCode(), HttpStatus.OK, ConfInterfaceResult.P2P_CANCEL_CALL.getMessage());
         }
-
     }
 
     @Async("confTaskExecutor")

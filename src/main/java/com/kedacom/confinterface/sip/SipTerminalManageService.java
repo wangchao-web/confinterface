@@ -109,6 +109,11 @@ public class SipTerminalManageService extends TerminalManageService implements I
         if (!bOK) {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "SIP, OnLocalMediaRequested, onOpenLogicalChannel failed! participantid :" + participantid);
             System.out.println("SIP, OnLocalMediaRequested, onOpenLogicalChannel failed! participantid :" + participantid);
+
+            //处理被叫失败
+            if (null != terminalService.getProxyMTE164()){
+                P2PCallRequestFail(terminalService);
+            }
         }
 
         //更新redis中的资源信息

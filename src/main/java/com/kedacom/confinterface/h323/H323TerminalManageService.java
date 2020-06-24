@@ -188,31 +188,9 @@ public class H323TerminalManageService extends TerminalManageService implements 
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "H323, OnLocalMediaRequested Failed to create resource node, cancel terminal call! participantid :" + participantid);
             System.out.println("H323, OnLocalMediaRequested Failed to create resource node, cancel terminal call! participantid :" + participantid);
 
-            String remoteMtAccount = terminalService.getRemoteMtAccount();
-            String groupId = terminalService.getGroupId();
-            //创建资源节点失败时,取消终端呼叫,并通知上层业务呼叫失败
-
-            P2PCallGroup callGroup = ConfInterfaceService.p2pCallGroupMap.get(groupId);
-            if (callGroup == null) {
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "H323, OnLocalMediaRequested callGroup is null ********");
-                System.out.println("H323, OnLocalMediaRequested callGroup is null ********");
-            } else {
-                TerminalService vmt = callGroup.getVmt(remoteMtAccount);
-                if (vmt != null) {
-                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"H323, OnLocalMediaRequested vmt is not null ********");
-                    System.out.println("H323, OnLocalMediaRequested vmt is not null ********");
-                    callGroup.removeCallMember(remoteMtAccount);
-                    if (callGroup.getCallMap().isEmpty()) {
-                        ConfInterfaceService.p2pCallGroupMap.remove(groupId);
-                    }
-                    terminalService.cancelCallMt();
-                    terminalService.setGroupId(null);
-                    TerminalManageService.publishStatus(remoteMtAccount, groupId, TerminalOnlineStatusEnum.OFFLINE.getCode(), TerminalOfflineReasonEnum.NmediaResource.getCode());
-                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "H323, OnLocalMediaRequested removeCallMember! CallMember :" + remoteMtAccount + ", GroupId " + groupId);
-                    System.out.println("H323, OnLocalMediaRequested  removeCallMember! CallMember :" + remoteMtAccount + ", GroupId " + groupId);
-                }
+            if (null != terminalService.getRemoteMtAccount() || null != terminalService.getProxyMTE164()){
+                P2PCallRequestFail(terminalService);
             }
-
         }
 
         //将虚拟终端的资源更新到数据库中
@@ -281,30 +259,7 @@ public class H323TerminalManageService extends TerminalManageService implements 
             //更新资源节点失败时,取消终端呼叫,并通知上层业务呼叫失败
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "H323, OnRemoteMediaReponsed Failed to update resource node, cancel terminal call status notification! participantid :" + terminalService.getRemoteMtAccount());
             System.out.println("H323, OnRemoteMediaReponsed Failed to update resource node, cancel terminal call status notification! participantid :" + terminalService.getRemoteMtAccount());
-            String remoteMtAccount = terminalService.getRemoteMtAccount();
-            String groupId = terminalService.getGroupId();
-            P2PCallGroup callGroup = ConfInterfaceService.p2pCallGroupMap.get(groupId);
-            if (callGroup == null) {
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "H323, OnRemoteMediaReponsed callGroup is null *************");
-                System.out.println("H323, OnRemoteMediaReponsed callGroup is null *************");
-            } else {
-                TerminalService vmt = callGroup.getVmt(remoteMtAccount);
-                if (vmt != null) {
-                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"H323, OnRemoteMediaReponsed vmt is not null **************");
-                    System.out.println("H323, OnRemoteMediaReponsed vmt is not null **************");
-                    callGroup.removeCallMember(remoteMtAccount);
-                    if (callGroup.getCallMap().isEmpty()) {
-                        ConfInterfaceService.p2pCallGroupMap.remove(groupId);
-                    }
-                    terminalService.cancelCallMt();
-                    terminalService.setGroupId(null);
-                    TerminalManageService.publishStatus(remoteMtAccount, groupId, TerminalOnlineStatusEnum.OFFLINE.getCode(), TerminalOfflineReasonEnum.NmediaResource.getCode());
-                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "H323, OnRemoteMediaReponsed removeCallMember! CallMember :" + remoteMtAccount + ", GroupId " + groupId);
-                    System.out.println("H323, OnRemoteMediaReponsed  removeCallMember! CallMember :" + remoteMtAccount + ", GroupId " + groupId);
-                }
-            }
         }
-
 
         if (mediaDescriptions.get(0).getDual()) {
             DualStreamRequestFail(terminalService);

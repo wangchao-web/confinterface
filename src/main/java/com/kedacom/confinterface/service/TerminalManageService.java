@@ -14,16 +14,12 @@ import com.kedacom.confinterface.dto.MediaResource;
 import com.kedacom.confinterface.dto.P2PCallRequest;
 import com.kedacom.confinterface.dto.P2PCallResult;
 import com.kedacom.confinterface.dto.TerminalMediaResource;
-import com.kedacom.confinterface.inner.DetailMediaResouce;
-import com.kedacom.confinterface.inner.InspectedParam;
-import com.kedacom.confinterface.inner.P2PCallGroup;
-import com.kedacom.confinterface.inner.TerminalOnlineStatusEnum;
+import com.kedacom.confinterface.inner.*;
 import com.kedacom.confinterface.restclient.mcu.InspectionStatusEnum;
 import com.kedacom.confinterface.util.AudioCap;
 import com.kedacom.confinterface.util.ConfInterfaceResult;
 import com.kedacom.confinterface.util.VideoCap;
 import org.springframework.http.HttpStatus;
-import com.kedacom.confinterface.inner.SubscribeMsgTypeEnum;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -465,15 +461,35 @@ public abstract class TerminalManageService {
         p2PCallRequest.getWaitMsg().clear();
         terminalService.delWaitMsg(P2PCallRequest.class.getName());
         LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "P2PCallRequestFail, 50024 : p2p call failed!");
-        if (0 != p2PCallRequest.getAccount().compareTo(terminalService.getE164())) {
-            //如果请求消息中的账号与虚拟终端的账号不一致，说明是实际的点对点请求，
-            // 否则则说明是有MT从系统外部主动呼叫虚拟终端
-            p2PCallRequest.makeErrorResponseMsg(ConfInterfaceResult.P2P_CALL.getCode(), HttpStatus.OK, ConfInterfaceResult.P2P_CALL.getMessage());
+        //注释掉得原因：点对点呼叫时，已经在接收到消息时已经回复成功，因此后续不管失败还是成功，不需要再回复消息
+        // 只需要将终端状态推送上去即可
+//        if (0 != p2PCallRequest.getAccount().compareTo(terminalService.getE164())) {
+//            //如果请求消息中的账号与虚拟终端的账号不一致，说明是实际的点对点请求，
+//            // 否则则说明是有MT从系统外部主动呼叫虚拟终端
+//            p2PCallRequest.makeErrorResponseMsg(ConfInterfaceResult.P2P_CALL.getCode(), HttpStatus.OK, ConfInterfaceResult.P2P_CALL.getMessage());
+//        }
+
+        String groupId = terminalService.getGroupId();
+        P2PCallGroup p2PCallGroup = ConfInterfaceService.p2pCallGroupMap.get(groupId);
+        if (null == p2PCallGroup) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "P2PCallRequestFail callGroup is null *************");
+            System.out.println("P2PCallRequestFail callGroup is null *************");
+            return;
         }
 
+        String remoteMtAccount = terminalService.getRemoteMtAccount() != null ? terminalService.getRemoteMtAccount() : terminalService.getProxyMTE164();
+        p2PCallGroup.removeCallMember(remoteMtAccount);
+        if (p2PCallGroup.getCallMap().isEmpty()) {
+            ConfInterfaceService.p2pCallGroupMap.remove(groupId);
+        }
+
+        TerminalManageService.publishStatus(remoteMtAccount, groupId, TerminalOnlineStatusEnum.OFFLINE.getCode(), TerminalOfflineReasonEnum.NmediaResource.getCode());
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "P2PCallRequestFail removeCallMember! CallMember :" + remoteMtAccount + ", GroupId " + groupId);
+        System.out.println("P2PCallRequestFail removeCallMember! CallMember :" + remoteMtAccount + ", GroupId " + groupId);
+
         boolean bOk = terminalService.cancelCallMt();
-        if (!bOk){
-            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "P2PCallRequestFail, cancelCallMt fail, vmt: " + terminalService.getE164() + ", account: "+ p2PCallRequest.getAccount());
+        if (!bOk) {
+            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "P2PCallRequestFail, cancelCallMt fail, vmt: " + terminalService.getE164() + ", account: " + p2PCallRequest.getAccount());
         }
     }
 
