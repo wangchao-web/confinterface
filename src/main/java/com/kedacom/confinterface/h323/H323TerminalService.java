@@ -252,7 +252,7 @@ public class H323TerminalService extends TerminalService {
             }
 
             resourceInfo.add(resourceResponse.getResourceID());
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "resourceResponse" + resourceResponse.getSdp());
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "resourceResponse : " + resourceResponse.getSdp());
             System.out.println("resourceResponse : " + resourceResponse.getSdp());
             newMediaDescription.add(constructRequestMediaDescription(mediaDescriptions.get(0), resourceResponse.getSdp()));
         }

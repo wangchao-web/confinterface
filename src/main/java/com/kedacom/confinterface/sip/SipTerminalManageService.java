@@ -9,6 +9,7 @@ import com.kedacom.confinterface.LogService.LogTools;
 import com.kedacom.confinterface.dto.MediaResource;
 import com.kedacom.confinterface.dto.P2PCallRequest;
 import com.kedacom.confinterface.dto.TerminalMediaResource;
+import com.kedacom.confinterface.h323.H323ProtocalConfig;
 import com.kedacom.confinterface.inner.DetailMediaResouce;
 import com.kedacom.confinterface.inner.TerminalOnlineStatusEnum;
 import com.kedacom.confinterface.service.TerminalManageService;
@@ -241,6 +242,9 @@ public class SipTerminalManageService extends TerminalManageService implements I
         TerminalManageService.publishStatus(p2PCallRequest.getAccount(), p2PCallRequest.getGroupId(), TerminalOnlineStatusEnum.ONLINE.getCode(), p2PCallRequest.getForwardResources(), p2PCallRequest.getReverseResources());
 
         terminalService.delWaitMsg(P2PCallRequest.class.getName());
+    }
+    public SipProtocalConfig getProtocalConfig() {
+        return sipProtocalConfig;
     }
 
     private SipProtocalConfig sipProtocalConfig;

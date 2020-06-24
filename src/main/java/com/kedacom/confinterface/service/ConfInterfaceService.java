@@ -48,6 +48,8 @@ public class ConfInterfaceService {
                 int localCallPort = ((H323TerminalManageService) terminalManageService).getProtocalConfig().getLocalCallPort();
                 terminalMediaSourceService.setSrvToken(String.valueOf(localCallPort));
             }
+            int localCallPort = ((SipTerminalManageService) terminalManageService).getProtocalConfig().getSipLocalPort();
+            terminalMediaSourceService.setSrvToken(String.valueOf(localCallPort));
         }
 
         return terminalMediaSourceService.getVmtList();
@@ -1322,8 +1324,6 @@ public class ConfInterfaceService {
         if (null != groupConfInfo) {
             String confId = groupConfInfo.getConfId();
             ConcurrentHashMap<String, MonitorsMember> monitorsMembers = terminalMediaSourceService.getMonitorsMembers(confId);
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "monitorsMembers : " + monitorsMembers.toString());
-            System.out.println("monitorsMembers : " + monitorsMembers.toString());
             if (null != monitorsMembers || !monitorsMembers.isEmpty()) {
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "sendIFrame monitorsMembers is not null or empty : " + resourceId);
                 System.out.println("sendIFrame monitorsMembers is not null or empty : " + resourceId);
@@ -1561,7 +1561,7 @@ public class ConfInterfaceService {
     public void p2pCall(P2PCallRequest p2PCallRequest, P2PCallParam p2PCallParam) {
         final String groupId = p2PCallRequest.getGroupId();
         String mtAccount = p2PCallParam.getAccount();
-        if (p2PCallParam.getAccountType() == 2 && terminalManageService.isSupportAliasCall()) {
+        if (p2PCallParam.getAccountType() == 2 && !terminalManageService.isSupportAliasCall()) {
             LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50027 : " + " Unused GK , Use E164 call failed : " + groupId);
             System.out.println("50027 : " + " Unused GK , Use E164 call failed : " + groupId);
             p2PCallRequest.makeErrorResponseMsg(ConfInterfaceResult.ACCOUNT_E164_INVALID.getCode(), HttpStatus.OK, ConfInterfaceResult.ACCOUNT_E164_INVALID.getMessage());
