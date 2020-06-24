@@ -16,6 +16,7 @@ import com.kedacom.confinterface.restclient.McuRestConfig;
 import com.kedacom.confinterface.restclient.RestClientService;
 import com.kedacom.confinterface.restclient.mcu.*;
 import com.kedacom.confinterface.restclient.mcu.ConfsCascadesMtsRspInfo;
+import com.kedacom.confinterface.sip.SipTerminalManageService;
 import com.kedacom.confinterface.syssetting.BaseSysConfig;
 import com.kedacom.confinterface.util.ConfInterfaceResult;
 import org.eclipse.jetty.util.ajax.JSON;
