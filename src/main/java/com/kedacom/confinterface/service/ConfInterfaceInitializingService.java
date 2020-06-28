@@ -56,7 +56,12 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
 
         createConferenceManage();
         //初始化协议栈
-        initConfAdapter();
+        boolean bInitConfAdapter = initConfAdapter();
+        if(!bInitConfAdapter){
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "init conferenceAdapterController fail, end confinterface service");
+            System.out.println("init conferenceAdapterController fail, end confinterface service");
+            return;
+        }
         registerVmts();
 
         //提前处理状态发布
@@ -234,7 +239,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
         terminalManageService.setConferenceManage(conferenceManager);
     }
 
-    private void initConfAdapter() {
+    private boolean initConfAdapter() {
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "now in initConfAdapter................");
         System.out.println("now in initConfAdapter................");
         IConferenceAdapterController conferenceAdapterController = terminalManageService.getConferenceManager().CreateAdapterController();
@@ -247,6 +252,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "init conferenceAdapterController fail");
             System.out.println("init conferenceAdapterController fail");
         }
+        return bInitOk;
     }
 
     private void registerVmts() {
@@ -745,7 +751,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
     private McuRestConfig mcuRestConfig;
 
     //版本号修复
-    public static final String VERSION = "confinterface-V.1.2.0.4";
+    public static final String VERSION = "confinterface-V.1.2.0.5";
 
     public static Boolean initialized = false;
 
