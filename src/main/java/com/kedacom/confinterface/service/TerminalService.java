@@ -107,6 +107,14 @@ public abstract class TerminalService {
         this.waitMsg = null;
     }
 
+    public boolean isReadyToPrepare() {
+        return readyToPrepare;
+    }
+
+    public void setReadyToPrepare(boolean readyToPrepare) {
+        this.readyToPrepare = readyToPrepare;
+    }
+
     public String getIp() {
         return ip;
     }
@@ -543,6 +551,8 @@ public abstract class TerminalService {
         inspentedTerminals = null;
         //1月14
         remoteMtAccount = null;
+        //先开到终端的逻辑通道的判断
+        readyToPrepare = false;
     }
 
     public abstract boolean onOpenLogicalChannel(Vector<MediaDescription> mediaDescriptions);
@@ -1050,6 +1060,7 @@ public abstract class TerminalService {
                 groupId = null;
                 confId = null;
                 remoteMtAccount = null;
+                readyToPrepare = false;
                 setDualStream(false);
 
                 if (dynamicBind == 1) {
@@ -1150,8 +1161,9 @@ public abstract class TerminalService {
             }
         }
 
-        if (resourceInfo.size() == 0)
+        if (resourceInfo.size() == 0){
             return resourceInfo;
+        }
 
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "onOpenLogicalChannel, exist reverseChannel info, start query exchange info, resourceInfoSize:" + resourceInfo.size());
         System.out.println("onOpenLogicalChannel, exist reverseChannel info, start query exchange info, resourceInfoSize:" + resourceInfo.size());
@@ -1249,9 +1261,10 @@ public abstract class TerminalService {
             sdp.append(" ::\r\n");
         }
 
-
         /*此处暂时将mcu向会议接入微服务打开逻辑通道时使用的媒体参数作为接受媒体信息携带的流媒体
          * todo:等到赵智琛将能力集协商结果提供出来后，此处可以需填写能力集协商内容*/
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"mediaDescription.getMediaType() : " + mediaDescription.getMediaType());
+        System.out.println("mediaDescription.getMediaType() : " + mediaDescription.getMediaType());
         if (mediaDescription.getMediaType().equals(MediaTypeEnum.VIDEO.getName())) {
             sdp.append("m=video 0 RTP/AVP ");
             sdp.append(mediaDescription.getPayload());
@@ -2318,6 +2331,7 @@ public abstract class TerminalService {
     public Map<String, MediaResource> dualSource = new HashMap<>();
     protected String deviceID; //流媒体音视频同步设备Id
 
+    protected volatile boolean readyToPrepare = false;
 
 
     //显控双向选看

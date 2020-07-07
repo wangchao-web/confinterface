@@ -177,8 +177,8 @@ public class SipTerminalManageService extends TerminalManageService implements I
 
         SipTerminalService terminalService = (SipTerminalService) usedVmtServiceMap.get(participantid);
         if (null == terminalService) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "SIP, OnRemoteMediaReponsed�� not found terminal : " + participantid);
-            System.out.println("SIP, OnRemoteMediaReponsed�� not found terminal : " + participantid);
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "SIP, OnRemoteMediaReponsed not found terminal : " + participantid);
+            System.out.println("SIP, OnRemoteMediaReponsed not found terminal : " + participantid);
             return;
         }
 
@@ -214,6 +214,11 @@ public class SipTerminalManageService extends TerminalManageService implements I
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Sip, OnKeyFrameRequested, terminal: " + participantid + " is on key frameRequest, threadName: " + Thread.currentThread().getName() + "mediaDescriptions : " + mediaDescriptions.toString());
         System.out.println("Sip, OnKeyFrameRequested, terminal: " + participantid + " is on key frameRequest  conference,threadName:" + Thread.currentThread().getName() + "mediaDescriptions : " + mediaDescriptions.toString());
         ProcessKeyFrameRequested(participantid, mediaDescriptions);
+    }
+
+    @Override
+    public void OnReadyToPrepareLocalChannel(String s, Vector<MediaDescription> vector) {
+
     }
 
     private void ProcessProxyCall(TerminalService terminalService) {

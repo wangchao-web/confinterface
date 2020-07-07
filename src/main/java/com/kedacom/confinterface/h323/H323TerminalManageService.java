@@ -179,8 +179,11 @@ public class H323TerminalManageService extends TerminalManageService implements 
             System.out.println("H323, OnLocalMediaRequested, not found terminal : " + participantid);
             return;
         }
+        Boolean bOK = false;
+        synchronized (terminalService){
+            bOK = terminalService.onOpenLogicalChannel(mediaDescriptions);
+        }
 
-        Boolean  bOK= terminalService.onOpenLogicalChannel(mediaDescriptions);
 
         if (!bOK) {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "H323, OnLocalMediaRequested, onOpenLogicalChannel failed! participantid :" + participantid);
@@ -188,13 +191,36 @@ public class H323TerminalManageService extends TerminalManageService implements 
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "H323, OnLocalMediaRequested Failed to create resource node, cancel terminal call! participantid :" + participantid);
             System.out.println("H323, OnLocalMediaRequested Failed to create resource node, cancel terminal call! participantid :" + participantid);
 
-            if (null != terminalService.getRemoteMtAccount() || null != terminalService.getProxyMTE164()){
+            if (null != terminalService.getRemoteMtAccount() || null != terminalService.getProxyMTE164()) {
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "H323, OnLocalMediaRequested P2PCallRequestFail, cancel terminal call! participantid :" + participantid);
+                System.out.println("H323, OnLocalMediaRequested P2PCallRequestFail, cancel terminal call! participantid :" + participantid);
                 P2PCallRequestFail(terminalService);
             }
-        }
+        } else {
+            if (terminalService.isReadyToPrepare()) {
+                if (!mediaDescriptions.get(0).getDual()) {
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "H323, OnLocalMediaRequested, remoteMtAccount : " + terminalService.getRemoteMtAccount());
+                    System.out.println("H323, OnLocalMediaRequested, remoteMtAccount : " + terminalService.getRemoteMtAccount());
+                    if (null != terminalService.getRemoteMtAccount() || null != terminalService.getProxyMTE164()) {
+                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "H323, OnLocalMediaRequested, P2PCallRequestSuccess : ");
+                        System.out.println("H323, OnLocalMediaRequested, P2PCallRequestSuccess : ");
+                        synchronized (this) {
+                            P2PCallRequestSuccess(terminalService, mediaDescriptions.get(0).getStreamIndex());
+                        }
 
+                    }
+
+                    if (terminalService.getForwardGenericStreamNum().decrementAndGet() != 0) {
+                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "H323, OnLocalMediaRequested, decrementAndGet : ");
+                        System.out.println("H323, OnLocalMediaRequested, decrementAndGet : ");
+                    }
+                }
+            }
+        }
         //将虚拟终端的资源更新到数据库中
         synchronized (terminalService) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "H323, OnLocalMediaRequested TerminalMediaResource");
+            System.out.println("H323, OnLocalMediaRequested update TerminalMediaResource");
             TerminalMediaResource oldTerminalMediaResource = terminalMediaSourceService.getTerminalMediaResource(participantid);
             List<MediaResource> forwardResources = TerminalMediaResource.convertToMediaResource(terminalService.getForwardChannel(), "all");
             List<MediaResource> reverseResources = TerminalMediaResource.convertToMediaResource(terminalService.getReverseChannel(), "all");
@@ -219,6 +245,7 @@ public class H323TerminalManageService extends TerminalManageService implements 
                 terminalMediaSourceService.setTerminalMediaResource(terminalMediaResource);
             }
         }
+
     }
 
     @Override
@@ -233,16 +260,26 @@ public class H323TerminalManageService extends TerminalManageService implements 
             System.out.println("H323, OnRemoteMediaReponsed， not found terminal : " + participantid);
             return;
         }
+        boolean bOk = false;
+        synchronized (terminalService){
+            bOk = terminalService.updateExchange(mediaDescriptions);
+        }
 
-        boolean bOk = terminalService.updateExchange(mediaDescriptions);
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "H323, OnRemoteMediaReponsed, updateExchange result : " + bOk
-                + ", streamIndex:"+ mediaDescriptions.get(0).getStreamIndex() + ", bDual: " + mediaDescriptions.get(0).getDual());
-        System.out.println("H323, OnRemoteMediaReponsed, updateExchange result : " + bOk + ", streamIndex:"+ mediaDescriptions.get(0).getStreamIndex() + ", bDual: " + mediaDescriptions.get(0).getDual());
+                + ", streamIndex:" + mediaDescriptions.get(0).getStreamIndex() + ", bDual: " + mediaDescriptions.get(0).getDual());
+        System.out.println("H323, OnRemoteMediaReponsed, updateExchange result : " + bOk + ", streamIndex:" + mediaDescriptions.get(0).getStreamIndex() + ", bDual: " + mediaDescriptions.get(0).getDual());
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "H323, OnRemoteMediaReponsed ReadyToPrepare : " + terminalService.isReadyToPrepare());
+        System.out.println("H323, OnRemoteMediaReponsed ReadyToPrepare : " + terminalService.isReadyToPrepare());
+
         if (bOk) {
             if (!mediaDescriptions.get(0).getDual()) {
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "H323, OnRemoteMediaReponsed, remoteMtAccount : " + terminalService.getRemoteMtAccount());
                 System.out.println("H323, OnRemoteMediaReponsed, remoteMtAccount : " + terminalService.getRemoteMtAccount());
                 if (null != terminalService.getRemoteMtAccount() || null != terminalService.getProxyMTE164()) {
-                    P2PCallRequestSuccess(terminalService, mediaDescriptions.get(0).getStreamIndex());
+                    synchronized (this) {
+                        P2PCallRequestSuccess(terminalService, mediaDescriptions.get(0).getStreamIndex());
+                    }
+
                 }
 
                 if (terminalService.getForwardGenericStreamNum().decrementAndGet() != 0) {
@@ -264,8 +301,11 @@ public class H323TerminalManageService extends TerminalManageService implements 
         if (mediaDescriptions.get(0).getDual()) {
             DualStreamRequestFail(terminalService);
         } else if (null != terminalService.getRemoteMtAccount() || null != terminalService.getProxyMTE164()) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "H323, OnRemoteMediaReponsed P2PCallRequestFail cancel terminal call status notification! participantid :" + terminalService.getRemoteMtAccount());
+            System.out.println("H323, OnRemoteMediaReponsed P2PCallRequestFail  cancel terminal call status notification! participantid :" + terminalService.getRemoteMtAccount());
             P2PCallRequestFail(terminalService);
         }
+
     }
 
     @Override
@@ -343,10 +383,46 @@ public class H323TerminalManageService extends TerminalManageService implements 
     }
 
     @Override
+    @Async("confTaskExecutor")
     public void OnKeyFrameRequested(String participantid, Vector<MediaDescription> mediaDescriptions) {
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "H323, OnKeyFrameRequested, terminal: " + participantid + " is on key frameRequest, threadName: " + Thread.currentThread().getName()+ "mediaDescriptions : " + mediaDescriptions.toString());
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "H323, OnKeyFrameRequested, terminal: " + participantid + " is on key frameRequest, threadName: " + Thread.currentThread().getName() + "mediaDescriptions : " + mediaDescriptions.toString());
         System.out.println("H323, OnKeyFrameRequested, terminal: " + participantid + " is on key frameRequest  conference,threadName:" + Thread.currentThread().getName() + "mediaDescriptions : " + mediaDescriptions.toString());
         ProcessKeyFrameRequested(participantid, mediaDescriptions);
+    }
+
+    @Override
+    @Async("confTaskExecutor")
+    public void OnReadyToPrepareLocalChannel(String participantid, Vector<MediaDescription> mediaDescriptions) {
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "H323, OnReadyToPrepareLocalChannel, request terminal: " + participantid + " local media! threadName:" + Thread.currentThread().getName());
+        System.out.println("H323, OnReadyToPrepareLocalChannel, request terminal: " + participantid + " local media! threadName:" + Thread.currentThread().getName());
+        H323TerminalService terminalService = (H323TerminalService) usedVmtServiceMap.get(participantid);
+        if (null == terminalService) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "H323, OnReadyToPrepareLocalChannel, not found terminal : " + participantid);
+            System.out.println("H323, OnReadyToPrepareLocalChannel, not found terminal : " + participantid);
+            return;
+        }
+        MediaDescription mediaDescription = mediaDescriptions.get(0);
+        mediaDescription.getRtcpAddress().setIP("0.0.0.0");
+        mediaDescription.getRtpAddress().setIP("0.0.0.0");
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "H323, OnReadyToPrepareLocalChannel participantid : " + participantid + " : " + mediaDescription);
+        System.out.println("H323, OnReadyToPrepareLocalChannel participantid : " + participantid + " : " + mediaDescription);
+        terminalService.setReadyToPrepare(true);
+        Boolean bOK = false;
+        synchronized (terminalService) {
+            bOK = terminalService.openLogicalChannel(mediaDescriptions);
+        }
+
+        if (!bOK) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "H323, OnReadyToPrepareLocalChannel, onOpenLogicalChannel failed! participantid :" + participantid);
+            System.out.println("H323, OnReadyToPrepareLocalChannel, onOpenLogicalChannel failed! participantid :" + participantid);
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "H323, OnReadyToPrepareLocalChannel Failed to create resource node, cancel terminal call! participantid :" + participantid);
+            System.out.println("H323, OnReadyToPrepareLocalChannel Failed to create resource node, cancel terminal call! participantid :" + participantid);
+
+            if (null != terminalService.getRemoteMtAccount() || null != terminalService.getProxyMTE164()) {
+                P2PCallRequestFail(terminalService);
+            }
+        }
+
     }
 
     private void ResumeDualStream(H323TerminalService terminalService) {

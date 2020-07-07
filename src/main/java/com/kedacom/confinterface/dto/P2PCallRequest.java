@@ -113,6 +113,6 @@ public class P2PCallRequest extends BaseRequestMsg<BaseResponseMsg> {
     private List<MediaResource> forwardResources;
     private List<MediaResource> reverseResources;
 
-    public boolean SuccessResponseMsg = false;
+    public volatile boolean SuccessResponseMsg = false;
 
 }

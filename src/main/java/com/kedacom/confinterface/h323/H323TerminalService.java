@@ -135,14 +135,14 @@ public class H323TerminalService extends TerminalService {
                     resourceInfo.add(resourceResponse.getResourceID());
                     addMediaResource(mediaDescription.getStreamIndex(), mediaDescription.getDual(), resourceResponse);
                 } else if (mediaDescription.getDual()) {
-                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"Enter dual node update");
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Enter dual node update");
                     System.out.println("Enter dual node update");
                     List<String> dualResourceInfo = new ArrayList<>();
                     List<UpdateResourceParam> updateResourceParams = new ArrayList<>();
                     for (Map.Entry<String, MediaResource> entry : dualSource.entrySet()) {
-                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"Added streaming media resource node update: dualSource.size() :" + dualSource.size());
+                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Added streaming media resource node update: dualSource.size() :" + dualSource.size());
                         System.out.println("Added streaming media resource node update: dualSource.size() :" + dualSource.size());
-                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"E164 = " + entry.getKey() + " dualResourceInfo.getId()= " + entry.getValue().toString());
+                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "E164 = " + entry.getKey() + " dualResourceInfo.getId()= " + entry.getValue().toString());
                         System.out.println("E164 = " + entry.getKey() + " dualResourceInfo.getId()= " + entry.getValue().toString());
                         dualResourceInfo.add(entry.getValue().getId());
                         UpdateResourceParam updateResourceParam = new UpdateResourceParam(entry.getValue().getId());
@@ -179,16 +179,22 @@ public class H323TerminalService extends TerminalService {
         }
 
         resourceInfo.clear();
-
         if (bOnlyDualStream) {
             return true;
         }
 
-        //在收到主流的反向的通道打开时，发起正向主流通道的打开
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "H323, start open forward logical channel...........");
-        System.out.println("H323, start open forward logical channel...........");
-        return openLogicalChannel(mediaDescriptions);
+        if (readyToPrepare) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "H323, readyToPrepare........... : " + readyToPrepare);
+            System.out.println("H323, readyToPrepare........... : " + readyToPrepare);
+        } else {
+            //在收到主流的反向的通道打开时，发起正向主流通道的打开
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "H323, start open forward logical channel...........");
+            System.out.println("H323, start open forward logical channel...........");
+            return openLogicalChannel(mediaDescriptions);
+        }
+        return bOk;
     }
+
 
     public boolean openLogicalChannel(Vector<MediaDescription> mediaDescriptions) {
         Vector<MediaDescription> newMediaDescription = new Vector<>();
@@ -248,6 +254,8 @@ public class H323TerminalService extends TerminalService {
             createResourceParam.setSdp(constructCreateSdp(mediaDescriptions.get(0)));
             resourceResponse = addExchange(createResourceParam);
             if (null == resourceResponse) {
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "H323, openLogicalChannel,  add exchange info resourceResponse is null !!! ");
+                System.out.println("H323, openLogicalChannel,  add exchange info resourceResponse is null !!! ");
                 return false;
             }
 
@@ -258,6 +266,7 @@ public class H323TerminalService extends TerminalService {
         }
         boolean bOk = false;
         synchronized (this) {
+            System.out.println("H323, openLogicalChannel, RequestRemoteMedia");
             bOk = conferenceParticipant.RequestRemoteMedia(newMediaDescription);
             if (!bOk) {
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "H323, openLogicalChannel, RequestRemoteMedia failed! participartId : " + e164);
@@ -279,6 +288,7 @@ public class H323TerminalService extends TerminalService {
         return bOk;
     }
 
+    @Override
     public void openDualStreamChannel(BaseRequestMsg startDualStreamRequest) {
         if (null != forwardChannel) {
             for (DetailMediaResouce detailMediaResouce : forwardChannel) {
@@ -343,32 +353,32 @@ public class H323TerminalService extends TerminalService {
         boolean bOK;
         CallParameterEx callParameterEx = new CallParameterEx();
 
-        if(videoCodec == null || null == videoCodec.getCodecFormat() || videoCodec.getCodecFormat().isEmpty()){
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"callRemote, videoCodec is null ******");
+        if (videoCodec == null || null == videoCodec.getCodecFormat() || videoCodec.getCodecFormat().isEmpty()) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "callRemote, videoCodec is null ******");
             System.out.println("callRemote, videoCodec is null ******");
             bOK = conferenceParticipant.CallRemote(remoteParticipantInfo);
-        }else{
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"callRemote, videoCodec.getCodeFormat() : " + videoCodec.getCodecFormat() + " ,videoCodec.getResolution()" + videoCodec.getResolution() + " ,videoCodec.getBitrate() :" + videoCodec.getBitrate()+ " ,videoCodec.getFramerate()" + videoCodec.getFramerate());
+        } else {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "callRemote, videoCodec.getCodeFormat() : " + videoCodec.getCodecFormat() + " ,videoCodec.getResolution()" + videoCodec.getResolution() + " ,videoCodec.getBitrate() :" + videoCodec.getBitrate() + " ,videoCodec.getFramerate()" + videoCodec.getFramerate());
             System.out.println("callRemote, videoCodec.getCodeFormat() : " + videoCodec.getCodecFormat() + " ,videoCodec.getResolution()" + videoCodec.getResolution() + " ,videoCodec.getBitrate() :" + videoCodec.getBitrate() + " ,videoCodec.getFramerate()" + videoCodec.getFramerate());
             MediaCodec mediaCodec = new MediaCodec();
             constructMediaCodec(videoCodec, audioCodec, mediaCodec);
             callParameterEx.setCodec(mediaCodec);
-            bOK = conferenceParticipant.CallRemote(remoteParticipantInfo,callParameterEx);
+            bOK = conferenceParticipant.CallRemote(remoteParticipantInfo, callParameterEx);
         }
 
         TerminalOfflineReasonEnum terminalOfflineReasonEnum = TerminalOfflineReasonEnum.OK;
 
-        if (bOK){
+        if (bOK) {
             System.out.println("callRemote, CallRemote OK! terminalOfflineStatusEnum = " + terminalOfflineReasonEnum);
             setDualStream(true);
         } else {
             terminalOfflineReasonEnum = callFailureCode(callParameterEx.getErrorReason());
             LogTools.debug(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "callRemote(GroupID:" + groupId +
                     " ,account: " + remoteParticipantInfo.getParticipantId() + ") failed errcode:" + terminalOfflineReasonEnum.getCode() +
-                    ", errMsg:"+ callParameterEx.getErrorReason().name());
+                    ", errMsg:" + callParameterEx.getErrorReason().name());
 
             System.out.println("callRemote(GroupID:" + groupId + " ,account: " + remoteParticipantInfo.getParticipantId() + ") failed errcode:"
-                    + terminalOfflineReasonEnum.getCode() + ", errMsg:"+ callParameterEx.getErrorReason().name());
+                    + terminalOfflineReasonEnum.getCode() + ", errMsg:" + callParameterEx.getErrorReason().name());
         }
 
         return terminalOfflineReasonEnum;
@@ -419,6 +429,7 @@ public class H323TerminalService extends TerminalService {
         return true;
     }
 
+    @Override
     public boolean closeDualStreamChannel() {
         if (null == videoDualStreamMediaDesc || null == forwardChannel || null == dualStreamResourceId) {
             return true;

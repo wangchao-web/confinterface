@@ -406,61 +406,68 @@ public abstract class TerminalManageService {
     public  int queryUsedVmtServiceMap(){
         return usedVmtServiceMap.size();
     }
+
     protected void P2PCallRequestSuccess(TerminalService terminalService, int streamIndex) {
-        P2PCallRequest p2PCallRequest = (P2PCallRequest) terminalService.getWaitMsg(P2PCallRequest.class.getName());
-        if (null == p2PCallRequest) {
-            System.out.println("P2PCallRequestSuccess, no p2pCallRequest need deal!");
-            return;
-        }
-
-        List<DetailMediaResouce> mediaResources = terminalService.getForwardChannel();
-        for (DetailMediaResouce detailMediaResouce : mediaResources) {
-            if (detailMediaResouce.getStreamIndex() != streamIndex) {
-                continue;
+            P2PCallRequest p2PCallRequest = (P2PCallRequest) terminalService.getWaitMsg(P2PCallRequest.class.getName());
+            if (null == p2PCallRequest) {
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "P2PCallRequestSuccess, no p2pCallRequest need deal!");
+                System.out.println("P2PCallRequestSuccess, no p2pCallRequest need deal!");
+                return;
             }
 
-            MediaResource mediaResource = new MediaResource();
-            detailMediaResouce.convertTo(mediaResource);
+            List<DetailMediaResouce> mediaResources = terminalService.getForwardChannel();
+            for (DetailMediaResouce detailMediaResouce : mediaResources) {
+                if (detailMediaResouce.getStreamIndex() != streamIndex) {
+                    continue;
+                }
 
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "P2PCallRequestSuccess, add forward mediaResource :" + mediaResource.getId());
-            System.out.println("P2PCallRequestSuccess add forward mediaResource :" + mediaResource.getId());
-            p2PCallRequest.addForwardResource(mediaResource);
-            synchronized (this) {
-                p2PCallRequest.removeMsg(P2PCallRequest.class.getName());
-            }
+                MediaResource mediaResource = new MediaResource();
+                detailMediaResouce.convertTo(mediaResource);
 
-            if (detailMediaResouce.getSdp().contains("sendrecv")){
-                System.out.println("P2PCallRequestSuccess, sendrecv, add Reverse Resouce!!");
-                p2PCallRequest.addReverseResource(mediaResource);
-                terminalService.addReverseChannel(detailMediaResouce);  //对于sip来说，正向和反向资源相同
-                synchronized (this){
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "P2PCallRequestSuccess, add forward mediaResource :" + mediaResource.getId());
+                System.out.println("P2PCallRequestSuccess add forward mediaResource :" + mediaResource.getId());
+                p2PCallRequest.addForwardResource(mediaResource);
+                synchronized (terminalService) {
                     p2PCallRequest.removeMsg(P2PCallRequest.class.getName());
                 }
+
+                if (detailMediaResouce.getSdp().contains("sendrecv")) {
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "P2PCallRequestSuccess, sendrecv, add Reverse Resouce!!");
+                    System.out.println("P2PCallRequestSuccess, sendrecv, add Reverse Resouce!!");
+                    p2PCallRequest.addReverseResource(mediaResource);
+                    terminalService.addReverseChannel(detailMediaResouce);  //对于sip来说，正向和反向资源相同
+                    synchronized (terminalService) {
+                        p2PCallRequest.removeMsg(P2PCallRequest.class.getName());
+                    }
+                }
+
+                if (p2PCallRequest.isSuccessResponseMsg()) {
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "P2PCallRequestSuccess, pubulish terminal status, account:" + p2PCallRequest.getAccount() + ", groupId: " + p2PCallRequest.getGroupId() + ", forwardResources: " + p2PCallRequest.getForwardResources().toString() + ", reverseResources: " + p2PCallRequest.getReverseResources().toString());
+                    System.out.println("P2PCallRequestSuccess, pubulish terminal status, account: " + p2PCallRequest.getAccount() + ", groupId : " + p2PCallRequest.getGroupId() + ", forwardResources: " + p2PCallRequest.getForwardResources().toString() + ", reverseResources: " + p2PCallRequest.getReverseResources().toString());
+
+                    TerminalManageService.publishStatus(p2PCallRequest.getAccount(), p2PCallRequest.getGroupId(), TerminalOnlineStatusEnum.ONLINE.getCode(), p2PCallRequest.getForwardResources(), p2PCallRequest.getReverseResources());
+                }
+                break;
             }
 
-            if(p2PCallRequest.isSuccessResponseMsg()){
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "P2PCallRequestSuccess, pubulish terminal status, account:" + p2PCallRequest.getAccount() + ", groupId: " + p2PCallRequest.getGroupId() + ", forwardResources: " + p2PCallRequest.getForwardResources().toString() + ", reverseResources: " + p2PCallRequest.getReverseResources().toString());
-                System.out.println("P2PCallRequestSuccess, pubulish terminal status, account: " + p2PCallRequest.getAccount() + ", groupId : " + p2PCallRequest.getGroupId() + ", forwardResources: " + p2PCallRequest.getForwardResources().toString() + ", reverseResources: " + p2PCallRequest.getReverseResources().toString());
-
-                TerminalManageService.publishStatus(p2PCallRequest.getAccount(), p2PCallRequest.getGroupId(), TerminalOnlineStatusEnum.ONLINE.getCode(), p2PCallRequest.getForwardResources(), p2PCallRequest.getReverseResources());
+            if (p2PCallRequest.getWaitMsg().isEmpty()) {
+                terminalService.delWaitMsg(P2PCallRequest.class.getName());
             }
-            break;
-        }
 
-        if (p2PCallRequest.getWaitMsg().isEmpty()) {
-            terminalService.delWaitMsg(P2PCallRequest.class.getName());
-        }
     }
 
     protected void P2PCallRequestFail(TerminalService terminalService) {
         P2PCallRequest p2PCallRequest = (P2PCallRequest) terminalService.getWaitMsg(P2PCallRequest.class.getName());
         if (null == p2PCallRequest) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "P2PCallRequestFail p2PCallRequest is null *************");
+            System.out.println("P2PCallRequestFail p2PCallRequest is null *************");
             return;
         }
 
         p2PCallRequest.getWaitMsg().clear();
         terminalService.delWaitMsg(P2PCallRequest.class.getName());
         LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "P2PCallRequestFail, 50024 : p2p call failed!");
+        System.out.println("P2PCallRequestFail, 50024 : p2p call failed!");
         //注释掉得原因：点对点呼叫时，已经在接收到消息时已经回复成功，因此后续不管失败还是成功，不需要再回复消息
         // 只需要将终端状态推送上去即可
 //        if (0 != p2PCallRequest.getAccount().compareTo(terminalService.getE164())) {
@@ -490,6 +497,7 @@ public abstract class TerminalManageService {
         boolean bOk = terminalService.cancelCallMt();
         if (!bOk) {
             LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "P2PCallRequestFail, cancelCallMt fail, vmt: " + terminalService.getE164() + ", account: " + p2PCallRequest.getAccount());
+            System.out.println("P2PCallRequestFail, cancelCallMt fail, vmt: " + terminalService.getE164() + ", account: " + p2PCallRequest.getAccount());
         }
     }
 
