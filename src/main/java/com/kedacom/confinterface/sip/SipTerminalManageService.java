@@ -9,7 +9,6 @@ import com.kedacom.confinterface.LogService.LogTools;
 import com.kedacom.confinterface.dto.MediaResource;
 import com.kedacom.confinterface.dto.P2PCallRequest;
 import com.kedacom.confinterface.dto.TerminalMediaResource;
-import com.kedacom.confinterface.h323.H323ProtocalConfig;
 import com.kedacom.confinterface.inner.DetailMediaResouce;
 import com.kedacom.confinterface.inner.TerminalOnlineStatusEnum;
 import com.kedacom.confinterface.service.TerminalManageService;
@@ -156,17 +155,20 @@ public class SipTerminalManageService extends TerminalManageService implements I
     }
 
     @Override
+    @Async("confTaskExecutor")
     public void OnParticipantJoined(String participantid, ConferencePresentParticipant conferencePresentParticipant) {
         //mcu会议中有新与会者加入时，进入该逻辑
     }
 
     @Override
+    @Async("confTaskExecutor")
     public void OnMediaCleaned(String participantid, Vector<MediaDescription> mediaDescriptions) {
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "SIP, OnMediaCleaned, terminal: " + participantid + ", media cleaned, threadName: " + Thread.currentThread().getName());
         System.out.println("SIP, OnMediaCleaned, terminal: " + participantid + ", media cleaned, threadName: " + Thread.currentThread().getName());
     }
 
     @Override
+    @Async("confTaskExecutor")
     public void OnRemoteMediaReponsed(String participantid, Vector<MediaDescription> mediaDescriptions) {
         //虚拟终端主动呼叫会议终端或者mcu触发的主叫，mediaDescriptions包含对方主流和双流的音视频信息
         //会议终端主叫时，mediaDescriptions里面不包含任何东西
@@ -210,6 +212,7 @@ public class SipTerminalManageService extends TerminalManageService implements I
     }
 
     @Override
+    @Async("confTaskExecutor")
     public void OnKeyFrameRequested(String participantid, Vector<MediaDescription> mediaDescriptions) {
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Sip, OnKeyFrameRequested, terminal: " + participantid + " is on key frameRequest, threadName: " + Thread.currentThread().getName() + "mediaDescriptions : " + mediaDescriptions.toString());
         System.out.println("Sip, OnKeyFrameRequested, terminal: " + participantid + " is on key frameRequest  conference,threadName:" + Thread.currentThread().getName() + "mediaDescriptions : " + mediaDescriptions.toString());
