@@ -16,10 +16,11 @@ import com.kedacom.confinterface.dto.P2PCallResult;
 import com.kedacom.confinterface.dto.TerminalMediaResource;
 import com.kedacom.confinterface.inner.*;
 import com.kedacom.confinterface.restclient.mcu.InspectionStatusEnum;
+import com.kedacom.confinterface.syssetting.BaseSysConfig;
 import com.kedacom.confinterface.util.AudioCap;
-import com.kedacom.confinterface.util.ConfInterfaceResult;
 import com.kedacom.confinterface.util.VideoCap;
-import org.springframework.http.HttpStatus;
+import org.springframework.beans.factory.annotation.Autowired;
+
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,7 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public abstract class TerminalManageService {
 
-    public TerminalManageService(){
+    public TerminalManageService() {
         super();
         this.freeVmtServiceMap = new ConcurrentHashMap<>();
         this.usedVmtServiceMap = new ConcurrentHashMap<>();
@@ -111,7 +112,7 @@ public abstract class TerminalManageService {
         return terminalService;
     }
 
-    public void processKickedOffMsg(String participantid){
+    public void processKickedOffMsg(String participantid) {
         TerminalService terminalService = usedVmtServiceMap.get(participantid);
         if (null == terminalService) {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processKickedOffMsg, not found terminal! participantid: " + participantid);
@@ -119,14 +120,12 @@ public abstract class TerminalManageService {
             return;
         }
 
-        if(terminalService.dualSource.size() > 0){
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"processKickedOffMsg dualSource.size() : " + terminalService.dualSource.size());
+        if (terminalService.dualSource.size() > 0) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processKickedOffMsg dualSource.size() : " + terminalService.dualSource.size());
             System.out.println("processKickedOffMsg dualSource.size() : " + terminalService.dualSource.size());
             terminalService.dualSource.clear();
         }
 
-        usedVmtServiceMap.remove(participantid);
-        freeVmtServiceMap.put(participantid, terminalService);
 
         String groupId = terminalService.getGroupId();
         Map<String, P2PCallGroup> p2pCallGroupMap = ConfInterfaceService.p2pCallGroupMap;
@@ -143,10 +142,10 @@ public abstract class TerminalManageService {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processKickedOffMsg, mtAccount: " + mtAccount);
             System.out.println("OnKickedOff, mtAccount " + mtAccount);
             if (null != mtAccount) {
-                terminalMediaSourceService.delP2PMtMember(groupId,mtAccount);
-                terminalMediaSourceService.delP2PVmtMember(groupId,participantid);
+                terminalMediaSourceService.delP2PMtMember(groupId, mtAccount);
+                terminalMediaSourceService.delP2PVmtMember(groupId, participantid);
                 p2PCallGroup.removeCallMember(mtAccount);
-                if (p2PCallGroup.getCallMap().isEmpty()){
+                if (p2PCallGroup.getCallMap().isEmpty()) {
                     LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "processKickedOffMsg, remove p2pCallGroup : " + groupId);
                     p2pCallGroupMap.remove(groupId);
                 }
@@ -179,9 +178,11 @@ public abstract class TerminalManageService {
 
             terminalService.leftConference();
         }
+        usedVmtServiceMap.remove(participantid);
+        freeVmtServiceMap.put(participantid, terminalService);
     }
 
-    public void processParticipantLeftMsg(String participantid, ConferencePresentParticipant conferencePresentParticipant){
+    public void processParticipantLeftMsg(String participantid, ConferencePresentParticipant conferencePresentParticipant) {
         /*如果下线的是虚拟终端,则不需要额外的处理,因为虚拟终端不会选看或者被其他虚拟终端选看*/
         String offlineMtE164 = conferencePresentParticipant.getId();
         TerminalService offlineTerminal = findVmt(offlineMtE164);
@@ -218,7 +219,7 @@ public abstract class TerminalManageService {
         }
     }
 
-    public TerminalService getFreeVmt(){
+    public TerminalService getFreeVmt() {
         synchronized (freeVmtServiceMap) {
             if (freeVmtServiceMap.isEmpty()) {
                 return null;
@@ -236,7 +237,7 @@ public abstract class TerminalManageService {
         }
     }
 
-    public List<TerminalService> getFreeVmts(int vmtNum){
+    public List<TerminalService> getFreeVmts(int vmtNum) {
         synchronized (freeVmtServiceMap) {
             if (freeVmtServiceMap.isEmpty() || freeVmtServiceMap.size() < vmtNum) {
                 return null;
@@ -260,8 +261,8 @@ public abstract class TerminalManageService {
         }
     }
 
-    public TerminalService getVmt(String e164){
-        synchronized (this){
+    public TerminalService getVmt(String e164) {
+        synchronized (this) {
             TerminalService terminalService = freeVmtServiceMap.get(e164);
             if (null != terminalService) {
                 freeVmtServiceMap.remove(e164);
@@ -272,8 +273,8 @@ public abstract class TerminalManageService {
         }
     }
 
-    public TerminalService findVmt(String e164){
-        synchronized (this){
+    public TerminalService findVmt(String e164) {
+        synchronized (this) {
             TerminalService terminalService = freeVmtServiceMap.get(e164);
             if (null != terminalService) {
                 return terminalService;
@@ -284,21 +285,21 @@ public abstract class TerminalManageService {
         }
     }
 
-    public List<TerminalService> queryAllUsedVmts(){
+    public List<TerminalService> queryAllUsedVmts() {
         if (usedVmtServiceMap.isEmpty()) {
             return null;
         }
 
         List<TerminalService> terminalServices = new ArrayList<>();
-        for(Map.Entry<String, TerminalService> terminalServiceEntry : usedVmtServiceMap.entrySet()){
+        for (Map.Entry<String, TerminalService> terminalServiceEntry : usedVmtServiceMap.entrySet()) {
             terminalServices.add(terminalServiceEntry.getValue());
         }
 
         return terminalServices;
     }
 
-    public void freeVmt(String e164){
-        synchronized (usedVmtServiceMap){
+    public void freeVmt(String e164) {
+        synchronized (usedVmtServiceMap) {
             TerminalService vmtService = usedVmtServiceMap.get(e164);
             if (null == vmtService) {
                 return;
@@ -309,9 +310,9 @@ public abstract class TerminalManageService {
         }
     }
 
-    public  void freeVmts(List<Terminal> vmts){
-        synchronized (usedVmtServiceMap){
-            for(Terminal vmt : vmts){
+    public void freeVmts(List<Terminal> vmts) {
+        synchronized (usedVmtServiceMap) {
+            for (Terminal vmt : vmts) {
                 TerminalService vmtService = usedVmtServiceMap.get(vmt.getMtE164());
                 if (null == vmtService) {
                     return;
@@ -323,7 +324,7 @@ public abstract class TerminalManageService {
         }
     }
 
-    public void setConferenceManage(IConferenceManager conferenceManage){
+    public void setConferenceManage(IConferenceManager conferenceManage) {
         this.conferenceManager = conferenceManage;
     }
 
@@ -339,7 +340,7 @@ public abstract class TerminalManageService {
         return conferenceManager;
     }
 
-    public void createConfParticipant(TerminalService terminalService){
+    public void createConfParticipant(TerminalService terminalService) {
         if (null == conferenceManager) {
             return;
         }
@@ -352,107 +353,118 @@ public abstract class TerminalManageService {
         }
     }
 
-    public static void publishStatus(String account, String groupId, int status, List<MediaResource> forwardResources, List<MediaResource> reverseResources){
-        if (null == confInterfacePublishService){
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"TerminalManagerService, 1, publishStatus, confInterfacePublishService is null **************");
+    public static void publishStatus(String account, String groupId, int status, List<MediaResource> forwardResources, List<MediaResource> reverseResources) {
+        if (null == confInterfacePublishService) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "TerminalManagerService, 1, publishStatus, confInterfacePublishService is null **************");
             System.out.println("TerminalManagerService, 1, publishStatus, confInterfacePublishService is null **************");
             return;
         } else {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"TerminalManagerService, 1, publishStatus, confInterfacePublishService is not null **************");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "TerminalManagerService, 1, publishStatus, confInterfacePublishService is not null **************");
             System.out.println("TerminalManagerService, 1, publishStatus, confInterfacePublishService is not null **************");
         }
         confInterfacePublishService.publishStatus(account, groupId, status, forwardResources, reverseResources);
     }
 
-    public static void publishStatus(String account, String groupId, int status){
-        if (null == confInterfacePublishService){
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"TerminalManagerService, 2, publishStatus, confInterfacePublishService is null **************");
+    public static void publishStatus(String account, String groupId, int status) {
+        if (null == confInterfacePublishService) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "TerminalManagerService, 2, publishStatus, confInterfacePublishService is null **************");
             System.out.println("TerminalManagerService, 2, publishStatus, confInterfacePublishService is null **************");
             return;
         } else {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"TerminalManagerService, 2, publishStatus, confInterfacePublishService is not null **************");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "TerminalManagerService, 2, publishStatus, confInterfacePublishService is not null **************");
             System.out.println("TerminalManagerService, 2, publishStatus, confInterfacePublishService is not null **************");
         }
 
         confInterfacePublishService.publishStatus(account, groupId, status);
     }
 
-    public static void publishStatus(String account, String groupId, int status , int faileCode){
-        if (null == confInterfacePublishService){
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"TerminalManagerService, account : " + account + "2, publishStatus, confInterfacePublishService is null **************");
+    public static void publishStatus(String account, String groupId, int status, int faileCode) {
+        if (null == confInterfacePublishService) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "TerminalManagerService, account : " + account + "2, publishStatus, confInterfacePublishService is null **************");
             System.out.println("TerminalManagerService, account : " + account + "2, publishStatus, confInterfacePublishService is null **************");
             return;
         } else {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"TerminalManagerService, account : " + account + " 2, publishStatus, confInterfacePublishService is not null **************");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "TerminalManagerService, account : " + account + " 2, publishStatus, confInterfacePublishService is not null **************");
             System.out.println("TerminalManagerService, account : " + account + " 2, publishStatus, confInterfacePublishService is not null **************");
         }
 
-        confInterfacePublishService.publishStatus(account, groupId, status,faileCode);
+        confInterfacePublishService.publishStatus(account, groupId, status, faileCode);
     }
 
-    public static void setPublishService(ConfInterfacePublishService inConfInterfacePublishService){
+    public static void setPublishService(ConfInterfacePublishService inConfInterfacePublishService) {
         confInterfacePublishService = inConfInterfacePublishService;
     }
 
     //用于会议服务断链再重启之后推送状态
-    public static void publishStatus(SubscribeMsgTypeEnum type ,String publishUrl, Object publishmsg){
+    public static void publishStatus(SubscribeMsgTypeEnum type, String publishUrl, Object publishmsg) {
         confInterfacePublishService.publishStatus(type, publishUrl, publishmsg);
     }
 
-    public  int queryFreeVmtServiceMap(){
+    public int queryFreeVmtServiceMap() {
         return freeVmtServiceMap.size();
     }
 
-    public  int queryUsedVmtServiceMap(){
+    public int queryUsedVmtServiceMap() {
         return usedVmtServiceMap.size();
     }
 
-    protected void P2PCallRequestSuccess(TerminalService terminalService, int streamIndex) {
-            P2PCallRequest p2PCallRequest = (P2PCallRequest) terminalService.getWaitMsg(P2PCallRequest.class.getName());
-            if (null == p2PCallRequest) {
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "P2PCallRequestSuccess, no p2pCallRequest need deal!");
-                System.out.println("P2PCallRequestSuccess, no p2pCallRequest need deal!");
-                return;
-            }
+    protected void P2PCallRequestSuccess(TerminalService terminalService, int streamIndex,String mediaType) {
+        P2PCallRequest p2PCallRequest = (P2PCallRequest) terminalService.getWaitMsg(P2PCallRequest.class.getName());
+        if (null == p2PCallRequest) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "P2PCallRequestSuccess, no p2pCallRequest need deal!");
+            System.out.println("P2PCallRequestSuccess, no p2pCallRequest need deal!");
+            return;
+        }
 
-            List<DetailMediaResouce> mediaResources = terminalService.getForwardChannel();
-            for (DetailMediaResouce detailMediaResouce : mediaResources) {
+        List<DetailMediaResouce> mediaResources = terminalService.getForwardChannel();
+        for (DetailMediaResouce detailMediaResouce : mediaResources) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "P2PCallRequestSuccess, add forward mediaResource :" + detailMediaResouce.toString());
+            System.out.println("P2PCallRequestSuccess add forward mediaResource :" + detailMediaResouce.toString());
+
+            if (!detailMediaResouce.getSdp().contains("sendrecv")) {
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "P2PCallRequestSuccess streamIndex" + streamIndex + detailMediaResouce.getStreamIndex());
+                System.out.println("P2PCallRequestSuccess streamIndex " + streamIndex + detailMediaResouce.getStreamIndex());
                 if (detailMediaResouce.getStreamIndex() != streamIndex) {
                     continue;
                 }
+            }else{
+                if (!mediaType.equals(detailMediaResouce.getType())){
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "P2PCallRequestSuccess streamIndex is mediaType :" + mediaType);
+                    System.out.println("P2PCallRequestSuccess mediaType is same :" + mediaType );
+                    continue;
+                }
+            }
 
-                MediaResource mediaResource = new MediaResource();
-                detailMediaResouce.convertTo(mediaResource);
+            MediaResource mediaResource = new MediaResource();
+            detailMediaResouce.convertTo(mediaResource);
 
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "P2PCallRequestSuccess, add forward mediaResource :" + mediaResource.getId());
-                System.out.println("P2PCallRequestSuccess add forward mediaResource :" + mediaResource.getId());
-                p2PCallRequest.addForwardResource(mediaResource);
+            p2PCallRequest.addForwardResource(mediaResource);
+            synchronized (terminalService) {
+                p2PCallRequest.removeMsg(P2PCallRequest.class.getName());
+            }
+
+            if (detailMediaResouce.getSdp().contains("sendrecv")) {
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "P2PCallRequestSuccess, sendrecv, add Reverse Resouce!!");
+                System.out.println("P2PCallRequestSuccess, sendrecv, add Reverse Resouce!!");
+                p2PCallRequest.addReverseResource(mediaResource);
+                terminalService.addReverseChannel(detailMediaResouce);  //对于sip来说，正向和反向资源相同
                 synchronized (terminalService) {
                     p2PCallRequest.removeMsg(P2PCallRequest.class.getName());
                 }
-
-                if (detailMediaResouce.getSdp().contains("sendrecv")) {
-                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "P2PCallRequestSuccess, sendrecv, add Reverse Resouce!!");
-                    System.out.println("P2PCallRequestSuccess, sendrecv, add Reverse Resouce!!");
-                    p2PCallRequest.addReverseResource(mediaResource);
-                    terminalService.addReverseChannel(detailMediaResouce);  //对于sip来说，正向和反向资源相同
-                    synchronized (terminalService) {
-                        p2PCallRequest.removeMsg(P2PCallRequest.class.getName());
-                    }
-                }
-
-                if (p2PCallRequest.isSuccessResponseMsg()) {
-                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "P2PCallRequestSuccess, pubulish terminal status, account:" + p2PCallRequest.getAccount() + ", groupId: " + p2PCallRequest.getGroupId() + ", forwardResources: " + p2PCallRequest.getForwardResources().toString() + ", reverseResources: " + p2PCallRequest.getReverseResources().toString());
-                    System.out.println("P2PCallRequestSuccess, pubulish terminal status, account: " + p2PCallRequest.getAccount() + ", groupId : " + p2PCallRequest.getGroupId() + ", forwardResources: " + p2PCallRequest.getForwardResources().toString() + ", reverseResources: " + p2PCallRequest.getReverseResources().toString());
-
-                    TerminalManageService.publishStatus(p2PCallRequest.getAccount(), p2PCallRequest.getGroupId(), TerminalOnlineStatusEnum.ONLINE.getCode(), p2PCallRequest.getForwardResources(), p2PCallRequest.getReverseResources());
-                }
-                break;
             }
 
-            if (p2PCallRequest.getWaitMsg().isEmpty()) {
-                terminalService.delWaitMsg(P2PCallRequest.class.getName());
+            if (p2PCallRequest.isSuccessResponseMsg()) {
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "P2PCallRequestSuccess, pubulish terminal status, account:" + p2PCallRequest.getAccount() + ", groupId: " + p2PCallRequest.getGroupId() + ", forwardResources: " + p2PCallRequest.getForwardResources().toString() + ", reverseResources: " + p2PCallRequest.getReverseResources().toString());
+                System.out.println("P2PCallRequestSuccess, pubulish terminal status, account: " + p2PCallRequest.getAccount() + ", groupId : " + p2PCallRequest.getGroupId() + ", forwardResources: " + p2PCallRequest.getForwardResources().toString() + ", reverseResources: " + p2PCallRequest.getReverseResources().toString());
+
+                TerminalManageService.publishStatus(p2PCallRequest.getAccount(), p2PCallRequest.getGroupId(), TerminalOnlineStatusEnum.ONLINE.getCode(), p2PCallRequest.getForwardResources(), p2PCallRequest.getReverseResources());
             }
+            break;
+        }
+
+        if (p2PCallRequest.getWaitMsg().isEmpty()) {
+            terminalService.delWaitMsg(P2PCallRequest.class.getName());
+        }
 
     }
 
@@ -521,9 +533,9 @@ public abstract class TerminalManageService {
         return false;
     }
 
-    protected void constructMediaDescriptions(List<VideoCap> videoCaps, List<AudioCap> audioCaps, Vector<MediaDescription> mediaDescriptions){
+    protected void constructMediaDescriptions(List<VideoCap> videoCaps, List<AudioCap> audioCaps, Vector<MediaDescription> mediaDescriptions) {
         int streamIndex = 0;
-        if (!videoCaps.isEmpty()){
+        if (!videoCaps.isEmpty()) {
             for (VideoCap videoCap : videoCaps) {
                 VideoMediaDescription videoMediaDescription = new VideoMediaDescription();
                 VideoCap.constructMediaDescription(videoCap, videoMediaDescription);
@@ -532,8 +544,8 @@ public abstract class TerminalManageService {
             }
         }
 
-        if (!audioCaps.isEmpty()){
-            for (AudioCap audioCap : audioCaps){
+        if (!audioCaps.isEmpty()) {
+            for (AudioCap audioCap : audioCaps) {
                 AudioMediaDescription audioMediaDescription = new AudioMediaDescription();
                 audioMediaDescription.setStreamIndex(streamIndex++);
                 AudioCap.constructAudioMediaDescription(audioCap, audioMediaDescription);
@@ -543,7 +555,7 @@ public abstract class TerminalManageService {
         }
     }
 
-    protected void ProcessKeyFrameRequested(String participantid, Vector<MediaDescription> mediaDescriptions){
+    protected void ProcessKeyFrameRequested(String participantid, Vector<MediaDescription> mediaDescriptions) {
         TerminalService terminalService = usedVmtServiceMap.get(participantid);
         if (null == terminalService) {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "ProcessKeyFrameRequested, not found terminal! participantid: " + participantid);
@@ -552,31 +564,33 @@ public abstract class TerminalManageService {
         }
 
         TerminalMediaResource terminalMediaResource = terminalMediaSourceService.getTerminalMediaResource(participantid);
-        if(terminalMediaResource == null){
+        if (terminalMediaResource == null) {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "ProcessKeyFrameRequested, terminalMediaResource is null *******!");
             System.out.println("ProcessKeyFrameRequested, terminalMediaResource is null *******!");
             return;
         }
 
         List<DetailMediaResouce> forwardResources = terminalService.getForwardChannel();
-        if(forwardResources == null || forwardResources.isEmpty()){
+        if (forwardResources == null || forwardResources.isEmpty()) {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "ProcessKeyFrameRequested, get forwardResources is null or empty *******!");
             System.out.println("ProcessKeyFrameRequested, get forwardResources is null or empty *******!");
             return;
         }
 
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"forwardResources size : " + forwardResources.size());
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "forwardResources size : " + forwardResources.size());
         System.out.println("forwardResources size : " + forwardResources.size());
-        List<String>  resourceIds = new ArrayList<>();
+        List<String> resourceIds = new ArrayList<>();
 
-        for(DetailMediaResouce detailMediaResouce : forwardResources) {
+        for (DetailMediaResouce detailMediaResouce : forwardResources) {
             if (!"video".equals(detailMediaResouce.getType())) {
                 continue;
             }
 
-            for (MediaDescription mediaDescription: mediaDescriptions){
-                if (mediaDescription.getStreamIndex() != detailMediaResouce.getStreamIndex()) {
-                    continue;
+            for (MediaDescription mediaDescription : mediaDescriptions) {
+                if (!baseSysConfig.isSendRecvPort()){
+                    if (mediaDescription.getStreamIndex() != detailMediaResouce.getStreamIndex()) {
+                        continue;
+                    }
                 }
 
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "forwardResource type is video resourceId is : " + detailMediaResouce.getId() + ", mediaDescriptions : " + mediaDescription.toString() + ", detailMediaResouce : " + detailMediaResouce.toString());
@@ -597,4 +611,7 @@ public abstract class TerminalManageService {
     protected TerminalMediaSourceService terminalMediaSourceService;
     private static ConfInterfacePublishService confInterfacePublishService;
     private boolean supportAliasCall;
+
+    @Autowired
+    private BaseSysConfig baseSysConfig;
 }

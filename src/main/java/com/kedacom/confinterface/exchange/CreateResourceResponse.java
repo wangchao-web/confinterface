@@ -20,6 +20,11 @@ public class CreateResourceResponse extends BaseResponseMsg {
         this.sdp = sdp;
     }
 
+    @Override
+    public String toString() {
+        return new StringBuilder().append("resourceID:").append(resourceID).append(", sdp:").append(sdp).toString();
+    }
+
     private String resourceID;
     private String sdp;
 }

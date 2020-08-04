@@ -286,6 +286,14 @@ public class BaseSysConfig {
         return isExternalDocking;
     }
 
+    public boolean isSendRecvPort() {
+        return sendRecvPort;
+    }
+
+    public void setSendRecvPort(boolean sendRecvPort) {
+        this.sendRecvPort = sendRecvPort;
+    }
+
     @Value("${confinterface.sys.isExternalDocking:false}")
     public  void setIsExternalDocking(Boolean isExternalDocking) {
         this.isExternalDocking = isExternalDocking;
@@ -377,8 +385,11 @@ public class BaseSysConfig {
     private List<AudioCap> audioCapList;
     private boolean useDeviceId = false;
 
+    private boolean sendRecvPort = false;  //H323收发端口一致
+
     //@Value("${confinterface.sys.isExternalDocking}")
     public static Boolean isExternalDocking = false;  //适应外厂商paload
+
 
 
 }

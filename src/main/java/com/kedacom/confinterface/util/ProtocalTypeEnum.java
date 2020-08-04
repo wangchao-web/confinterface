@@ -2,7 +2,7 @@ package com.kedacom.confinterface.util;
 
 public enum ProtocalTypeEnum {
 
-    H323(0, "h323"), SIP(1, "sip");
+    H323(0, "h323"), SIP(1, "sip"),H323Plus(2, "H323Plus");
 
     public int getCode() {
         return code;

@@ -3,6 +3,7 @@ package com.kedacom.confinterface.h323;
 
 import com.kedacom.confadapter.common.*;
 import com.kedacom.confadapter.media.MediaDescription;
+import com.kedacom.confadapter.media.MediaDirectionEnum;
 import com.kedacom.confinterface.LogService.LogOutputTypeEnum;
 import com.kedacom.confinterface.LogService.LogTools;
 import com.kedacom.confinterface.dto.BaseRequestMsg;
@@ -129,9 +130,12 @@ public class H323TerminalService extends TerminalService {
                     createResourceParam.setSdp(constructSdp(mediaDescription));
                     CreateResourceResponse resourceResponse = addExchange(createResourceParam);
                     if (null == resourceResponse) {
+                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "H323, onOpenLogicalChannel resourceResponse is null *******");
+                        System.out.println("H323, onOpenLogicalChannel resourceResponse is null *******");
                         return false;
                     }
-
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "H323, onOpenLogicalChannel resourceResponse " + resourceResponse.toString());
+                    System.out.println("H323, onOpenLogicalChannel resourceResponse " + resourceResponse.toString());
                     resourceInfo.add(resourceResponse.getResourceID());
                     addMediaResource(mediaDescription.getStreamIndex(), mediaDescription.getDual(), resourceResponse);
                 } else if (mediaDescription.getDual()) {
@@ -249,20 +253,37 @@ public class H323TerminalService extends TerminalService {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "H323, openLogicalChannel, start add exchange info!!! threadName:" + Thread.currentThread().getName());
             System.out.println("H323, openLogicalChannel, start add exchange info!!! threadName:" + Thread.currentThread().getName());
 
-            CreateResourceParam createResourceParam = new CreateResourceParam();
-            createResourceParam.setDeviceID(deviceID);
-            createResourceParam.setSdp(constructCreateSdp(mediaDescriptions.get(0)));
-            resourceResponse = addExchange(createResourceParam);
-            if (null == resourceResponse) {
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "H323, openLogicalChannel,  add exchange info resourceResponse is null !!! ");
-                System.out.println("H323, openLogicalChannel,  add exchange info resourceResponse is null !!! ");
-                return false;
+            if(mediaDescriptions.get(0).getDirection() == MediaDirectionEnum.SendRecv){
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "H323, openLogicalChannel, open sendRecv port same");
+                System.out.println("H323, openLogicalChannel, open sendRecv port same");
+                DetailMediaResouce MediaResouce = null;
+                String mediaType = mediaDescriptions.get(0).getMediaType();
+                for(DetailMediaResouce detailMediaResouce : forwardChannel){
+                    if(mediaType.equals(detailMediaResouce.getType())){
+                        MediaResouce =  detailMediaResouce;
+                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "H323, openLogicalChannel, MediaResouce : " + MediaResouce.toString());
+                        System.out.println("H323, openLogicalChannel, MediaResouce : " + MediaResouce.toString());
+                        break;
+                    }
+                }
+                newMediaDescription.add(constructRequestMediaDescription(mediaDescriptions.get(0), MediaResouce.getSdp()));
+                bCreate = false;
+            }else{
+                CreateResourceParam createResourceParam = new CreateResourceParam();
+                createResourceParam.setDeviceID(deviceID);
+                createResourceParam.setSdp(constructCreateSdp(mediaDescriptions.get(0)));
+                resourceResponse = addExchange(createResourceParam);
+                if (null == resourceResponse) {
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "H323, openLogicalChannel,  add exchange info resourceResponse is null !!! ");
+                    System.out.println("H323, openLogicalChannel,  add exchange info resourceResponse is null !!! ");
+                    return false;
+                }
+                resourceInfo.add(resourceResponse.getResourceID());
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "resourceResponse : " + resourceResponse.getSdp());
+                System.out.println("resourceResponse : " + resourceResponse.getSdp());
+                newMediaDescription.add(constructRequestMediaDescription(mediaDescriptions.get(0), resourceResponse.getSdp()));
             }
 
-            resourceInfo.add(resourceResponse.getResourceID());
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "resourceResponse : " + resourceResponse.getSdp());
-            System.out.println("resourceResponse : " + resourceResponse.getSdp());
-            newMediaDescription.add(constructRequestMediaDescription(mediaDescriptions.get(0), resourceResponse.getSdp()));
         }
         boolean bOk = false;
         synchronized (this) {
@@ -275,12 +296,17 @@ public class H323TerminalService extends TerminalService {
             } else {
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "H323, openLogicalChannel, RequestRemoteMedia Ok, participartId : " + e164);
                 System.out.println("H323, openLogicalChannel, RequestRemoteMedia Ok, participartId : " + e164);
-                if (bCreate) {
-                    addMediaResource(newMediaDescription.get(0).getStreamIndex(), newMediaDescription.get(0).getDual(), resourceResponse);
-                } else {
-                    //更新流ID
-                    needUpdateDetailMediaResouce.setStreamIndex(newMediaDescription.get(0).getStreamIndex());
+                if(mediaDescriptions.get(0).getDirection() == MediaDirectionEnum.SendRecv){
+
+                }else{
+                    if (bCreate) {
+                        addMediaResource(newMediaDescription.get(0).getStreamIndex(), newMediaDescription.get(0).getDual(), resourceResponse);
+                    } else {
+                        //更新流ID
+                        needUpdateDetailMediaResouce.setStreamIndex(newMediaDescription.get(0).getStreamIndex());
+                    }
                 }
+
             }
         }
         newMediaDescription.clear();

@@ -47,6 +47,14 @@ public class SipProtocalConfig {
         this.baseSysConfig = baseSysConfig;
     }
 
+    public boolean isCalled() {
+        return called;
+    }
+
+    public void setCalled(boolean called) {
+        this.called = called;
+    }
+
     @Autowired
     protected BaseSysConfig baseSysConfig;
 
@@ -54,4 +62,6 @@ public class SipProtocalConfig {
     private String serverIp;
     private int serverPort = 5060;
     private int localPort = 5060;
+
+    private boolean called = false;
 }

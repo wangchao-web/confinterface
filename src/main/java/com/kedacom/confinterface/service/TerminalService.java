@@ -9,6 +9,7 @@ import com.kedacom.confinterface.LogService.LogTools;
 import com.kedacom.confinterface.dao.InspectionSrcParam;
 import com.kedacom.confinterface.dto.*;
 import com.kedacom.confinterface.exchange.*;
+import com.kedacom.confinterface.h323.H323ProtocalConfig;
 import com.kedacom.confinterface.inner.*;
 import com.kedacom.confinterface.restclient.RestClientService;
 import com.kedacom.confinterface.restclient.mcu.InspectionStatusEnum;
@@ -129,14 +130,6 @@ public abstract class TerminalService {
 
     public void setOnline(AtomicInteger online) {
         this.online = online;
-    }
-
-    public Boolean getInspectionAndInspectioned() {
-        return isInspectionAndInspectioned;
-    }
-
-    public void setInspectionAndInspectioned(Boolean inspectionAndInspectioned) {
-        isInspectionAndInspectioned = inspectionAndInspectioned;
     }
 
     public String getGroupId() {
@@ -885,12 +878,15 @@ public abstract class TerminalService {
     }
 
     public boolean updateExchange(Vector<MediaDescription> mediaDescriptions) {
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "now in updateExchange, mediaDescriptions : " + mediaDescriptions.size());
-        System.out.println("now in updateExchange, mediaDescriptions : " + mediaDescriptions.size());
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "now in updateExchange, mediaDescriptions : " + mediaDescriptions.get(0).toString());
+        System.out.println("now in updateExchange, mediaDescriptions : " + mediaDescriptions.get(0).toString());
         List<UpdateResourceParam> updateResourceParams = new ArrayList<>();
         List<DetailMediaResouce> channel;
 
         for (MediaDescription mediaDescription : mediaDescriptions) {
+            if (baseSysConfig.isSendRecvPort()) {
+                mediaDescription.setDirection(MediaDirectionEnum.SendRecv);
+            }
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "updateExchange, mediaDescription, direction : " + mediaDescription.getDirection());
             System.out.println("updateExchange, mediaDescription, direction : " + mediaDescription.getDirection());
             if (MediaDirectionEnum.Send == mediaDescription.getDirection()) {
@@ -903,14 +899,14 @@ public abstract class TerminalService {
             for (DetailMediaResouce detailMediaResouce : channel) {
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "updateExchange, mediaDesc(mediaType:" + mediaDescription.getMediaType() + ", streamIndex:" + mediaDescription.getStreamIndex() + ")");
                 System.out.println("updateExchange, mediaDesc(mediaType:" + mediaDescription.getMediaType() + ", streamIndex:" + mediaDescription.getStreamIndex() + ")");
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "                detailMediaResource(type:" + detailMediaResouce.getType() + ", dual:" + detailMediaResouce.getDual() + ", StreamIndex : " + detailMediaResouce.getStreamIndex() + ")");
-                System.out.println("                detailMediaResource(type:" + detailMediaResouce.getType() + ", dual:" + detailMediaResouce.getDual() + ", StreamIndex : " + detailMediaResouce.getStreamIndex() + ")");
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "updateExchange,detailMediaResource(type:" + detailMediaResouce.getType() + ", dual:" + detailMediaResouce.getDual() + ", StreamIndex : " + detailMediaResouce.getStreamIndex() + "resourceID" + detailMediaResouce.getId() + ")");
+                System.out.println(" updateExchange ,detailMediaResource(type:" + detailMediaResouce.getType() + ", dual:" + detailMediaResouce.getDual() + ", StreamIndex : " + detailMediaResouce.getStreamIndex() + "resourceID" + detailMediaResouce.getId() + ")");
 
                 if (!mediaDescription.getMediaType().equals(detailMediaResouce.getType())) {
                     continue;
                 }
 
-                if (mediaDescription.getStreamIndex() != detailMediaResouce.getStreamIndex()) {
+                if (mediaDescription.getDirection() != MediaDirectionEnum.SendRecv && mediaDescription.getStreamIndex() != detailMediaResouce.getStreamIndex()) {
                     LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "StreamIndex  not equal ********");
                     System.out.println("StreamIndex  not equal ********");
                     continue;
@@ -1161,7 +1157,7 @@ public abstract class TerminalService {
             }
         }
 
-        if (resourceInfo.size() == 0){
+        if (resourceInfo.size() == 0) {
             return resourceInfo;
         }
 
@@ -1212,7 +1208,7 @@ public abstract class TerminalService {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "requestUpdateResource, start update exchange, resourceId:" + updateResourceParam.getResourceID() + ", sdp:" + updateResourceParam.getSdp());
             System.out.println("requestUpdateResource, start update exchange, resourceId:" + updateResourceParam.getResourceID() + ", sdp:" + updateResourceParam.getSdp());
             ResponseEntity<BaseResponseMsg> updateResponse = restClientService.exchangeJson(url.toString(), HttpMethod.POST, updateResourceParam, args, BaseResponseMsg.class);
-            if (null == updateResponse){
+            if (null == updateResponse) {
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "requestUpdateResource, null == updateResponse, mediaUrl: " + url.toString());
                 System.out.println("requestUpdateResource, null == updateResponse, mediaUrl: " + url.toString());
                 return false;
@@ -1263,7 +1259,7 @@ public abstract class TerminalService {
 
         /*此处暂时将mcu向会议接入微服务打开逻辑通道时使用的媒体参数作为接受媒体信息携带的流媒体
          * todo:等到赵智琛将能力集协商结果提供出来后，此处可以需填写能力集协商内容*/
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"mediaDescription.getMediaType() : " + mediaDescription.getMediaType());
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "mediaDescription.getMediaType() : " + mediaDescription.getMediaType());
         System.out.println("mediaDescription.getMediaType() : " + mediaDescription.getMediaType());
         if (mediaDescription.getMediaType().equals(MediaTypeEnum.VIDEO.getName())) {
             sdp.append("m=video 0 RTP/AVP ");
@@ -1342,8 +1338,8 @@ public abstract class TerminalService {
         }
 
         TransportAddress rtpAddress = constructTransAddress(exchangeSdp);
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "rtpAddress : " + rtpAddress.toString());
-        System.out.println("rtpAddress : " + rtpAddress.toString());
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "constructRequestMediaDescription rtpAddress : " + rtpAddress.toString());
+        System.out.println("constructRequestMediaDescription rtpAddress : " + rtpAddress.toString());
         NetAddress rtpNetAddress = new NetAddress();
         rtpNetAddress.setIP(rtpAddress.getIp());
         rtpNetAddress.setPort(rtpAddress.getPort());
@@ -1356,8 +1352,8 @@ public abstract class TerminalService {
 
         parseRtpMapAndFmtp(exchangeSdp, newMediaDescription);
 
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "newMediaDescription.getPayload() : " + newMediaDescription.getPayload());
-        System.out.println("newMediaDescription.getPayload() : " + newMediaDescription.getPayload());
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "constructRequestMediaDescription newMediaDescription : : " + newMediaDescription.toString());
+        System.out.println("constructRequestMediaDescription newMediaDescription : " + newMediaDescription.toString());
         return newMediaDescription;
     }
 
@@ -1422,6 +1418,7 @@ public abstract class TerminalService {
         int payLoad = mediaDescription.getPayload();
         if (mediaDescription.getDirection() == MediaDirectionEnum.Send && isExternalDocking && (mediaDescription.getPayload() >= 96 && mediaDescription.getPayload() <= 127)) {
             payLoad = 127;
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "payload set to 127");
             System.out.println("payload set to 127");
         }
 
@@ -1429,16 +1426,33 @@ public abstract class TerminalService {
         TransportDirectionEnum direction = TransportDirectionEnum.SEND;
 
         do {
-            sdp.append("c=IN ");
-            sdp.append(rtpProtocolType);
-            sdp.append(" ");
-            sdp.append(mediaDescription.getRtpAddress().getIP());
-            sdp.append("\r\n");
+            if (mediaDescription.getDirection() == MediaDirectionEnum.SendRecv && direction == TransportDirectionEnum.SEND) {
+                sdp.append("c=IN ");
+                sdp.append(rtpProtocolType);
+                sdp.append(" ");
+                if ("IP4".equals(rtpProtocolType)) {
+                    sdp.append("0.0.0.0");
+                }
+                if ("IP6".equals(rtpProtocolType)) {
+                    sdp.append("::");
+                }
+                sdp.append("\r\n");
+            } else {
+                sdp.append("c=IN ");
+                sdp.append(rtpProtocolType);
+                sdp.append(" ");
+                sdp.append(mediaDescription.getRtpAddress().getIP());
+                sdp.append("\r\n");
+            }
 
             if (mediaDescription.getMediaType().equals(MediaTypeEnum.VIDEO.getName())) {
                 VideoMediaDescription videoMediaDescription = (VideoMediaDescription) mediaDescription;
                 sdp.append("m=video ");
-                sdp.append(mediaDescription.getRtpAddress().getPort());
+                if (mediaDescription.getDirection() == MediaDirectionEnum.SendRecv && direction == TransportDirectionEnum.SEND) {
+                    sdp.append("0");
+                } else {
+                    sdp.append(mediaDescription.getRtpAddress().getPort());
+                }
                 sdp.append(" RTP/AVP ");
                 sdp.append(payLoad);
                 sdp.append("\r\n");
@@ -1457,7 +1471,11 @@ public abstract class TerminalService {
             } else {
                 AudioMediaDescription audioMediaDescription = (AudioMediaDescription) mediaDescription;
                 sdp.append("m=audio ");
-                sdp.append(mediaDescription.getRtpAddress().getPort());
+                if (mediaDescription.getDirection() == MediaDirectionEnum.SendRecv && direction == TransportDirectionEnum.SEND) {
+                    sdp.append("0");
+                } else {
+                    sdp.append(mediaDescription.getRtpAddress().getPort());
+                }
                 sdp.append(" RTP/AVP ");
                 sdp.append(payLoad);
                 sdp.append("\r\n");
@@ -1472,30 +1490,28 @@ public abstract class TerminalService {
                 sdp.append("\r\n");
             }
 
-            if (!isExternalDocking) {
-                sdp.append("a=rtcp:");
-                sdp.append(mediaDescription.getRtcpAddress().getPort());
-                sdp.append(" IN ");
-                sdp.append(rtcpProtocolType);
-                sdp.append(" ");
-                sdp.append(mediaDescription.getRtcpAddress().getIP());
-                sdp.append("\r\n");
+            sdp.append("a=rtcp:");
+            sdp.append(mediaDescription.getRtcpAddress().getPort());
+            sdp.append(" IN ");
+            sdp.append(rtcpProtocolType);
+            sdp.append(" ");
+            sdp.append(mediaDescription.getRtcpAddress().getIP());
+            sdp.append("\r\n");
 
-                sdp.append("a=rtcp-fb:");
-                sdp.append(mediaDescription.getPayload());
-                sdp.append(" nack");
-                sdp.append("\r\n");
+            sdp.append("a=rtcp-fb:");
+            sdp.append(mediaDescription.getPayload());
+            sdp.append(" nack");
+            sdp.append("\r\n");
 
-                sdp.append("a=rtcp-fb:");
-                sdp.append(mediaDescription.getPayload());
-                sdp.append(" nack kdv");
-                sdp.append("\r\n");
-            }
+            sdp.append("a=rtcp-fb:");
+            sdp.append(mediaDescription.getPayload());
+            sdp.append(" nack kdv");
+            sdp.append("\r\n");
 
-            if (mediaDescription.getDirection()== MediaDirectionEnum.Send) {
+            if (mediaDescription.getDirection() == MediaDirectionEnum.Send) {
                 sdp.append("a=sendonly\r\n");
                 break;
-            } else if (mediaDescription.getDirection()== MediaDirectionEnum.Recv) {
+            } else if (mediaDescription.getDirection() == MediaDirectionEnum.Recv) {
                 sdp.append("a=recvonly\r\n");
                 break;
             } else if (direction == TransportDirectionEnum.SEND) {
@@ -1755,9 +1771,9 @@ public abstract class TerminalService {
         //添加媒体信息
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "addMediaResource, resourceId:" + resourceResponse.getResourceID());
         System.out.println("addMediaResource, resourceId:" + resourceResponse.getResourceID());
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "exchangeSdp:");
-        System.out.println("exchangeSdp:");
-        System.out.println(resourceResponse.getSdp());
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "addMediaResource exchangeSdp : " + resourceResponse.getSdp());
+        System.out.println("addMediaResource exchangeSdp : " + resourceResponse.getSdp());
+
 
         DetailMediaResouce detailMediaResouce = new DetailMediaResouce();
         detailMediaResouce.setStreamIndex(streamIndex);
@@ -2081,8 +2097,8 @@ public abstract class TerminalService {
 
     protected boolean ackOpenLogicalChannel(Vector<MediaDescription> mcuDescriptions) {
         Vector<MediaDescription> localMediaDescriptions = constructAckMediaDescription(mcuDescriptions);
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "ackOpenLogicalChannel, localMediaDescriptions.get(0): " + localMediaDescriptions.get(0).toString());
-        System.out.println("ackOpenLogicalChannel, localMediaDescriptions.get(0): " + localMediaDescriptions.get(0).toString());
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "participartId: " + e164 + ", ackOpenLogicalChannel, localMediaDescriptions.get(0): " + localMediaDescriptions.get(0).toString());
+        System.out.println("participartId: " + e164 + ", ackOpenLogicalChannel, localMediaDescriptions.get(0): " + localMediaDescriptions.get(0).toString());
         boolean bOk = conferenceParticipant.ResponseLocalMediaToRemotePeer(localMediaDescriptions);
         if (!bOk) {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "ackOpenLogicalChannel, ResponseLocalMediaToRemotePeer failed! participartId : " + e164);
@@ -2333,10 +2349,6 @@ public abstract class TerminalService {
 
     protected volatile boolean readyToPrepare = false;
 
-
-    //显控双向选看
-    protected Boolean isInspectionAndInspectioned = false;
-
     protected ConcurrentHashMap<String, BaseRequestMsg> waitMsg;
 
     protected final org.slf4j.Logger logger = LoggerFactory.getLogger(this.getClass());
@@ -2350,5 +2362,6 @@ public abstract class TerminalService {
     @Autowired
     private TerminalManageService terminalManageService;
 
-
+    @Autowired
+    private BaseSysConfig baseSysConfig;
 }

@@ -413,7 +413,7 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
                         System.out.println("telephone terminal(E164:" + e164 + ",mtId:" + mtId + ") is online! confId:" + groupConfInfo.getConfId() + ", vmt:" + terminalService.isVmt());
                     }
                 } else {
-                    if (!getConfMtInfoResponse.getA_snd_chn().isEmpty() && !getConfMtInfoResponse.getA_rcv_chn().isEmpty()
+                    if (!terminalService.isVmt() || !getConfMtInfoResponse.getA_snd_chn().isEmpty() && !getConfMtInfoResponse.getA_rcv_chn().isEmpty()
                             && !getConfMtInfoResponse.getV_snd_chn().isEmpty() && !getConfMtInfoResponse.getV_rcv_chn().isEmpty()) {
                         terminalService.setOnline(TerminalOnlineStatusEnum.ONLINE.getCode());
                         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "terminal(E164:" + e164 + ",mtId:" + mtId + ") is online! confId:" + groupConfInfo.getConfId() + ", vmt:" + terminalService.isVmt() + ", type:" + getConfMtInfoResponse.getType());
@@ -459,11 +459,13 @@ public class SubscribeEventListenser implements ApplicationListener<SubscribeEve
             //返回该错误码时，表明终端被另外一个会议占用，因此入会失败
             terminalService.setOnline(status);
             terminalService.setOccupyConfName(joinConfFailInfo.getOccupy_confname());
+            terminalOfflineReasonEnum = TerminalOfflineReasonEnum.McuOccupy;
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "occupy conf name : " + terminalService.getOccupyConfName());
             System.out.println("occupy conf name : " + terminalService.getOccupyConfName());
         } else if (20445 == subscribeEvent.getErrorCode()) {
             //返回该错误码时，表明未被注册，因此入会失败
             status = TerminalOnlineStatusEnum.UNREGISTERED.getCode();
+            terminalOfflineReasonEnum = TerminalOfflineReasonEnum.UnreachableGatekeeper;
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "TerminalOnlineStatusEnum.UNREGISTERED.getCode() : " + TerminalOnlineStatusEnum.UNREGISTERED.getCode());
             System.out.println("TerminalOnlineStatusEnum.UNREGISTERED.getCode() : " + TerminalOnlineStatusEnum.UNREGISTERED.getCode());
             terminalService.setOnline(status);

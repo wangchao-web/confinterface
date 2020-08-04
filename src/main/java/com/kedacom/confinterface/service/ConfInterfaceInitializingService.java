@@ -40,10 +40,10 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
     @Override
     public void run(String... args) {
 
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "whether to use IsExternalDocking : " + BaseSysConfig.getIsExternalDocking());
-        System.out.println("whether to use IsExternalDocking : " + BaseSysConfig.getIsExternalDocking());
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "confinterface version: " + VERSION);
-        System.out.println("confinterface version: " + VERSION);
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "whether to use IsExternalDocking : " + BaseSysConfig.getIsExternalDocking() + baseSysConfig.isSendRecvPort());
+        System.out.println("whether to use IsExternalDocking : " + BaseSysConfig.getIsExternalDocking() + baseSysConfig.isSendRecvPort());
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "ConfInterfaceInitializingService confinterface version: " + VERSION);
+        System.out.println("ConfInterfaceInitializingService confinterface version: " + VERSION);
         boolean status = checkDBConn();
         if (false == status) {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Read configuration file fail or connect to redis failed ! End the service process !");
@@ -232,8 +232,11 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
 
         if (baseSysConfig.getProtocalType().equals(ProtocalTypeEnum.H323.getName())) {
             conferenceManager = ConferenceManagerFactory.CreateConferenceManager(ConferenceProtoEnum.CONF_H323);
-        } else {
+        }
+        else if(baseSysConfig.getProtocalType().equals(ProtocalTypeEnum.SIP.getName())) {
             conferenceManager = ConferenceManagerFactory.CreateConferenceManager(ConferenceProtoEnum.CONF_SIP);
+        }else{
+            conferenceManager = ConferenceManagerFactory.CreateConferenceManager(ConferenceProtoEnum.CONF_H323);
         }
 
         terminalManageService.setConferenceManage(conferenceManager);
@@ -244,6 +247,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
         System.out.println("now in initConfAdapter................");
         IConferenceAdapterController conferenceAdapterController = terminalManageService.getConferenceManager().CreateAdapterController();
         conferenceAdapterController.SetEventHandler((IConferenceEventHandler) terminalManageService);
+
         boolean bInitOk = conferenceAdapterController.Init("");
         if (bInitOk) {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "init conferenceAdapterController successfully");
@@ -751,7 +755,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
     private McuRestConfig mcuRestConfig;
 
     //版本号修复
-    public static final String VERSION = "confinterface-V.1.2.0.5";
+    public static final String VERSION = "confinterface-V.1.2.0.7";
 
     public static Boolean initialized = false;
 

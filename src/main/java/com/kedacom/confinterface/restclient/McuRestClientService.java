@@ -30,7 +30,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 @ConditionalOnExpression("${confinterface.sys.useMcu:true} && '${confinterface.sys.mcuMode}'.equals('mcu')")
-//@ConditionalOnExpression("${confinterface.sys.useMcu:true}")
 @Service
 @EnableScheduling
 @EnableConfigurationProperties(McuRestConfig.class)

@@ -292,18 +292,18 @@ public class ConfInterfaceController {
     @GetMapping(value = "/confs")
     public DeferredResult<ResponseEntity<QueryAllConfsResponse>> getConfs(){
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"query All confs! time:"+System.currentTimeMillis());
-        System.out.println("query All confs ! time:"+System.currentTimeMillis());
+        System.out.println("query All confs! time:"+System.currentTimeMillis());
         QueryAllConfsRequest queryAllConfsRequest = new QueryAllConfsRequest();
         confInterfaceService.queryConfs(queryAllConfsRequest);
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now finished query All confs, time:"+System.currentTimeMillis());
-        System.out.println("now finished query All confs ! time, time:"+System.currentTimeMillis());
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now finished query All confs! time:"+System.currentTimeMillis());
+        System.out.println("now finished query All confs! time:"+System.currentTimeMillis());
         return queryAllConfsRequest.getResponseMsg();
     }
 
     @GetMapping(value = "/confInfo")
     public DeferredResult<ResponseEntity<QueryConfInfoResponse>>  getConfInfo(@RequestParam("GroupId") String groupId){
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"query confInfo! time:"+System.currentTimeMillis());
-        System.out.println("query confInfo ! time:"+System.currentTimeMillis());
+        System.out.println("query confInfo! time:"+System.currentTimeMillis());
         QueryConfInfoRequest queryConfInfoRequest = new QueryConfInfoRequest(groupId);
         confInterfaceService.queryConfInfo(queryConfInfoRequest);
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now finished  query confInfo, time:"+System.currentTimeMillis());
@@ -314,7 +314,7 @@ public class ConfInterfaceController {
     @GetMapping(value = "/cascades")
     public DeferredResult<ResponseEntity<QueryConfCascadesInfoResponse>>  getConfCascadeInfo(@RequestParam("GroupId") String groupId){
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"query getConfCascadeInfo! time:"+System.currentTimeMillis());
-        System.out.println("query getConfCascadeInfo ! time:"+System.currentTimeMillis());
+        System.out.println("query getConfCascadeInfo! time:"+System.currentTimeMillis());
         QueryConfsCascadesRequest queryConfsCascadesRequest = new QueryConfsCascadesRequest(groupId);
         confInterfaceService.queryConfsCascades(queryConfsCascadesRequest);
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now finished query query getConfCascadeInfo, time:"+System.currentTimeMillis());
@@ -325,7 +325,7 @@ public class ConfInterfaceController {
     @GetMapping(value = "/cascades/{cascadeId}/mts")
     public DeferredResult<ResponseEntity<QueryConfsCascadesMtsResponse>> getConfsCascadesMts(@RequestParam("GroupId") String groupId, @PathVariable String cascadeId){
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"query ConfsCascadesMts! time:"+System.currentTimeMillis());
-        System.out.println("query ConfsCascadesMts ! time:"+System.currentTimeMillis());
+        System.out.println("query ConfsCascadesMts! time:"+System.currentTimeMillis());
         QueryConfsCascadesMtsRequest queryConfsCascadesMtsRequest = new QueryConfsCascadesMtsRequest(groupId,cascadeId);
         confInterfaceService.queryConfsCascadesMts(queryConfsCascadesMtsRequest);
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now finished query ConfsCascadesMts, time:"+System.currentTimeMillis());

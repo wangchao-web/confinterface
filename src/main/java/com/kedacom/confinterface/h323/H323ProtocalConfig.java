@@ -99,4 +99,5 @@ public class H323ProtocalConfig {
     private int localCallPort = 1730;
     private int registerGkThreadNum = 32;
     private String protocolStack = "H323Plus"; //H323代表使用H323协议栈,H323Plus代表使用H323Plus协议栈
+
 }

@@ -88,6 +88,12 @@ public class SipTerminalManageService extends TerminalManageService implements I
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "SIP, OnLocalMediaRequested, request terminal: " + participantid + " local media! threadName:" + Thread.currentThread().getName());
         System.out.println("SIP, OnLocalMediaRequested, request terminal: " + participantid + " local media! threadName:" + Thread.currentThread().getName());
 
+        if(!sipProtocalConfig.isCalled()){
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "sipProtocalConfig Called : " + sipProtocalConfig.isCalled());
+            System.out.println("sipProtocalConfig Called : " + sipProtocalConfig.isCalled());
+            return;
+        }
+
         TerminalService terminalService = usedVmtServiceMap.get(participantid);
         if (null == terminalService) {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "SIP, OnLocalMediaRequested, not found terminal : " + participantid);
@@ -203,7 +209,7 @@ public class SipTerminalManageService extends TerminalManageService implements I
                 P2PCallRequestFail(terminalService);
             } else {
                 for (MediaDescription mediaDescription : mediaDescriptions) {
-                    P2PCallRequestSuccess(terminalService, mediaDescription.getStreamIndex());
+                    P2PCallRequestSuccess(terminalService, mediaDescription.getStreamIndex(),mediaDescription.getMediaType());
                 }
             }
         }

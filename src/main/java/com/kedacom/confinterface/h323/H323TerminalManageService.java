@@ -5,6 +5,7 @@ import com.kedacom.confadapter.IConferenceEventHandler;
 import com.kedacom.confadapter.common.ConferenceInfo;
 import com.kedacom.confadapter.common.ConferencePresentParticipant;
 import com.kedacom.confadapter.media.MediaDescription;
+import com.kedacom.confadapter.media.MediaDirectionEnum;
 import com.kedacom.confinterface.LogService.LogOutputTypeEnum;
 import com.kedacom.confinterface.LogService.LogTools;
 import com.kedacom.confinterface.dto.*;
@@ -180,16 +181,20 @@ public class H323TerminalManageService extends TerminalManageService implements 
             return;
         }
         Boolean bOK = false;
-        synchronized (terminalService){
+        synchronized (terminalService) {
+            if (protocalConfig.getBaseSysConfig().isSendRecvPort()) {
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "H323, OnLocalMediaRequested, open sendRecv port same ");
+                System.out.println("H323, OnLocalMediaRequested, open sendRecv port same ");
+                mediaDescriptions.get(0).setDirection(MediaDirectionEnum.SendRecv);
+            }
             bOK = terminalService.onOpenLogicalChannel(mediaDescriptions);
         }
-
 
         if (!bOK) {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "H323, OnLocalMediaRequested, onOpenLogicalChannel failed! participantid :" + participantid);
             System.out.println("H323, OnLocalMediaRequested, onOpenLogicalChannel failed! participantid :" + participantid);
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "H323, OnLocalMediaRequested Failed to create resource node, cancel terminal call! participantid :" + participantid);
-            System.out.println("H323, OnLocalMediaRequested Failed to create resource node, cancel terminal call! participantid :" + participantid);
+            System.out.println("H323, Failed to create resource node, cancel terminal call! participantid :" + participantid);
 
             if (null != terminalService.getRemoteMtAccount() || null != terminalService.getProxyMTE164()) {
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "H323, OnLocalMediaRequested P2PCallRequestFail, cancel terminal call! participantid :" + participantid);
@@ -205,7 +210,7 @@ public class H323TerminalManageService extends TerminalManageService implements 
                         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "H323, OnLocalMediaRequested, P2PCallRequestSuccess : ");
                         System.out.println("H323, OnLocalMediaRequested, P2PCallRequestSuccess : ");
                         synchronized (this) {
-                            P2PCallRequestSuccess(terminalService, mediaDescriptions.get(0).getStreamIndex());
+                            P2PCallRequestSuccess(terminalService, mediaDescriptions.get(0).getStreamIndex(), mediaDescriptions.get(0).getMediaType());
                         }
 
                     }
@@ -261,7 +266,7 @@ public class H323TerminalManageService extends TerminalManageService implements 
             return;
         }
         boolean bOk = false;
-        synchronized (terminalService){
+        synchronized (terminalService) {
             bOk = terminalService.updateExchange(mediaDescriptions);
         }
 
@@ -275,9 +280,10 @@ public class H323TerminalManageService extends TerminalManageService implements 
             if (!mediaDescriptions.get(0).getDual()) {
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "H323, OnRemoteMediaReponsed, remoteMtAccount : " + terminalService.getRemoteMtAccount());
                 System.out.println("H323, OnRemoteMediaReponsed, remoteMtAccount : " + terminalService.getRemoteMtAccount());
+
                 if (null != terminalService.getRemoteMtAccount() || null != terminalService.getProxyMTE164()) {
                     synchronized (this) {
-                        P2PCallRequestSuccess(terminalService, mediaDescriptions.get(0).getStreamIndex());
+                        P2PCallRequestSuccess(terminalService, mediaDescriptions.get(0).getStreamIndex(), mediaDescriptions.get(0).getMediaType());
                     }
 
                 }
