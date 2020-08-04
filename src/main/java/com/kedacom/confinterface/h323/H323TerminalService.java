@@ -187,7 +187,7 @@ public class H323TerminalService extends TerminalService {
             return true;
         }
 
-        if (readyToPrepare) {
+        if (readyToPrepare && mediaDescriptions.get(0).getDirection() != MediaDirectionEnum.SendRecv) {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "H323, readyToPrepare........... : " + readyToPrepare);
             System.out.println("H323, readyToPrepare........... : " + readyToPrepare);
         } else {

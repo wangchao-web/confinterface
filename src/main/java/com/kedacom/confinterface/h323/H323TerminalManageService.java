@@ -202,7 +202,7 @@ public class H323TerminalManageService extends TerminalManageService implements 
                 P2PCallRequestFail(terminalService);
             }
         } else {
-            if (terminalService.isReadyToPrepare()) {
+            if (terminalService.isReadyToPrepare() && !protocalConfig.getBaseSysConfig().isSendRecvPort()) {
                 if (!mediaDescriptions.get(0).getDual()) {
                     LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "H323, OnLocalMediaRequested, remoteMtAccount : " + terminalService.getRemoteMtAccount());
                     System.out.println("H323, OnLocalMediaRequested, remoteMtAccount : " + terminalService.getRemoteMtAccount());
@@ -414,6 +414,11 @@ public class H323TerminalManageService extends TerminalManageService implements 
         System.out.println("H323, OnReadyToPrepareLocalChannel participantid : " + participantid + " : " + mediaDescription);
         terminalService.setReadyToPrepare(true);
         Boolean bOK = false;
+        if(protocalConfig.baseSysConfig.isSendRecvPort()){
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "H323, OnReadyToPrepareLocalChannel participantid : " + participantid + " ,SendRecvPort : " + protocalConfig.baseSysConfig.isSendRecvPort());
+            System.out.println("H323, OnReadyToPrepareLocalChannel participantid : " + participantid + " ,SendRecvPort : " + protocalConfig.baseSysConfig.isSendRecvPort());
+            return;
+        }
         synchronized (terminalService) {
             bOK = terminalService.openLogicalChannel(mediaDescriptions);
         }
