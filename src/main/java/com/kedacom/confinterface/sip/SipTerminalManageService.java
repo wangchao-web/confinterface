@@ -87,12 +87,6 @@ public class SipTerminalManageService extends TerminalManageService implements I
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "SIP, OnLocalMediaRequested, request terminal: " + participantid + " local media! threadName:" + Thread.currentThread().getName());
         System.out.println("SIP, OnLocalMediaRequested, request terminal: " + participantid + " local media! threadName:" + Thread.currentThread().getName());
 
-        if(!sipProtocalConfig.isCalled()){
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "sipProtocalConfig Called : " + sipProtocalConfig.isCalled());
-            System.out.println("sipProtocalConfig Called : " + sipProtocalConfig.isCalled());
-            return;
-        }
-
         TerminalService terminalService = usedVmtServiceMap.get(participantid);
         if (null == terminalService) {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "SIP, OnLocalMediaRequested, not found terminal : " + participantid);
@@ -185,8 +179,8 @@ public class SipTerminalManageService extends TerminalManageService implements I
 
         SipTerminalService terminalService = (SipTerminalService) usedVmtServiceMap.get(participantid);
         if (null == terminalService) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "SIP, OnRemoteMediaReponsed not found terminal : " + participantid);
-            System.out.println("SIP, OnRemoteMediaReponsed not found terminal : " + participantid);
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "SIP, OnRemoteMediaReponsed�� not found terminal : " + participantid);
+            System.out.println("SIP, OnRemoteMediaReponsed�� not found terminal : " + participantid);
             return;
         }
 
@@ -264,3 +258,4 @@ public class SipTerminalManageService extends TerminalManageService implements I
 
     private SipProtocalConfig sipProtocalConfig;
 }
+

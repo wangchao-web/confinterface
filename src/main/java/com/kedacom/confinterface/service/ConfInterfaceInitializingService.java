@@ -27,8 +27,6 @@ import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Service;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.util.*;
