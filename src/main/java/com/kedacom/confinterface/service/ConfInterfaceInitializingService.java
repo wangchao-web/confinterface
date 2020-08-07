@@ -27,6 +27,8 @@ import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Service;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.util.*;
@@ -55,6 +57,33 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
         System.out.println("now in ConfInterfaceInitializingService, protocalType:" + baseSysConfig.getProtocalType());
 
         createConferenceManage();
+
+        if (baseSysConfig.isScan()) {
+           /* BufferedReader bReader = null;
+            while (true) {
+                try {
+                    bReader = new BufferedReader(new InputStreamReader(System.in));
+                    String str = bReader.readLine();
+                    System.out.println("用户输入" + str);
+                    if (str.equals("a")){
+                        System.out.println("用户输出" + str);
+                        break;
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+*/
+            Scanner scan = new Scanner(System.in);
+            while (true){
+                String read = scan.nextLine();
+                System.out.println("scan read ："+read);
+                if (read.equals("a")){
+                    System.out.println("exit read ："+ read);
+                    scan.close();
+                    break;
+                }
+            }
+        }
         //初始化协议栈
         boolean bInitConfAdapter = initConfAdapter();
         if(!bInitConfAdapter){

@@ -294,6 +294,14 @@ public class BaseSysConfig {
         this.sendRecvPort = sendRecvPort;
     }
 
+    public boolean isScan() {
+        return scan;
+    }
+
+    public void setScan(boolean scan) {
+        this.scan = scan;
+    }
+
     @Value("${confinterface.sys.isExternalDocking:false}")
     public  void setIsExternalDocking(Boolean isExternalDocking) {
         this.isExternalDocking = isExternalDocking;
@@ -386,6 +394,8 @@ public class BaseSysConfig {
     private boolean useDeviceId = false;
 
     private boolean sendRecvPort = false;  //H323收发端口一致
+
+    private boolean scan = false;
 
     //@Value("${confinterface.sys.isExternalDocking}")
     public static Boolean isExternalDocking = false;  //适应外厂商paload
