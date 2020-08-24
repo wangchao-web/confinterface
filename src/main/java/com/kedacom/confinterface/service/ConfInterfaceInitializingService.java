@@ -56,8 +56,8 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
 
         createConferenceManage();
 
-        if (baseSysConfig.isScan()) {
-           /* BufferedReader bReader = null;
+        /*if (baseSysConfig.isScan()) {
+           *//* BufferedReader bReader = null;
             while (true) {
                 try {
                     bReader = new BufferedReader(new InputStreamReader(System.in));
@@ -70,7 +70,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-*/
+*//*
             Scanner scan = new Scanner(System.in);
             while (true){
                 String read = scan.nextLine();
@@ -81,7 +81,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
                     break;
                 }
             }
-        }
+        }*/
         //初始化协议栈
         boolean bInitConfAdapter = initConfAdapter();
         if(!bInitConfAdapter){
@@ -746,9 +746,6 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
         return false;
     }
 
-    private void probeMedia() {
-
-    }
 
     @Autowired
     private BaseSysConfig baseSysConfig;
@@ -782,7 +779,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
     private McuRestConfig mcuRestConfig;
 
     //版本号修复
-    public static final String VERSION = "confinterface-V.1.2.0.7";
+    public static final String VERSION = "confinterface-V.1.2.0.8";
 
     public static Boolean initialized = false;
 

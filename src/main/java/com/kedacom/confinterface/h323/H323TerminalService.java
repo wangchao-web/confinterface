@@ -97,10 +97,8 @@ public class H323TerminalService extends TerminalService {
         * */
         boolean bCreate = true;
         boolean bOnlyDualStream = true;
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "mediaDescriptions.get(0).getDual() : " + mediaDescriptions.get(0).getDual());
-        System.out.println("mediaDescriptions.get(0).getDual() : " + mediaDescriptions.get(0).getDual());
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "mediaDescriptions.get(0).getMediaType() :" + mediaDescriptions.get(0).getMediaType());
-        System.out.println("mediaDescriptions.get(0).getMediaType() :" + mediaDescriptions.get(0).getMediaType());
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "H323, onOpenLogicalChannel, mediaDescriptions dual :" + mediaDescriptions.get(0).getDual() +", MediaType :"+mediaDescriptions.get(0).getMediaType());
+        System.out.println("H323, onOpenLogicalChannel, mediaDescriptions dual :" + mediaDescriptions.get(0).getDual() +", MediaType :"+mediaDescriptions.get(0).getMediaType());
         if (!mediaDescriptions.get(0).getDual()) {
             bOnlyDualStream = false;
             if (null == videoDualStreamMediaDesc
@@ -122,8 +120,8 @@ public class H323TerminalService extends TerminalService {
             System.out.println("H323, onOpenLogicalChannel, start add exchange info!! threadName:" + Thread.currentThread().getName());
 
             for (MediaDescription mediaDescription : mediaDescriptions) {
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "mediaDescription:" + mediaDescription.toString());
-                System.out.println("mediaDescription:" + mediaDescription.toString());
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "H323, onOpenLogicalChannel, mediaDescription:" + mediaDescription.toString());
+                System.out.println("H323, onOpenLogicalChannel, mediaDescription:" + mediaDescription.toString());
                 if (dualSource.size() == 0 || !mediaDescription.getDual()) {
                     CreateResourceParam createResourceParam = new CreateResourceParam();
                     createResourceParam.setDeviceID(deviceID);

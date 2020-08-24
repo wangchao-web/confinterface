@@ -304,8 +304,9 @@ public class BaseSysConfig {
 
     @Value("${confinterface.sys.isExternalDocking:false}")
     public  void setIsExternalDocking(Boolean isExternalDocking) {
-        this.isExternalDocking = isExternalDocking;
+        BaseSysConfig.isExternalDocking = isExternalDocking;
     }
+
     @Override
     public String toString() {
         return new StringBuffer()
@@ -335,6 +336,14 @@ public class BaseSysConfig {
                 .append(mainVideoCapSet)
                 .append(", mainAudioCaps:")
                 .append(mainAudioCapSet)
+                .append(", useDeviceId:")
+                .append(useDeviceId)
+                .append(", sendRecvPort:")
+                .append(sendRecvPort)
+                .append(", isExternalDocking:")
+                .append(isExternalDocking)
+                .append(", scan:")
+                .append(scan)
                 .toString();
     }
 
@@ -397,7 +406,6 @@ public class BaseSysConfig {
 
     private boolean scan = false;
 
-    //@Value("${confinterface.sys.isExternalDocking}")
     public static Boolean isExternalDocking = false;  //适应外厂商paload
 
 
