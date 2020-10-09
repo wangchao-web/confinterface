@@ -3,6 +3,7 @@ package com.kedacom.confinterface.dao;
 import java.io.Serializable;
 
 public class BroadcastSrcMediaInfo implements Serializable {
+
     public BroadcastSrcMediaInfo(){
         super();
     }

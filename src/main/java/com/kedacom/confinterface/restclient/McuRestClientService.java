@@ -1866,6 +1866,73 @@ public class McuRestClientService {
         return McuStatus.resolve(getMonitorsInfoResponse.getError_code());
     }
 
+    //获取终端视频源信息
+    public GetVideoSourceResponse getVideoSource(String confId, String mtId) {
+        if (!loginSuccess) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "get Video Source , has login out!!!");
+            System.out.println("get Video Source , has login out!!!");
+            return null;
+        }
+
+        //URL为 /api/v1/vc/confs/{conf_id}/mts/{mt_id}/videos
+        StringBuilder url = new StringBuilder();
+        constructUrl(url, "/api/v1/vc/confs/{conf_id}/mts/{mt_id}/videos?account_token={account_token}");
+        Map<String, String> args = new HashMap<>();
+        args.put("conf_id", confId);
+        args.put("mt_id", mtId);
+        args.put("account_token", accountToken);
+
+        GetVideoSourceResponse getVideoSourceResponse = restClientService.exchange(url.toString(), HttpMethod.GET, null, urlencodeMediaType, args, GetVideoSourceResponse.class);
+        if (null == getVideoSourceResponse) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "get video source response, null == getVideoSourceResponse");
+            System.out.println("get video source response, null == getVideoSourceResponse");
+            return null;
+        }
+
+        if (!getVideoSourceResponse.success()) {
+            int errorCode = getVideoSourceResponse.getError_code();
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "get video source response failed! errCode :" + errorCode + ", errmsg:" + McuStatus.resolve(errorCode).getDescription());
+            System.out.println("get video source response failed! errCode :" + errorCode + ", errmsg:" + McuStatus.resolve(errorCode).getDescription());
+            return null;
+        }
+
+        return getVideoSourceResponse;
+    }
+
+    //设置终端视频源
+    public McuStatus setVideoSource(String confId, String mtId,int videoIdx) {
+        if (!loginSuccess) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "setVideoSource, has login out!!!");
+            System.out.println("setVideoSource, has login out!!!");
+            return McuStatus.TimeOut;
+        }
+
+        //url：/api/v1/vc/confs/{conf_id}/mts/{mt_id}/videos
+        StringBuilder url = new StringBuilder();
+        constructUrl(url, "/api/v1/vc/confs/{conf_id}/mts/{mt_id}/videos");
+        Map<String, String> args = new HashMap<>();
+        args.put("conf_id", confId);
+        args.put("mt_id",mtId);
+
+        McuVideoSourceParam mcuVideoSourceParam = new McuVideoSourceParam(videoIdx);
+        McuPostMsg mcuPostMsg = new McuPostMsg(accountToken);
+        mcuPostMsg.setParams(mcuVideoSourceParam);
+        McuBaseResponse response = restClientService.exchange(url.toString(), HttpMethod.PUT, mcuPostMsg.getMsg(), urlencodeMediaType, args, McuBaseResponse.class);
+        if (null == response) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "set Video Source, exchange put, null == response");
+            System.out.println("set Video Source, exchange put, null == response");
+            return McuStatus.Unknown;
+        }
+
+        if (!response.success()) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "set Video Source, exchange put failed! errcode:" + response.getError_code());
+            System.out.println("set Video Source, exchange put failed! errcode:" + response.getError_code());
+            return McuStatus.resolve(response.getError_code());
+        }
+
+        return McuStatus.OK;
+    }
+
     public Map<String, List<String>> getConfSubcribeChannelMap() {
         return confSubcribeChannelMap;
     }

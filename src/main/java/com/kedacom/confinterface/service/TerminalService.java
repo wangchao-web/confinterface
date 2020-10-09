@@ -6,10 +6,10 @@ import com.kedacom.confadapter.common.*;
 import com.kedacom.confadapter.media.*;
 import com.kedacom.confinterface.LogService.LogOutputTypeEnum;
 import com.kedacom.confinterface.LogService.LogTools;
+import com.kedacom.confinterface.dao.H323PlusEnum;
 import com.kedacom.confinterface.dao.InspectionSrcParam;
 import com.kedacom.confinterface.dto.*;
 import com.kedacom.confinterface.exchange.*;
-import com.kedacom.confinterface.h323.H323ProtocalConfig;
 import com.kedacom.confinterface.inner.*;
 import com.kedacom.confinterface.restclient.RestClientService;
 import com.kedacom.confinterface.restclient.mcu.InspectionStatusEnum;
@@ -546,6 +546,10 @@ public abstract class TerminalService {
         remoteMtAccount = null;
         //先开到终端的逻辑通道的判断
         readyToPrepare = false;
+        h323PlusSendVideo = false;
+        h323PlusSendAudio = false;
+        h323PlusRecvAudio = false;
+        h323PlusRecvVideo = false;
     }
 
     public abstract boolean onOpenLogicalChannel(Vector<MediaDescription> mediaDescriptions);
@@ -634,6 +638,14 @@ public abstract class TerminalService {
 
     public boolean sendIFrame() {
         return conferenceParticipant.RequestKeyframe();
+    }
+
+    public boolean setVideoSrc(int videoSrc) {
+        return conferenceParticipant.SwitchRemoteVideoSrc(videoSrc);
+    }
+
+    public boolean getVideoSrc(VideoSrcConfig videoSrcs) {
+        return conferenceParticipant.GetRemoteVideoSrcs(videoSrcs);
     }
 
     public boolean ctrlCamera(int state, int type) {
@@ -917,10 +929,92 @@ public abstract class TerminalService {
 
                 updateResourceParams.add(updateResourceParam);
                 break;
+
             }
         }
 
         return requestUpdateResource(updateResourceParams);
+    }
+
+
+    public H323PlusEnum h323PlusupdateExchange(Vector<MediaDescription> mediaDescriptions) {
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "now in h323PlusupdateExchange, mediaDescriptions : " + mediaDescriptions.get(0).toString());
+        System.out.println("now in h323PlusupdateExchange, mediaDescriptions : " + mediaDescriptions.get(0).toString());
+        List<UpdateResourceParam> h323PlusupdateExchange = new ArrayList<>();
+        List<DetailMediaResouce> channel;
+
+        for (MediaDescription mediaDescription : mediaDescriptions) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "h323PlusupdateExchange, mediaDescription, direction : " + mediaDescription.getDirection());
+            System.out.println("h323PlusupdateExchange, mediaDescription, direction : " + mediaDescription.getDirection());
+            channel = forwardChannel;
+
+            for (DetailMediaResouce detailMediaResouce : channel) {
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "h323PlusupdateExchange, mediaDesc(mediaType:" + mediaDescription.getMediaType() + ", streamIndex:" + mediaDescription.getStreamIndex() + ")");
+                System.out.println("h323PlusupdateExchange, mediaDesc(mediaType:" + mediaDescription.getMediaType() + ", streamIndex:" + mediaDescription.getStreamIndex() + ")");
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "h323PlusupdateExchange,detailMediaResource(type:" + detailMediaResouce.getType() + ", dual:" + detailMediaResouce.getDual() + ", StreamIndex : " + detailMediaResouce.getStreamIndex() + "resourceID" + detailMediaResouce.getId() + ")");
+                System.out.println(" h323PlusupdateExchange ,detailMediaResource(type:" + detailMediaResouce.getType() + ", dual:" + detailMediaResouce.getDual() + ", StreamIndex : " + detailMediaResouce.getStreamIndex() + "resourceID" + detailMediaResouce.getId() + ")");
+
+                if (!mediaDescription.getMediaType().equals(detailMediaResouce.getType())) {
+                    continue;
+                }
+
+                UpdateResourceParam updateResourceParam = new UpdateResourceParam(detailMediaResouce.getId());
+                if ("video".equals(mediaDescription.getMediaType())) {
+                    if (mediaDescription.getDirection() == MediaDirectionEnum.Send) {
+                        h323PlusSendVideoSdp = h323PlusConstructSdp(mediaDescription);
+                        h323PlusSendVideo = true;
+                    } else {
+                        h323PlusRecvVideoSdp = h323PlusConstructSdp(mediaDescription);
+                        h323PlusRecvVideo = true;
+                    }
+
+                    if (h323PlusSendVideo == true && h323PlusRecvVideo == true) {
+                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "h323PlusupdateExchange h323PlusRecvVideo and h323PlusSendVideo is true");
+                        System.out.println("h323PlusupdateExchange h323PlusRecvVideo and h323PlusSendVideo is true");
+                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "h323PlusupdateExchange h323PlusSendVideoSdp : " + h323PlusSendVideoSdp + ", h323PlusRecvVideoSdp : "+h323PlusRecvVideoSdp);
+                        System.out.println("h323PlusupdateExchange h323PlusSendVideoSdp : " + h323PlusSendVideoSdp + ", h323PlusRecvVideoSdp : "+h323PlusRecvVideoSdp);
+                        updateResourceParam.setSdp(h323PlusSendVideoSdp + h323PlusRecvVideoSdp);
+
+                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "h323PlusupdateExchange VideoupdateResourceParam : " + updateResourceParam.toString());
+                        System.out.println("h323PlusupdateExchange VideoupdateResourceParam : " + updateResourceParam.toString());
+                        h323PlusupdateExchange.add(updateResourceParam);
+                        boolean requestUpdateResource = requestUpdateResource(h323PlusupdateExchange);
+                        if(requestUpdateResource){
+                            return H323PlusEnum.SUCCESS;
+                        }else{
+                            return H323PlusEnum.FAILED;
+                        }
+                    }
+                } else {
+                    if (mediaDescription.getDirection() == MediaDirectionEnum.Send) {
+                        h323PlusSendAudioSdp = h323PlusConstructSdp(mediaDescription);
+                        h323PlusSendAudio = true;
+                    } else {
+                        h323PlusRecvAudioSdp = h323PlusConstructSdp(mediaDescription);
+                        h323PlusRecvAudio = true;
+                    }
+                    if (h323PlusSendAudio == true && h323PlusRecvAudio == true) {
+                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "h323PlusupdateExchange h323PlusSendAudio and h323PlusRecvAudio is true");
+                        System.out.println("h323PlusupdateExchange h323PlusSendAudio and h323PlusRecvAudio is true");
+                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "h323PlusupdateExchange h323PlusSendAudioSdp : " + h323PlusSendAudioSdp +", h323PlusRecvAudioSdp : "+h323PlusRecvAudioSdp);
+                        System.out.println("h323PlusupdateExchange h323PlusSendAudioSdp : " + h323PlusSendAudioSdp +", h323PlusRecvAudioSdp : "+h323PlusRecvAudioSdp);
+                        updateResourceParam.setSdp(h323PlusSendAudioSdp + h323PlusRecvAudioSdp);
+                        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "h323PlusupdateExchange AudiooupdateResourceParam : " + updateResourceParam.toString());
+                        System.out.println("h323PlusupdateExchange AudioupdateResourceParam : " + updateResourceParam.toString());
+                        h323PlusupdateExchange.add(updateResourceParam);
+                        boolean audioRequestUpdateResource = requestUpdateResource(h323PlusupdateExchange);
+                        if(audioRequestUpdateResource){
+                            return H323PlusEnum.SUCCESS;
+                        }else{
+                            return H323PlusEnum.FAILED;
+                        }
+                    }
+                }
+
+            }
+        }
+        return H323PlusEnum.UNKNOWN;
+
     }
 
     public abstract TerminalOfflineReasonEnum callRemote(RemoteParticipantInfo remoteParticipantInfo, P2PVideoCallMediaCap videoCodec, P2PAudioCallMediaCap audioCodec);
@@ -1058,6 +1152,10 @@ public abstract class TerminalService {
                 remoteMtAccount = null;
                 readyToPrepare = false;
                 setDualStream(false);
+                h323PlusSendVideo = false;
+                h323PlusRecvVideo = false;
+                h323PlusRecvAudio = false;
+                h323PlusSendAudio = false;
 
                 if (dynamicBind == 1) {
                     proxyMTE164 = null;
@@ -1127,13 +1225,15 @@ public abstract class TerminalService {
     protected List<String> isNeedCreateResource(boolean bReverse, Vector<MediaDescription> mediaDescriptions) {
         List<String> resourceInfo = new ArrayList<>();
         List<DetailMediaResouce> channel;
-        if (bReverse)
+        if (bReverse) {
             channel = reverseChannel;
-        else
+        } else {
             channel = forwardChannel;
+        }
 
-        if (null == channel)
+        if (null == channel) {
             return resourceInfo;
+        }
 
         List<UpdateResourceParam> updateResourceParams = new ArrayList<>();
         for (MediaDescription mediaDescription : mediaDescriptions) {
@@ -1490,24 +1590,26 @@ public abstract class TerminalService {
                 sdp.append("\r\n");
             }
 
-            sdp.append("a=rtcp:");
-            sdp.append(mediaDescription.getRtcpAddress().getPort());
-            sdp.append(" IN ");
-            sdp.append(rtcpProtocolType);
-            sdp.append(" ");
-            sdp.append(mediaDescription.getRtcpAddress().getIP());
-            sdp.append("\r\n");
+            if (BaseSysConfig.packetRetransmission) {
 
-            sdp.append("a=rtcp-fb:");
-            sdp.append(mediaDescription.getPayload());
-            sdp.append(" nack");
-            sdp.append("\r\n");
+                sdp.append("a=rtcp:");
+                sdp.append(mediaDescription.getRtcpAddress().getPort());
+                sdp.append(" IN ");
+                sdp.append(rtcpProtocolType);
+                sdp.append(" ");
+                sdp.append(mediaDescription.getRtcpAddress().getIP());
+                sdp.append("\r\n");
 
-            sdp.append("a=rtcp-fb:");
-            sdp.append(mediaDescription.getPayload());
-            sdp.append(" nack kdv");
-            sdp.append("\r\n");
+                sdp.append("a=rtcp-fb:");
+                sdp.append(mediaDescription.getPayload());
+                sdp.append(" nack");
+                sdp.append("\r\n");
 
+                sdp.append("a=rtcp-fb:");
+                sdp.append(mediaDescription.getPayload());
+                sdp.append(" nack kdv");
+                sdp.append("\r\n");
+            }
             if (mediaDescription.getDirection() == MediaDirectionEnum.Send) {
                 sdp.append("a=sendonly\r\n");
                 break;
@@ -1526,6 +1628,113 @@ public abstract class TerminalService {
 
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "constructSdp : " + sdp.toString());
         System.out.println("constructSdp : " + sdp.toString());
+        return sdp.toString();
+    }
+
+
+    protected static String h323PlusConstructSdp(MediaDescription mediaDescription) {
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "[h323PlusConstructSdp] mediaDescription.getEncodingFormat().name() : " + mediaDescription.getEncodingFormat().name() + ", rtpIp: " + mediaDescription.getRtpAddress().getIP() +
+                ", rtcpIp: " + mediaDescription.getRtcpAddress().getIP());
+        System.out.println("[h323PlusConstructSdp] mediaDescription.getEncodingFormat().name() : " + mediaDescription.getEncodingFormat().name() + ", rtpIp: " + mediaDescription.getRtpAddress().getIP() +
+                ", rtcpIp: " + mediaDescription.getRtcpAddress().getIP());
+
+        if (null == mediaDescription) {
+            return "";
+        }
+
+        String rtpProtocolType = getIpProtocolType(mediaDescription.getRtpAddress().getIP());
+        String rtcpProtocolType = getIpProtocolType(mediaDescription.getRtcpAddress().getIP());
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "h323PlusConstructSdp rtpProtocolType : " + rtpProtocolType + ",rtcpProtocolType : " + rtcpProtocolType);
+        System.out.println("h323PlusConstructSdp rtpProtocolType : " + rtpProtocolType + ",rtcpProtocolType : " + rtcpProtocolType);
+        if (null == rtpProtocolType || null == rtcpProtocolType) {
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "[h323PlusConstructSdp] rtpProtocolType or rtcpProtocolType is null!!!!");
+            System.out.println("[h323PlusConstructSdp] rtpProtocolType or rtcpProtocolType is null!!!!");
+            return "";
+        }
+
+        int payLoad = mediaDescription.getPayload();
+        if (mediaDescription.getDirection() == MediaDirectionEnum.Send && isExternalDocking && (mediaDescription.getPayload() >= 96 && mediaDescription.getPayload() <= 127)) {
+            payLoad = 127;
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "h323PlusConstructSdp payload set to 127");
+            System.out.println("h323PlusConstructSdp payload set to 127");
+        }
+
+        StringBuilder sdp = new StringBuilder();
+
+
+        sdp.append("c=IN ");
+        sdp.append(rtpProtocolType);
+        sdp.append(" ");
+        sdp.append(mediaDescription.getRtpAddress().getIP());
+        sdp.append("\r\n");
+
+        if (mediaDescription.getMediaType().equals(MediaTypeEnum.VIDEO.getName())) {
+            VideoMediaDescription videoMediaDescription = (VideoMediaDescription) mediaDescription;
+            sdp.append("m=video ");
+            sdp.append(mediaDescription.getRtpAddress().getPort());
+            sdp.append(" RTP/AVP ");
+            sdp.append(payLoad);
+            sdp.append("\r\n");
+            sdp.append("a=framerate:");
+            sdp.append(videoMediaDescription.getFramerate());
+            sdp.append("\r\n");
+            sdp.append("a=rtpmap:");
+            sdp.append(payLoad);
+            sdp.append(" ");
+            sdp.append(mediaDescription.getEncodingFormat().name());
+            sdp.append("/90000\r\n");
+
+            if (mediaDescription.getEncodingFormat() == (EncodingFormatEnum.H264)) {
+                constructH264Fmtp(sdp, mediaDescription.getPayload(), videoMediaDescription.getH264Desc(), mediaDescription.getDirection());
+            }
+        } else {
+            AudioMediaDescription audioMediaDescription = (AudioMediaDescription) mediaDescription;
+            sdp.append("m=audio ");
+            sdp.append(mediaDescription.getRtpAddress().getPort());
+            sdp.append(" RTP/AVP ");
+            sdp.append(payLoad);
+            sdp.append("\r\n");
+            sdp.append("a=rtpmap:");
+            sdp.append(payLoad);
+            sdp.append(" ");
+            sdp.append(mediaDescription.getEncodingFormat().name());
+            sdp.append("/");
+            sdp.append(audioMediaDescription.getSampleRate());
+            sdp.append("/");
+            sdp.append(audioMediaDescription.getChannelNum());
+            sdp.append("\r\n");
+        }
+
+        if (BaseSysConfig.packetRetransmission) {
+
+            sdp.append("a=rtcp:");
+            sdp.append(mediaDescription.getRtcpAddress().getPort());
+            sdp.append(" IN ");
+            sdp.append(rtcpProtocolType);
+            sdp.append(" ");
+            sdp.append(mediaDescription.getRtcpAddress().getIP());
+            sdp.append("\r\n");
+
+            sdp.append("a=rtcp-fb:");
+            sdp.append(mediaDescription.getPayload());
+            sdp.append(" nack");
+            sdp.append("\r\n");
+
+            sdp.append("a=rtcp-fb:");
+            sdp.append(mediaDescription.getPayload());
+            sdp.append(" nack kdv");
+            sdp.append("\r\n");
+        }
+
+        if (mediaDescription.getDirection() == MediaDirectionEnum.Send) {
+            sdp.append("a=sendonly\r\n");
+
+        } else if (mediaDescription.getDirection() == MediaDirectionEnum.Recv) {
+            sdp.append("a=recvonly\r\n");
+        }
+
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "h323PlusConstructSdp : ............" + sdp.toString());
+        System.out.println("h323PlusConstructSdp ............ : " + sdp.toString());
         return sdp.toString();
     }
 
@@ -2136,8 +2345,8 @@ public abstract class TerminalService {
         url.append(srvPort);
         url.append(restApi);
     }
-
-    protected static String getIpProtocolType(String strIp) {
+    //将protected 改成 public
+    public static String getIpProtocolType(String strIp) {
         //判断是否是IPV4
         if (isIPv4(strIp)) {
             return "IP4";
@@ -2345,9 +2554,20 @@ public abstract class TerminalService {
     protected static StringBuilder notifyURL = null;
     //protected Boolean isTerminalRepeat = false; //判断mcu自己创建的会议时,在同一个组里新增终端相同的问题
     public Map<String, MediaResource> dualSource = new HashMap<>();
-    protected String deviceID; //流媒体音视频同步设备Id
+    protected String deviceID = ""; //流媒体音视频同步设备Id
 
     protected volatile boolean readyToPrepare = false;
+
+    protected String h323PlusSendVideoSdp = "";
+    protected String h323PlusRecvVideoSdp = "";
+
+    protected String h323PlusSendAudioSdp = "";
+    protected String h323PlusRecvAudioSdp = "";
+
+    protected Boolean h323PlusSendVideo = false;
+    protected Boolean h323PlusRecvVideo = false;
+    protected Boolean h323PlusSendAudio = false;
+    protected Boolean h323PlusRecvAudio = false;
 
     protected ConcurrentHashMap<String, BaseRequestMsg> waitMsg;
 

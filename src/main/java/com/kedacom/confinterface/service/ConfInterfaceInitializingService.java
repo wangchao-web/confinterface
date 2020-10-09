@@ -40,19 +40,17 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
     @Override
     public void run(String... args) {
 
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "whether to use IsExternalDocking : " + BaseSysConfig.getIsExternalDocking() + baseSysConfig.isSendRecvPort());
-        System.out.println("whether to use IsExternalDocking : " + BaseSysConfig.getIsExternalDocking() + baseSysConfig.isSendRecvPort());
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "ConfInterfaceInitializingService confinterface version: " + VERSION);
-        System.out.println("ConfInterfaceInitializingService confinterface version: " + VERSION);
+        System.out.println("ConfInterface Initializing Service confinterface version: " + VERSION);
         boolean status = checkDBConn();
         if (false == status) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Read configuration file fail or connect to redis failed ! End the service process !");
-            System.out.println("Read configuration file fail  or connect to redis failed ! End the service process !");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Read configuration file failed or connect to redis failed ! End the service process !");
+            System.out.println("Read configuration file failed  or connect to redis failed ! End the service process !");
             System.exit(0);
         }
 
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "now in ConfInterfaceInitializingService, protocalType:" + baseSysConfig.getProtocalType());
-        System.out.println("now in ConfInterfaceInitializingService, protocalType:" + baseSysConfig.getProtocalType());
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "now in ConfInterface Initializing Service, protocalType:" + baseSysConfig.getProtocalType());
+        System.out.println("now in ConfInterface Initializing Service, protocalType:" + baseSysConfig.getProtocalType());
 
         createConferenceManage();
 
@@ -280,8 +278,8 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "init conferenceAdapterController successfully");
             System.out.println("init conferenceAdapterController successfully");
         } else {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "init conferenceAdapterController fail");
-            System.out.println("init conferenceAdapterController fail");
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "init conferenceAdapterController failed");
+            System.out.println("init conferenceAdapterController failed");
         }
         return bInitOk;
     }
@@ -779,7 +777,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
     private McuRestConfig mcuRestConfig;
 
     //版本号修复
-    public static final String VERSION = "confinterface-V.1.2.0.8";
+    public static final String VERSION = "confinterface-V.1.2.1.0";
 
     public static Boolean initialized = false;
 

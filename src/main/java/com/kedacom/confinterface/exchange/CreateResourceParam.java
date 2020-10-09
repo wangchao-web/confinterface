@@ -24,7 +24,8 @@ public class CreateResourceParam {
     @Override
     public String toString() {
         return new StringBuilder().append(", sdp:").append(sdp)
-                .append(", deviceID:").append(deviceID).toString().toString();
+                .append(", deviceID:").append(deviceID)
+                .toString();
     }
 
     private String deviceID;

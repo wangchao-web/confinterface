@@ -4,10 +4,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class TranslateCallParam  {
 
-
-
-
-
     public int getSrcPort() {
         return srcPort;
     }

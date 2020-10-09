@@ -1,9 +1,10 @@
 package com.kedacom.confinterface.autoconfigure;
 
+import com.kedacom.confinterface.h323.H323TerminalManageService;
+import com.kedacom.confinterface.h323plus.H323PlusProtocalConfig;
+import com.kedacom.confinterface.h323plus.H323PlusTerminalManageService;
 import com.kedacom.confinterface.service.TerminalManageService;
 import com.kedacom.confinterface.service.TerminalMediaSourceService;
-import com.kedacom.confinterface.sip.SipProtocalConfig;
-import com.kedacom.confinterface.sip.SipTerminalManageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -14,17 +15,17 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableAsync;
 
 @Configuration
-@EnableConfigurationProperties(SipProtocalConfig.class)
-@ConditionalOnClass(SipTerminalManageService.class)
+@EnableConfigurationProperties(H323PlusProtocalConfig.class)
+@ConditionalOnClass(H323TerminalManageService.class)
 @ConditionalOnProperty(name = "confinterface.sys.protocalType", havingValue = "h323Plus", matchIfMissing = false)
 @EnableAsync(proxyTargetClass=true)
 public class H323PlusTerminalManageServiceAutoConfig {
     @Autowired
-    private SipProtocalConfig sipProtocalConfig;
+    private H323PlusProtocalConfig h323PlusProtocalConfig;
 
     @Bean
-    @ConditionalOnMissingBean(SipTerminalManageService.class)
+    @ConditionalOnMissingBean(H323TerminalManageService.class)
     public TerminalManageService sipTerminalManageService(TerminalMediaSourceService terminalMediaSourceService) {
-        return new SipTerminalManageService(sipProtocalConfig, terminalMediaSourceService);
+        return new H323PlusTerminalManageService(h323PlusProtocalConfig, terminalMediaSourceService);
     }
 }

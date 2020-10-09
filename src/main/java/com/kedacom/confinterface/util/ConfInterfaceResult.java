@@ -50,7 +50,10 @@ public enum ConfInterfaceResult {
     QUERY_CONFS_CASCADES_INFO_IS_NULL(50043,"query confs cascades  info is null"),
     QUERY_CONF_INFO_IS_NULL(50044,"query conf  info is null"),
     PROBE_FAILED(9999,"probe failed"),
-    PROBE_SUCCESS(200,"probe success");
+    PROBE_SUCCESS(200,"probe success"),
+    QUERY_VIDEO_SOURCE_FAILED(50045,"query video source failed"),
+    SET_VIDEO_SOURCE_FAILED(50046,"set video source failed"),
+    GET_VIDEO_SOURCE_FAILED(50047,"get video source failed");
 
     public int getCode(){
         return code;

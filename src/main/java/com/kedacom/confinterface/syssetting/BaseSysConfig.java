@@ -302,6 +302,10 @@ public class BaseSysConfig {
         this.scan = scan;
     }
 
+    public void setPacketRetransmission(boolean packetRetransmission) {
+        BaseSysConfig.packetRetransmission  = packetRetransmission;
+    }
+
     @Value("${confinterface.sys.isExternalDocking:false}")
     public  void setIsExternalDocking(Boolean isExternalDocking) {
         BaseSysConfig.isExternalDocking = isExternalDocking;
@@ -344,6 +348,8 @@ public class BaseSysConfig {
                 .append(isExternalDocking)
                 .append(", scan:")
                 .append(scan)
+                .append(", packetRetransmission:")
+                .append(packetRetransmission)
                 .toString();
     }
 
@@ -402,12 +408,15 @@ public class BaseSysConfig {
     private List<AudioCap> audioCapList;
     private boolean useDeviceId = false;
 
-    private boolean sendRecvPort = false;  //H323收发端口一致
+    //H323收发端口一致
+    private boolean sendRecvPort = false;
 
     private boolean scan = false;
 
-    public static Boolean isExternalDocking = false;  //适应外厂商paload
+    //适应外厂商paload
+    public static boolean isExternalDocking = false;
 
-
+    //丢包重传配置
+    public static boolean packetRetransmission = true;
 
 }

@@ -2,6 +2,7 @@ package com.kedacom.confinterface.controller;
 
 import com.kedacom.confinterface.LogService.LogOutputTypeEnum;
 import com.kedacom.confinterface.LogService.LogTools;
+import com.kedacom.confinterface.dao.Terminal;
 import com.kedacom.confinterface.dto.*;
 import com.kedacom.confinterface.inner.SubscribeMsgTypeEnum;
 import com.kedacom.confinterface.service.ConfInterfaceInitializingService;
@@ -15,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.async.DeferredResult;
+
 
 import javax.validation.Valid;
 import java.text.SimpleDateFormat;
@@ -470,8 +472,8 @@ public class ConfInterfaceController {
 
     @DeleteMapping(value = "/monitors")
     public DeferredResult<ResponseEntity<BaseResponseMsg>> deleteMonitors(@RequestParam("GroupId") String groupId,@Valid @RequestBody MonitorsParams monitorsParams){
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now in delete  Monitors , groupId : " + groupId + ", monitorsParams.toString() : " +monitorsParams.toString() +", time : " + System.currentTimeMillis());
-        System.out.println("now in delete Monitors , groupId : " + groupId + ", monitorsParams.toString() : " + monitorsParams.toString() + ", time : " + System.currentTimeMillis());
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now in delete  Monitors , groupId : " + groupId + ", monitorsParams : " +monitorsParams.toString() +", time : " + System.currentTimeMillis());
+        System.out.println("now in delete Monitors , groupId : " + groupId + ", monitorsParams : " + monitorsParams.toString() + ", time : " + System.currentTimeMillis());
         DeleteMonitorsRequest deleteMonitorsRequest = new DeleteMonitorsRequest(groupId, monitorsParams);
         confInterfaceService.deleteMonitors(deleteMonitorsRequest);
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now delete start Monitors, time : " + System.currentTimeMillis());
@@ -479,6 +481,27 @@ public class ConfInterfaceController {
         return deleteMonitorsRequest.getResponseMsg();
     }
 
+    @GetMapping(value = "/videoSource")
+    public DeferredResult<ResponseEntity<VideoSourceResponse>> getVideosSource(@RequestParam("GroupId") String groupId, @RequestParam("Account") String account){
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now in get  video source , groupId : " + groupId + ", account : " +account +", time : " + System.currentTimeMillis());
+        System.out.println("now in get video source , groupId : " + groupId + ", account : " + account + ", time : " + System.currentTimeMillis());
+        GetVideoSourceRequest getVideoSourceRequest = new GetVideoSourceRequest(groupId, account);
+        confInterfaceService.getVideoSource(getVideoSourceRequest);
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now finished get video source, time : " + System.currentTimeMillis());
+        System.out.println("now finished get video source , time : " + System.currentTimeMillis());
+        return getVideoSourceRequest.getResponseMsg();
+    }
+
+    @PostMapping(value = "/videoSource")
+    public DeferredResult<ResponseEntity<BaseResponseMsg>> setVideosSource(@RequestParam("GroupId") String groupId, @Valid @RequestBody VideoSourceParam videoSourceParam){
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now in set  video source , groupId : " + groupId + ", videoSourceParam : " +videoSourceParam.toString() +", time : " + System.currentTimeMillis());
+        System.out.println("now in set video source , groupId : " + groupId + ", videoSourceParam : " + videoSourceParam.toString() + ", time : " + System.currentTimeMillis());
+        VideoSourceRequest videoSourceRequest = new VideoSourceRequest(groupId, videoSourceParam);
+        confInterfaceService.setVideoSource(videoSourceRequest);
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now finished set video source, time : " + System.currentTimeMillis());
+        System.out.println("now finished set video source , time : " + System.currentTimeMillis());
+        return videoSourceRequest.getResponseMsg();
+    }
 
     @GetMapping(value = "/probe/liveness")
     public ResponseEntity<BaseResponseMsg> probeLiveness(){

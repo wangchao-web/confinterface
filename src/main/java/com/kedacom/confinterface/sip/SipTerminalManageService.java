@@ -4,6 +4,7 @@ import com.kedacom.confadapter.IConferenceEventHandler;
 import com.kedacom.confadapter.common.ConferenceInfo;
 import com.kedacom.confadapter.common.ConferencePresentParticipant;
 import com.kedacom.confadapter.media.MediaDescription;
+import com.kedacom.confadapter.media.MediaDirectionEnum;
 import com.kedacom.confinterface.LogService.LogOutputTypeEnum;
 import com.kedacom.confinterface.LogService.LogTools;
 import com.kedacom.confinterface.dto.MediaResource;
@@ -80,10 +81,17 @@ public class SipTerminalManageService extends TerminalManageService implements I
     @Override
     @Async("confTaskExecutor")
     public void OnLocalMediaRequested(String participantid, Vector<MediaDescription> mediaDescriptions) {
+
         //虚拟终端为被叫时，进入该逻辑
         //mcu发起的呼叫，mediaDescriptions不包含任何东西，需要虚拟终端先提供媒体能力及网络参数
         //会议终端发起的呼叫，mediaDescriptions包含主流视频、音频以及双流的视频、音频
         //该逻辑中需要向流媒体一次性请求主流双流的音视频资源，而且是sendrecv模式
+        if (!sipProtocalConfig.isCalled()){
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "SIP, OnLocalMediaRequested is called :　" + sipProtocalConfig.isCalled());
+            System.out.println("SIP, OnLocalMediaRequested is called :　" + sipProtocalConfig.isCalled());
+            return;
+        }
+
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "SIP, OnLocalMediaRequested, request terminal: " + participantid + " local media! threadName:" + Thread.currentThread().getName());
         System.out.println("SIP, OnLocalMediaRequested, request terminal: " + participantid + " local media! threadName:" + Thread.currentThread().getName());
 
@@ -179,8 +187,8 @@ public class SipTerminalManageService extends TerminalManageService implements I
 
         SipTerminalService terminalService = (SipTerminalService) usedVmtServiceMap.get(participantid);
         if (null == terminalService) {
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "SIP, OnRemoteMediaReponsed�� not found terminal : " + participantid);
-            System.out.println("SIP, OnRemoteMediaReponsed�� not found terminal : " + participantid);
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "SIP, OnRemoteMediaReponsed not found terminal : " + participantid);
+            System.out.println("SIP, OnRemoteMediaReponsed not found terminal : " + participantid);
             return;
         }
 
@@ -196,6 +204,9 @@ public class SipTerminalManageService extends TerminalManageService implements I
             return;
         }
 
+        if("h323plus".equals(sipProtocalConfig.getBaseSysConfig().getProtocalType())){
+            mediaDescriptions.get(0).setDirection(MediaDirectionEnum.SendRecv);
+        }
         boolean bOk = terminalService.updateExchange(mediaDescriptions);
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "SIP, OnRemoteMediaReponsed, updateExchange result : " + bOk);
         System.out.println("SIP, OnRemoteMediaReponsed, updateExchange result : " + bOk);
@@ -252,6 +263,7 @@ public class SipTerminalManageService extends TerminalManageService implements I
 
         terminalService.delWaitMsg(P2PCallRequest.class.getName());
     }
+
     public SipProtocalConfig getProtocalConfig() {
         return sipProtocalConfig;
     }

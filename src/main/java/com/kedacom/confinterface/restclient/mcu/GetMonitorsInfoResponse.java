@@ -1,6 +1,5 @@
 package com.kedacom.confinterface.restclient.mcu;
 
-import java.util.List;
 
 public class GetMonitorsInfoResponse extends McuBaseResponse {
 

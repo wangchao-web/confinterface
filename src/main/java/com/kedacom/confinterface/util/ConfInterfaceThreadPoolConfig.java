@@ -2,6 +2,7 @@ package com.kedacom.confinterface.util;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+
 @ConfigurationProperties(prefix = "confinterface.task.pool")
 public class ConfInterfaceThreadPoolConfig {
 

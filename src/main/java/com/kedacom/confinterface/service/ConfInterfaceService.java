@@ -1,5 +1,7 @@
 package com.kedacom.confinterface.service;
 
+import com.kedacom.confadapter.common.VideoSrcConfig;
+import com.kedacom.confadapter.common.VideoSrcInfo;
 import com.kedacom.confadapter.media.*;
 import com.kedacom.confinterface.LogService.LogOutputTypeEnum;
 import com.kedacom.confinterface.LogService.LogTools;
@@ -26,6 +28,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
+
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.async.DeferredResult;
 
@@ -48,8 +51,13 @@ public class ConfInterfaceService {
             if (terminalManageService instanceof H323TerminalManageService) {
                 int localCallPort = ((H323TerminalManageService) terminalManageService).getProtocalConfig().getLocalCallPort();
                 terminalMediaSourceService.setSrvToken(String.valueOf(localCallPort));
-            }else{
+            }else if(terminalManageService instanceof SipTerminalManageService){
                 int localCallPort = ((SipTerminalManageService) terminalManageService).getProtocalConfig().getLocalPort();
+                terminalMediaSourceService.setSrvToken(String.valueOf(localCallPort));
+            }else if(terminalManageService instanceof H323TerminalManageService){
+                int localCallPort = ((H323TerminalManageService) terminalManageService).getProtocalConfig().getLocalCallPort();
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, " H323TerminalManageService getVmts localCallPort : " +localCallPort);
+                System.out.println(" H323TerminalManageService getVmts localCallPort : " +localCallPort);
                 terminalMediaSourceService.setSrvToken(String.valueOf(localCallPort));
             }
 
@@ -3542,6 +3550,166 @@ public class ConfInterfaceService {
         deleteMonitorsRequest.makeErrorResponseMsg(ConfInterfaceResult.END_MONITORS.getCode(), HttpStatus.OK, mcuStatus.getDescription());
 
     }
+
+
+    @Async("confTaskExecutor")
+    public void getVideoSource(GetVideoSourceRequest getVideoSourceRequest) {
+
+        String groupId = getVideoSourceRequest.getGroupId();
+        String account = getVideoSourceRequest.getAccount();
+        if (account == null || account.isEmpty()) {
+            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50012 : invalid param! resourceId is empty!");
+            getVideoSourceRequest.makeErrorResponseMsg(ConfInterfaceResult.INVALID_PARAM.getCode(), HttpStatus.OK, ConfInterfaceResult.INVALID_PARAM.getMessage());
+            return;
+        }
+
+        GroupConfInfo groupConfInfo = groupConfInfoMap.get(groupId);
+        if (null != groupConfInfo) {
+            String confId = groupConfInfo.getConfId();
+            if ("".equals(confId)) {
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, " get video source info confId is empty  confid :　" + confId);
+                System.out.println(" get video source info confId is empty  confid :　" + confId);
+                getVideoSourceRequest.makeErrorResponseMsg(ConfInterfaceResult.CONF_NOT_EXIT.getCode(), HttpStatus.OK, ConfInterfaceResult.CONF_NOT_EXIT.getMessage());
+                return;
+            }
+            TerminalService member = groupConfInfo.getMember(account);
+            if (member == null) {
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "getVideoSource member is null  E164 :　" + account);
+                System.out.println("getVideoSource member is null  E164 :　" + account);
+                getVideoSourceRequest.makeErrorResponseMsg(ConfInterfaceResult.TERMINAL_NOT_EXIST.getCode(), HttpStatus.OK, ConfInterfaceResult.TERMINAL_NOT_EXIST.getMessage());
+                return;
+            }
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "get video source terminal E164 : " + account + ", mtID : "+ member.getMtId());
+            System.out.println("get video source terminal E164 : " + account + ", mtID : "+ member.getMtId());
+            GetVideoSourceResponse videoSource = mcuRestClientService.getVideoSource(confId, member.getMtId());
+
+            if (null == videoSource) {
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "get video source Response  is null **********");
+                System.out.println("get video source Response  is null **********");
+                getVideoSourceRequest.makeErrorResponseMsg(ConfInterfaceResult.QUERY_VIDEO_SOURCE_FAILED.getCode(), HttpStatus.OK, ConfInterfaceResult.QUERY_VIDEO_SOURCE_FAILED.getMessage());
+                return;
+            }
+
+            getVideoSourceRequest.setCurVideoIdx(videoSource.getCurVideoIdx());
+            getVideoSourceRequest.setMtVideos(videoSource.getMtVideos());
+            getVideoSourceRequest.makeSuccessResponseMsg();
+        } else {
+            VideoSrcConfig videoSrcConfig = new VideoSrcConfig();
+            P2PCallGroup p2PCallGroup = p2pCallGroupMap.get(groupId);
+            if (null == p2PCallGroup) {
+                LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "get video failed ; 50002 : P2P group not exist!");
+                getVideoSourceRequest.makeErrorResponseMsg(ConfInterfaceResult.GROUP_NOT_EXIST.getCode(), HttpStatus.OK, ConfInterfaceResult.GROUP_NOT_EXIST.getMessage());
+                return;
+            }
+            TerminalService vmtService = p2PCallGroup.getVmt(account);
+
+            if (null == vmtService) {
+                System.out.println("get video failed, 50015 : terminal not exist in this conference!");
+                LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "get video failed, 50015 : terminal not exist in this conference!");
+                getVideoSourceRequest.makeErrorResponseMsg(ConfInterfaceResult.TERMINAL_NOT_EXIST.getCode(), HttpStatus.OK, ConfInterfaceResult.TERMINAL_NOT_EXIST.getMessage());
+                return;
+            }
+            boolean bOk = vmtService.getVideoSrc(videoSrcConfig);
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "get video success bOK :" + bOk + ", CurIdx : "+ videoSrcConfig.getCurIdx() +", VideoSrcs : "+videoSrcConfig.getVideoSrcs());
+            System.out.println("get video success bOK :" + bOk + ", CurIdx : "+ videoSrcConfig.getCurIdx() +", VideoSrcs : "+videoSrcConfig.getVideoSrcs());
+            if (bOk) {
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "get video success *************");
+                System.out.println("get video success *************");
+                Vector<VideoSrcInfo> videoSrcs = videoSrcConfig.getVideoSrcs();
+                List<MtVideos> mtVideos = new ArrayList<>();
+                for (VideoSrcInfo videoSrcInfo : videoSrcs){
+                    MtVideos videos = new MtVideos();
+                    videos.setVideoAlise(videoSrcInfo.getName());
+                    videos.setVideoIdx(videoSrcInfo.getIdx());
+                    mtVideos.add(videos);
+                }
+                getVideoSourceRequest.setCurVideoIdx(videoSrcConfig.getCurIdx());
+                getVideoSourceRequest.setMtVideos(mtVideos);
+                getVideoSourceRequest.makeSuccessResponseMsg();
+            } else {
+                LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50047 : get video source failed!");
+                getVideoSourceRequest.makeErrorResponseMsg(ConfInterfaceResult.GET_VIDEO_SOURCE_FAILED.getCode(), HttpStatus.OK, ConfInterfaceResult.GET_VIDEO_SOURCE_FAILED.getMessage());
+            }
+        }
+
+    }
+
+    @Async("confTaskExecutor")
+    public void setVideoSource(VideoSourceRequest videoSourceRequest) {
+
+        String groupId = videoSourceRequest.getGroupId();
+        VideoSourceParam videoSourceParam = videoSourceRequest.getVideoSourceParam();
+        String account = videoSourceParam.getAccount();
+        int videoIdx = videoSourceParam.getVideoIdx();
+
+        if (account == null || account.isEmpty()) {
+            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "set video source ,50012 : invalid param! resourceId is empty!");
+            videoSourceRequest.makeErrorResponseMsg(ConfInterfaceResult.INVALID_PARAM.getCode(), HttpStatus.OK, ConfInterfaceResult.INVALID_PARAM.getMessage());
+            return;
+        }
+
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "terminal account : " + account);
+        System.out.println("terminal account : " + account);
+
+        GroupConfInfo groupConfInfo = groupConfInfoMap.get(groupId);
+        if (null != groupConfInfo) {
+            String confId = groupConfInfo.getConfId();
+            if ("".equals(confId)) {
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, " set video source info confId is empty  confid :　" + confId);
+                System.out.println(" set video source info confId is empty  confid :　" + confId);
+                videoSourceRequest.makeErrorResponseMsg(ConfInterfaceResult.CONF_NOT_EXIT.getCode(), HttpStatus.OK, ConfInterfaceResult.CONF_NOT_EXIT.getMessage());
+                return;
+            }
+            TerminalService member = groupConfInfo.getMember(account);
+            if (member == null) {
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "set Video Source member is null  E164 :　" + account);
+                System.out.println("set Video Source member is null  E164 :　" + account);
+                videoSourceRequest.makeErrorResponseMsg(ConfInterfaceResult.TERMINAL_NOT_EXIST.getCode(), HttpStatus.OK, ConfInterfaceResult.TERMINAL_NOT_EXIST.getMessage());
+                return;
+            }
+
+            McuStatus mcuStatus = mcuRestClientService.setVideoSource(confId, member.getMtId(), videoIdx);
+
+            if (mcuStatus.getValue() == 200) {
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "set Video Source success ***********************");
+                System.out.println("set Video Source success ***********************");
+                videoSourceRequest.makeSuccessResponseMsg();
+                return;
+            }
+
+            LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50046 set Video Source failed! " + mcuStatus.getDescription());
+            videoSourceRequest.makeErrorResponseMsg(ConfInterfaceResult.SET_VIDEO_SOURCE_FAILED.getCode(), HttpStatus.OK, mcuStatus.getDescription());
+        } else {
+            P2PCallGroup p2PCallGroup = p2pCallGroupMap.get(groupId);
+            if (null == p2PCallGroup) {
+                LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "set video failed ; 50002 : P2P group not exist!");
+                videoSourceRequest.makeErrorResponseMsg(ConfInterfaceResult.GROUP_NOT_EXIST.getCode(), HttpStatus.OK, ConfInterfaceResult.GROUP_NOT_EXIST.getMessage());
+                return;
+            }
+
+            TerminalService vmtService = p2PCallGroup.getVmt(account);
+
+            if (null == vmtService) {
+                System.out.println("set video failed, 50015 : terminal not exist in this conference!");
+                LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "set video failed, 50015 : terminal not exist in this conference!");
+                videoSourceRequest.makeErrorResponseMsg(ConfInterfaceResult.TERMINAL_NOT_EXIST.getCode(), HttpStatus.OK, ConfInterfaceResult.TERMINAL_NOT_EXIST.getMessage());
+                return;
+            }
+            boolean bOK = vmtService.setVideoSrc(videoIdx);
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "set video success bOK :" + bOK);
+            System.out.println("set video success bOK :" + bOK);
+            if (bOK) {
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "set video success *************");
+                System.out.println("set video success *************");
+                videoSourceRequest.makeSuccessResponseMsg();
+            } else {
+                LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50046 : set video source failed!");
+                videoSourceRequest.makeErrorResponseMsg(ConfInterfaceResult.SET_VIDEO_SOURCE_FAILED.getCode(), HttpStatus.OK, ConfInterfaceResult.SET_VIDEO_SOURCE_FAILED.getMessage());
+            }
+        }
+
+    }
+
 
     public CreateResourceResponse addExchange(String groupId, CreateResourceParam createResourceParam) {
         //请求创建 /services/media/v1/exchange?GroupID={groupId}&Action=addnode

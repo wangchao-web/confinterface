@@ -63,5 +63,5 @@ public class SipProtocalConfig {
     private int serverPort = 5060;
     private int localPort = 5060;
 
-    private boolean called = false;
+    private boolean called = false;  //sip是否被叫参数
 }

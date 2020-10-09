@@ -1,9 +1,9 @@
 package com.kedacom.confinterface.dto;
 
+
 import org.hibernate.validator.constraints.Range;
 import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.Null;
-import java.util.ArrayList;
+
 
 public class P2PCallParam {
     public P2PCallParam(int accountType, String account, int dual){

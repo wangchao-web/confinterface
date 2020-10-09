@@ -1,8 +1,8 @@
 package com.kedacom.confinterface.exchange;
 
-public class UpdateResourceParam extends CreateResourceParam{
+public class UpdateResourceParam extends CreateResourceParam {
 
-    public UpdateResourceParam(String resourceID){
+    public UpdateResourceParam(String resourceID) {
         super();
         this.resourceID = resourceID;
     }
@@ -17,7 +17,10 @@ public class UpdateResourceParam extends CreateResourceParam{
 
     @Override
     public String toString() {
-        return new StringBuilder().append("resourceID:").append(resourceID).toString();
+        return new StringBuilder().append("resourceID:").append(resourceID).
+                append(", sdp:").append(super.getSdp())
+                .append(", deviceID:").append(super.getDeviceID())
+                .toString();
     }
 
     private String resourceID;
