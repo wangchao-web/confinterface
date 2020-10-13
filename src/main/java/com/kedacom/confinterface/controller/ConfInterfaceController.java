@@ -225,8 +225,8 @@ public class ConfInterfaceController {
 
     @GetMapping(value = "/dualStream")
     public DeferredResult<ResponseEntity<QueryDualStreamResponse>> queryDualStream(@RequestParam("GroupId") String groupId){
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now in queryDualStream, groupId:"+groupId);
-        System.out.println("now in queryDualStream, groupId:"+groupId);
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"now in queryDualStream, groupId : " + groupId);
+        System.out.println("now in queryDualStream, groupId : " + groupId);
         QueryDualStreamRequest queryDualStreamRequest = new QueryDualStreamRequest(groupId);
         confInterfaceService.queryDualStream(queryDualStreamRequest);
         return queryDualStreamRequest.getResponseMsg();

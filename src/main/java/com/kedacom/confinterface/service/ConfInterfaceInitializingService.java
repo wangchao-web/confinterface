@@ -777,7 +777,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
     private McuRestConfig mcuRestConfig;
 
     //版本号修复
-    public static final String VERSION = "confinterface-V.1.2.1.0";
+    public static final String VERSION = "confinterface-V.1.5.0.0";
 
     public static Boolean initialized = false;
 

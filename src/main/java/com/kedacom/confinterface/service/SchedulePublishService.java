@@ -45,7 +45,7 @@ public class SchedulePublishService extends ConfInterfacePublishService {
         publishMessage(SubscribeMsgTypeEnum.TERMINAL_STATUS, groupId, terminalStatusNotify);
     }
 
-  //用于会议服务断链再重启之后推送状态
+    //用于会议服务断链再重启之后推送状态
     @Override
     public void publishStatus(SubscribeMsgTypeEnum type, String publishUrl, Object publishMsg) {
         serviceRestartPublishMessage(type, publishUrl, publishMsg);
