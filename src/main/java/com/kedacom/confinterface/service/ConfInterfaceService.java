@@ -3377,7 +3377,6 @@ public class ConfInterfaceService {
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "start Monitors E164 : " + E164 + ", type : " + type + ", mode : " + mode);
         System.out.println("start Monitors E164 : " + E164 + ", type : " + type + ", mode : " + mode);
         MediaDescription mediaDescription = new MediaDescription();
-        mediaDescription.setDirection(MediaDirectionEnum.Send);
         if (mode == 0) {
             mcuVideoFormat = videoFormat;
             MediaDescription videoMediaDescription = new VideoMediaDescription();
@@ -3406,6 +3405,7 @@ public class ConfInterfaceService {
             ((AudioMediaDescription) audioMediaDescription).setSampleRate(8000);
             mediaDescription = audioMediaDescription;
         }
+        mediaDescription.setDirection(MediaDirectionEnum.Send);
 
         CreateResourceParam createResourceParam = new CreateResourceParam();
         createResourceParam.setSdp(TerminalService.constructSdp(mediaDescription));
