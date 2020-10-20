@@ -34,7 +34,7 @@ public class ConfInterfaceController {
     @Autowired
     private ConfInterfacePublishService confInterfacePublishService;
 
-    private final String version = "version:" + ConfInterfaceInitializingService.VERSION + ", build: " + getBuildTime();
+    private final String version = "version:" + ConfInterfaceInitializingService.VERSION  +"innerVersion:" + ConfInterfaceInitializingService.INNERVERSION+ ", build: " + getBuildTime();
 
     private final org.slf4j.Logger logger = LoggerFactory.getLogger(this.getClass());
 
