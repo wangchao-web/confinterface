@@ -33,7 +33,7 @@ public class H323TerminalService extends TerminalService {
         this.gkRasPort = h323ProtocalConfig.getGkRasPort();
         this.localCallPort = h323ProtocalConfig.getLocalCallPort();
         this.localRasPort = h323ProtocalConfig.getLocalRasPort();
-        this.videoDualStreamMediaDesc = null;
+        videoDualStreamMediaDesc = null;
         this.dualStreamResourceId = null;
         this.resumeDualStream = new AtomicBoolean(false);
         this.forwardGenericStreamNum = new AtomicInteger(0);

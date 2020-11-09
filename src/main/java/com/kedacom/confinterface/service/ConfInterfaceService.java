@@ -11,8 +11,10 @@ import com.kedacom.confinterface.dto.*;
 import com.kedacom.confinterface.exchange.CreateResourceParam;
 import com.kedacom.confinterface.exchange.CreateResourceResponse;
 import com.kedacom.confinterface.exchange.QueryAndDelResourceParam;
+import com.kedacom.confinterface.h323.H323ProtocalConfig;
 import com.kedacom.confinterface.h323.H323TerminalManageService;
 import com.kedacom.confinterface.inner.*;
+import com.kedacom.confinterface.redis.RedisConfig;
 import com.kedacom.confinterface.restclient.McuRestClientService;
 import com.kedacom.confinterface.restclient.McuRestConfig;
 import com.kedacom.confinterface.restclient.RestClientService;
@@ -51,13 +53,13 @@ public class ConfInterfaceService {
             if (terminalManageService instanceof H323TerminalManageService) {
                 int localCallPort = ((H323TerminalManageService) terminalManageService).getProtocalConfig().getLocalCallPort();
                 terminalMediaSourceService.setSrvToken(String.valueOf(localCallPort));
-            }else if(terminalManageService instanceof SipTerminalManageService){
+            } else if (terminalManageService instanceof SipTerminalManageService) {
                 int localCallPort = ((SipTerminalManageService) terminalManageService).getProtocalConfig().getLocalPort();
                 terminalMediaSourceService.setSrvToken(String.valueOf(localCallPort));
-            }else if(terminalManageService instanceof H323TerminalManageService){
+            } else if (terminalManageService instanceof H323TerminalManageService) {
                 int localCallPort = ((H323TerminalManageService) terminalManageService).getProtocalConfig().getLocalCallPort();
-                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, " H323TerminalManageService getVmts localCallPort : " +localCallPort);
-                System.out.println(" H323TerminalManageService getVmts localCallPort : " +localCallPort);
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, " H323TerminalManageService getVmts localCallPort : " + localCallPort);
+                System.out.println(" H323TerminalManageService getVmts localCallPort : " + localCallPort);
                 terminalMediaSourceService.setSrvToken(String.valueOf(localCallPort));
             }
 
@@ -1279,7 +1281,7 @@ public class ConfInterfaceService {
                 mtId = mtService.getMtId();
             }
             if ("".equals(mtId)) {
-                LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"ctrlCamera mtId is null or empty !");
+                LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "ctrlCamera mtId is null or empty !");
                 System.out.println("ctrlCamera mtId is null or empty !");
                 cameraCtrlRequest.makeErrorResponseMsg(ConfInterfaceResult.INVALID_PARAM.getCode(), HttpStatus.OK, ConfInterfaceResult.INVALID_PARAM.getMessage());
                 return;
@@ -1572,7 +1574,8 @@ public class ConfInterfaceService {
     public void p2pCall(P2PCallRequest p2PCallRequest, P2PCallParam p2PCallParam) {
         final String groupId = p2PCallRequest.getGroupId();
         String mtAccount = p2PCallParam.getAccount();
-        if (p2PCallParam.getAccountType() == 2 && !terminalManageService.isSupportAliasCall()) {
+        int accountType = p2PCallParam.getAccountType();
+        if (accountType == 2 && !terminalManageService.isSupportAliasCall()) {
             LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "50027 : " + " Unused GK , Use E164 call failed : " + groupId);
             System.out.println("50027 : " + " Unused GK , Use E164 call failed : " + groupId);
             p2PCallRequest.makeErrorResponseMsg(ConfInterfaceResult.ACCOUNT_E164_INVALID.getCode(), HttpStatus.OK, ConfInterfaceResult.ACCOUNT_E164_INVALID.getMessage());
@@ -1592,7 +1595,13 @@ public class ConfInterfaceService {
             }
         }
         P2PCallGroup p2PCallGroup = p2pCallGroupMap.computeIfAbsent(groupId, k -> new P2PCallGroup(groupId));
-        TerminalService vmtService = terminalManageService.getFreeVmt();
+        TerminalService vmtService;
+        if(accountType == 2){
+            vmtService = terminalManageService.getUseGkFreeVmt();
+        }else{
+            vmtService = terminalManageService.getFreeVmt();
+        }
+
         if (null == vmtService) {
             LogTools.error(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "p2paCll, 50008 : reach max join terminal numbers!");
             System.out.println("p2paCll, 50008 : reach max join terminal numbers!");
@@ -3579,8 +3588,8 @@ public class ConfInterfaceService {
                 getVideoSourceRequest.makeErrorResponseMsg(ConfInterfaceResult.TERMINAL_NOT_EXIST.getCode(), HttpStatus.OK, ConfInterfaceResult.TERMINAL_NOT_EXIST.getMessage());
                 return;
             }
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "get video source terminal E164 : " + account + ", mtID : "+ member.getMtId());
-            System.out.println("get video source terminal E164 : " + account + ", mtID : "+ member.getMtId());
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "get video source terminal E164 : " + account + ", mtID : " + member.getMtId());
+            System.out.println("get video source terminal E164 : " + account + ", mtID : " + member.getMtId());
             GetVideoSourceResponse videoSource = mcuRestClientService.getVideoSource(confId, member.getMtId());
 
             if (null == videoSource) {
@@ -3610,14 +3619,14 @@ public class ConfInterfaceService {
                 return;
             }
             boolean bOk = vmtService.getVideoSrc(videoSrcConfig);
-            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "get video success bOK :" + bOk + ", CurIdx : "+ videoSrcConfig.getCurIdx() +", VideoSrcs : "+videoSrcConfig.getVideoSrcs());
-            System.out.println("get video success bOK :" + bOk + ", CurIdx : "+ videoSrcConfig.getCurIdx() +", VideoSrcs : "+videoSrcConfig.getVideoSrcs());
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "get video success bOK :" + bOk + ", CurIdx : " + videoSrcConfig.getCurIdx() + ", VideoSrcs : " + videoSrcConfig.getVideoSrcs());
+            System.out.println("get video success bOK :" + bOk + ", CurIdx : " + videoSrcConfig.getCurIdx() + ", VideoSrcs : " + videoSrcConfig.getVideoSrcs());
             if (bOk) {
                 LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "get video success *************");
                 System.out.println("get video success *************");
                 Vector<VideoSrcInfo> videoSrcs = videoSrcConfig.getVideoSrcs();
                 List<MtVideos> mtVideos = new ArrayList<>();
-                for (VideoSrcInfo videoSrcInfo : videoSrcs){
+                for (VideoSrcInfo videoSrcInfo : videoSrcs) {
                     MtVideos videos = new MtVideos();
                     videos.setVideoAlise(videoSrcInfo.getName());
                     videos.setVideoIdx(videoSrcInfo.getIdx());
@@ -3832,6 +3841,97 @@ public class ConfInterfaceService {
         this.confGroupMap = confGroupMap;
     }
 
+    public Connstatus redisStatus() {
+        Connstatus redissConnstatus = new Connstatus();
+        redissConnstatus.setIp(redisConfig.getHostName());
+        redissConnstatus.setPort(String.valueOf(redisConfig.getPort()));
+        redissConnstatus.setComponentname("redis");
+        redissConnstatus.setPassword(redisConfig.getPassword());
+        return redissConnstatus;
+    }
+
+    public Connstatus mcuStatus() {
+        Connstatus mcuConnstatus = new Connstatus();
+        mcuConnstatus.setIp(mcuRestConfig.getMcuIp());
+        if (mcuRestClientService.loginSuccess) {
+            mcuConnstatus.setStatus("0");
+        } else {
+            mcuConnstatus.setStatus("1");
+        }
+        mcuConnstatus.setPort(String.valueOf(mcuRestConfig.getMcuRestPort()));
+        mcuConnstatus.setComponentname("mcu");
+        mcuConnstatus.setUsername(mcuRestConfig.getUsername());
+        mcuConnstatus.setPassword(mcuRestConfig.getPassword());
+        return mcuConnstatus;
+    }
+
+    public Boolean useMcu() {
+        return baseSysConfig.isUseMcu();
+    }
+
+    public Boolean useGk() {
+        return terminalManageService.isSupportAliasCall();
+    }
+
+    public Connstatus gkStatus() {
+        Connstatus gkConnstatus = new Connstatus();
+        gkConnstatus.setIp(h323ProtocalConfig.getGkIp());
+        gkConnstatus.setStatus("0");
+        gkConnstatus.setPort(String.valueOf(h323ProtocalConfig.getGkCallPort()));
+        gkConnstatus.setComponentname("gk");
+        return gkConnstatus;
+    }
+
+
+    public List<UseVmtStatus> getVmtUseStatus() {
+        List<UseVmtStatus> useVmtStatuses = new ArrayList<>();
+        Map<String, TerminalService> freeVmtServiceMap = terminalManageService.getFreeVmtServiceMap();
+        Map<String, TerminalService> usedVmtServiceMap = terminalManageService.getUsedVmtServiceMap();
+        Map<String, TerminalService> useGkVmtServiceMap = terminalManageService.getUseGkVmtServiceMap();
+
+        if(!freeVmtServiceMap.isEmpty()){
+            ArrayList<String> freeE164 = new ArrayList<>();
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "getVmtUseStatus, freeVmtServiceMap is not empty ");
+            System.out.println("getVmtUseStatus, freeVmtServiceMap is not empty " );
+            UseVmtStatus freeVmtStatus = new UseVmtStatus();
+            freeVmtStatus.setUseVmtType("free");
+            for (Map.Entry<String, TerminalService> freeTerminalServiceEntry : freeVmtServiceMap.entrySet()) {
+                freeE164.add(freeTerminalServiceEntry.getKey());
+            }
+            freeVmtStatus.setVmtE164(freeE164);
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "freeVmtStatu : " + freeVmtStatus.toString());
+            System.out.println("freeVmtStatu : " + freeVmtStatus.toString());
+            useVmtStatuses.add(freeVmtStatus);
+        }
+
+        if(!usedVmtServiceMap.isEmpty()){
+            ArrayList<String> usedE164 = new ArrayList<>();
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "getVmtUseStatus, usedVmtServiceMap is not empty ");
+            System.out.println("getVmtUseStatus, usedVmtServiceMap is not empty " );
+            UseVmtStatus usedVmtStatus = new UseVmtStatus();
+            usedVmtStatus.setUseVmtType("used");
+            for (Map.Entry<String, TerminalService> usedTerminalServiceEntry : usedVmtServiceMap.entrySet()) {
+                usedE164.add(usedTerminalServiceEntry.getKey());
+            }
+            usedVmtStatus.setVmtE164(usedE164);
+            useVmtStatuses.add(usedVmtStatus);
+        }
+
+        if(!useGkVmtServiceMap.isEmpty()){
+            ArrayList<String> useGkE164 = new ArrayList<>();
+            LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "getVmtUseStatus, useGkVmtServiceMap is not empty ");
+            System.out.println("getVmtUseStatus, useGkVmtServiceMap is not empty " );
+            UseVmtStatus useGkVmtStatus = new UseVmtStatus();
+            useGkVmtStatus.setUseVmtType("useGk");
+            for (Map.Entry<String, TerminalService> useGkTerminalServiceEntry : useGkVmtServiceMap.entrySet()) {
+                useGkE164.add(useGkTerminalServiceEntry.getKey());
+            }
+            useGkVmtStatus.setVmtE164(useGkE164);
+            useVmtStatuses.add(useGkVmtStatus);
+        }
+        return useVmtStatuses;
+    }
+
     @Autowired
     private TerminalManageService terminalManageService;
 
@@ -3849,6 +3949,13 @@ public class ConfInterfaceService {
 
     @Autowired
     protected RestClientService restClientService;
+
+    @Autowired
+    private RedisConfig redisConfig;
+
+
+    @Autowired
+    private H323ProtocalConfig h323ProtocalConfig;
 
     private Map<String, GroupConfInfo> groupConfInfoMap = new ConcurrentHashMap<>();
     private Map<String, String> confGroupMap = new ConcurrentHashMap<>(); //key为confID,value为groupId

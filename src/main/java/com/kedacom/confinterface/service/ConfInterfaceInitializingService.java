@@ -4,6 +4,7 @@ import com.kedacom.confadapter.*;
 import com.kedacom.confinterface.LogService.LogOutputTypeEnum;
 import com.kedacom.confinterface.LogService.LogTools;
 import com.kedacom.confinterface.dao.BroadcastSrcMediaInfo;
+import com.kedacom.confinterface.dao.ComponentStatusErrorEnum;
 import com.kedacom.confinterface.dao.InspectionSrcParam;
 import com.kedacom.confinterface.dao.Terminal;
 import com.kedacom.confinterface.dto.*;
@@ -23,6 +24,7 @@ import com.kedacom.mcuadapter.McuClientManagerTypeEnum;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.text.StrBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Service;
@@ -42,20 +44,21 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
 
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "ConfInterfaceInitializingService confinterface version: " + VERSION);
         System.out.println("ConfInterface Initializing Service confinterface version: " + VERSION);
+
         boolean status = checkDBConn();
         if (false == status) {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "Read configuration file failed or connect to redis failed ! End the service process !");
             System.out.println("Read configuration file failed  or connect to redis failed ! End the service process !");
             System.exit(0);
         }
-
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "now in ConfInterface Initializing Service, protocalType:" + baseSysConfig.getProtocalType());
-        System.out.println("now in ConfInterface Initializing Service, protocalType:" + baseSysConfig.getProtocalType());
+        notifyUrl = notifyUrl();
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "now in ConfInterface Initializing Service, protocalType:" + baseSysConfig.getProtocalType() + ", notifyUrl :" + notifyUrl);
+        System.out.println("now in ConfInterface Initializing Service, protocalType:" + baseSysConfig.getProtocalType() + ", notifyUrl :" + notifyUrl);
 
         createConferenceManage();
 
         /*if (baseSysConfig.isScan()) {
-           *//* BufferedReader bReader = null;
+         *//* BufferedReader bReader = null;
             while (true) {
                 try {
                     bReader = new BufferedReader(new InputStreamReader(System.in));
@@ -82,7 +85,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
         }*/
         //初始化协议栈
         boolean bInitConfAdapter = initConfAdapter();
-        if(!bInitConfAdapter){
+        if (!bInitConfAdapter) {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "init conferenceAdapterController fail, end confinterface service");
             System.out.println("init conferenceAdapterController fail, end confinterface service");
             return;
@@ -257,10 +260,9 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
 
         if (baseSysConfig.getProtocalType().equals(ProtocalTypeEnum.H323.getName())) {
             conferenceManager = ConferenceManagerFactory.CreateConferenceManager(ConferenceProtoEnum.CONF_H323);
-        }
-        else if(baseSysConfig.getProtocalType().equals(ProtocalTypeEnum.SIP.getName())) {
+        } else if (baseSysConfig.getProtocalType().equals(ProtocalTypeEnum.SIP.getName())) {
             conferenceManager = ConferenceManagerFactory.CreateConferenceManager(ConferenceProtoEnum.CONF_SIP);
-        }else{
+        } else {
             conferenceManager = ConferenceManagerFactory.CreateConferenceManager(ConferenceProtoEnum.CONF_H323);
         }
 
@@ -328,7 +330,7 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
             ConcurrentHashMap<String, String> proxyMts = baseSysConfig.getMapProxyMTs();
             for (String vmtE164 : vmtList) {
                 TerminalService vmtService = terminalManageService.createTerminal(vmtE164, true);
-                if(baseSysConfig.isUseDeviceId()){
+                if (baseSysConfig.isUseDeviceId()) {
                     String deviceID = constructorDeviceID(vmtE164);
                     vmtService.setDeviceID(deviceID);
                 }
@@ -744,6 +746,15 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
         return false;
     }
 
+    private String notifyUrl() {
+        StrBuilder strBuilder = new StrBuilder();
+        strBuilder.append("http://")
+                .append(baseSysConfig.getLocalIp())
+                .append(":")
+                .append(String.valueOf(port))
+                .append("/notify?mt_ctrl=1");
+        return strBuilder.toString();
+    }
 
     @Autowired
     private BaseSysConfig baseSysConfig;
@@ -772,6 +783,8 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
     @Autowired
     private ConfInterfacePublishService confInterfacePublishService;
 
+    @Value("${server.port}")
+    private int port;
 
     @Autowired(required = false)
     private McuRestConfig mcuRestConfig;
@@ -780,10 +793,12 @@ public class ConfInterfaceInitializingService implements CommandLineRunner {
     public static final String VERSION = "confinterface-V.1.5.0.0";
 
     //内部版本号
-    public static final String INNERVERSION = "confinterface-V.1.5.0.0";
+    public static final String INNERVERSION = "confinterface-V.1.5.0.2";
 
     public static Boolean initialized = false;
 
+
+    public static String notifyUrl = "";
     //protected final org.slf4j.Logger logger = LoggerFactory.getLogger(this.getClass());
 
 }

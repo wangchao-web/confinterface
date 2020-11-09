@@ -17,6 +17,16 @@ public class P2PCallResult {
         this.vidoeCodec = vidoeCodec;
     }
 
+    public String getDeviceName() {
+        return deviceName;
+    }
+
+    public void setDeviceName(String deviceName) {
+        this.deviceName = deviceName;
+    }
+
     private String groupId;
     private P2PVideoCallMediaCap vidoeCodec;
+
+    private String deviceName = "";
 }

@@ -2,13 +2,16 @@ package com.kedacom.confinterface.controller;
 
 import com.kedacom.confinterface.LogService.LogOutputTypeEnum;
 import com.kedacom.confinterface.LogService.LogTools;
+import com.kedacom.confinterface.dao.Connstatus;
 import com.kedacom.confinterface.dao.Terminal;
 import com.kedacom.confinterface.dto.*;
 import com.kedacom.confinterface.inner.SubscribeMsgTypeEnum;
 import com.kedacom.confinterface.service.ConfInterfaceInitializingService;
 import com.kedacom.confinterface.service.ConfInterfaceService;
 import com.kedacom.confinterface.service.ConfInterfacePublishService;
+import com.kedacom.confinterface.service.TerminalService;
 import com.kedacom.confinterface.util.ConfInterfaceResult;
+import com.sun.javafx.collections.MappingChange;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -20,7 +23,10 @@ import org.springframework.web.context.request.async.DeferredResult;
 
 import javax.validation.Valid;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 
@@ -34,7 +40,7 @@ public class ConfInterfaceController {
     @Autowired
     private ConfInterfacePublishService confInterfacePublishService;
 
-    private final String version = "version:" + ConfInterfaceInitializingService.VERSION  +"innerVersion:" + ConfInterfaceInitializingService.INNERVERSION+ ", build: " + getBuildTime();
+    private final String version = "version:" + ConfInterfaceInitializingService.VERSION  +", innerVersion:" + ConfInterfaceInitializingService.INNERVERSION+ ", build: " + getBuildTime();
 
     private final org.slf4j.Logger logger = LoggerFactory.getLogger(this.getClass());
 
@@ -529,6 +535,31 @@ public class ConfInterfaceController {
 
     }
 
+    @GetMapping(value = "status/detection")
+    public ResponseEntity<StatusDetectionResponseMsg> statusDetection(){
+        ArrayList<Connstatus> connstatuses = new ArrayList<>();
+        Connstatus redisConnstatus = confInterfaceService.redisStatus();
+        if(confInterfaceService.checkDBConnStatus()){
+            redisConnstatus.setStatus("0");
+        }else{
+            redisConnstatus.setStatus("1");
+        }
+
+        connstatuses.add(redisConnstatus);
+
+        if (confInterfaceService.useMcu()){
+            Connstatus mcuStatus = confInterfaceService.mcuStatus();
+            connstatuses.add(mcuStatus);
+        }
+
+        if (confInterfaceService.useGk()){
+            Connstatus gkStatus = confInterfaceService.gkStatus();
+            connstatuses.add(gkStatus);
+        }
+        StatusDetectionResponseMsg baseResponseMsg = new StatusDetectionResponseMsg(connstatuses);
+        return new ResponseEntity<>(baseResponseMsg, HttpStatus.OK);
+    }
+
     @ExceptionHandler
     @ResponseBody
     public ResponseEntity<BaseResponseMsg> handleArgumentNotValidException(MethodArgumentNotValidException exception) {
@@ -537,6 +568,15 @@ public class ConfInterfaceController {
         errorResponse.setMessage(exception.getMessage());
 
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    }
+
+    @GetMapping(value = "/allVmts")
+    public List<UseVmtStatus> getAllVmts(){
+
+        List<UseVmtStatus> vmtUseStatus = confInterfaceService.getVmtUseStatus();
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"get all vmts! vmtUseStatus :"+ vmtUseStatus.toString());
+        System.out.println("get all vmts! vmtUseStatus :"+ vmtUseStatus.toString());
+        return vmtUseStatus;
     }
 
     private static String getBuildTime() {

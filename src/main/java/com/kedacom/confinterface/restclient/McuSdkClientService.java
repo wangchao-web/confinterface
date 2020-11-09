@@ -2,6 +2,7 @@ package com.kedacom.confinterface.restclient;
 
 import com.kedacom.confinterface.LogService.LogOutputTypeEnum;
 import com.kedacom.confinterface.LogService.LogTools;
+import com.kedacom.confinterface.dao.ComponentStatusErrorEnum;
 import com.kedacom.confinterface.syssetting.BaseSysConfig;
 import com.kedacom.mcuadapter.IMcuClient;
 import com.kedacom.mcuadapter.IMcuClientManager;
@@ -48,6 +49,7 @@ public class McuSdkClientService {
         } catch (Exception e) {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE,"sdk mcu, login failed!");
             System.out.println("sdk mcu, login failed!");
+            mcuStatusError = ComponentStatusErrorEnum.LOGINFAILED;
             e.printStackTrace();
             return false;
         }
@@ -90,5 +92,7 @@ public class McuSdkClientService {
     private IMcuClientManager mcuClientManager;
 
     protected volatile boolean loginSuccess;
+
+    public volatile ComponentStatusErrorEnum mcuStatusError = ComponentStatusErrorEnum.UNKNOWN;
 
 }

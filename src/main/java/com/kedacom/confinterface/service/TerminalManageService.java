@@ -5,6 +5,7 @@ import com.kedacom.confadapter.ILocalConferenceParticipant;
 import com.kedacom.confadapter.common.ConfSessionPeer;
 import com.kedacom.confadapter.common.ConferenceInfo;
 import com.kedacom.confadapter.common.ConferencePresentParticipant;
+import com.kedacom.confadapter.common.ServerErrorEnum;
 import com.kedacom.confadapter.media.*;
 import com.kedacom.confinterface.LogService.LogOutputTypeEnum;
 import com.kedacom.confinterface.LogService.LogTools;
@@ -22,11 +23,9 @@ import com.kedacom.confinterface.util.VideoCap;
 import org.springframework.beans.factory.annotation.Autowired;
 
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Vector;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public abstract class TerminalManageService {
 
@@ -104,7 +103,7 @@ public abstract class TerminalManageService {
         p2PCallGroup.addCallMember(terminalService.getProxyMTE164(), terminalService);
 
         //接受本地呼叫请求
-        terminalService.acceptInvited(p2PCallResult.getVidoeCodec(), null);
+        terminalService.acceptInvited(p2PCallResult.getVidoeCodec(), null, p2PCallResult.getDeviceName());
 
         LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "proccessInvitedMsg, translateCall Ok, accept invitation!");
         System.out.println("proccessInvitedMsg, translateCall Ok, accept invitation!");
@@ -604,13 +603,86 @@ public abstract class TerminalManageService {
         terminalService.RequestKeyframe(resourceIds);
     }
 
+    public  void processRegisterationStateChanged(String particpantId, boolean isRegistered, ServerErrorEnum err){
+        TerminalService vmt = findVmt(particpantId);
+        if(null != vmt){
+            if(isRegistered){
+                useGkStatus.incrementAndGet();
+                useGkVmtServiceMap.put(particpantId,vmt);
+            }else{
+                if(useGkVmtServiceMap.containsKey(particpantId)){
+                    useGkStatus.decrementAndGet();
+                    useGkVmtServiceMap.remove(particpantId);
+                }
+
+            }
+        }
+    }
+
+    public TerminalService getUseGkFreeVmt() {
+        synchronized (useGkVmtServiceMap) {
+            if (useGkVmtServiceMap.isEmpty()) {
+                return null;
+            }
+
+            for (Map.Entry<String, TerminalService> useGkTerminalServiceEntry : useGkVmtServiceMap.entrySet()) {
+                String particpantId = useGkTerminalServiceEntry.getKey();
+                if(freeVmtServiceMap.containsKey(particpantId)){
+                    TerminalService terminalService = freeVmtServiceMap.get(particpantId);
+                    freeVmtServiceMap.remove(particpantId);
+                    usedVmtServiceMap.put(particpantId, terminalService);
+                    LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "getUseGkFreeVmt, vmt :" + particpantId);
+                    System.out.println("getUseGkFreeVmt, vmt :" + particpantId);
+                    return terminalService;
+                }
+            }
+
+            return null;
+        }
+
+    }
+
+    public Map<String, TerminalService> getFreeVmtServiceMap() {
+        return freeVmtServiceMap;
+    }
+
+    public void setFreeVmtServiceMap(Map<String, TerminalService> freeVmtServiceMap) {
+        this.freeVmtServiceMap = freeVmtServiceMap;
+    }
+
+    public Map<String, TerminalService> getUsedVmtServiceMap() {
+        return usedVmtServiceMap;
+    }
+
+    public void setUsedVmtServiceMap(Map<String, TerminalService> usedVmtServiceMap) {
+        this.usedVmtServiceMap = usedVmtServiceMap;
+    }
+
+    public Map<String, TerminalService> getUseGkVmtServiceMap() {
+        return useGkVmtServiceMap;
+    }
+
+    public void setUseGkVmtServiceMap(Map<String, TerminalService> useGkVmtServiceMap) {
+        this.useGkVmtServiceMap = useGkVmtServiceMap;
+    }
+
+    public AtomicInteger getUseGkStatus() {
+        return useGkStatus;
+    }
+
+    public void setUseGkStatus(AtomicInteger useGkStatus) {
+        this.useGkStatus = useGkStatus;
+    }
+
     protected IConferenceManager conferenceManager;
     protected Map<String, TerminalService> freeVmtServiceMap;
     protected Map<String, TerminalService> usedVmtServiceMap;
+    protected Map<String, TerminalService> useGkVmtServiceMap = new ConcurrentHashMap<>();
     protected ConfInterfaceService confInterfaceService;
     protected TerminalMediaSourceService terminalMediaSourceService;
     private static ConfInterfacePublishService confInterfacePublishService;
     private boolean supportAliasCall;
+    private AtomicInteger useGkStatus = new AtomicInteger(0);
 
     @Autowired
     private BaseSysConfig baseSysConfig;

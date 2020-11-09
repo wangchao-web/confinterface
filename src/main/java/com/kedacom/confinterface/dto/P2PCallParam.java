@@ -71,7 +71,7 @@ public class P2PCallParam {
                 .toString();
     }
 
-    @Range(min = 1, max = 2)
+    @Range(min = 1, max = 3)
     private int accountType;
 
     @NotBlank

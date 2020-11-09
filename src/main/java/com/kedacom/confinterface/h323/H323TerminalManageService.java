@@ -4,6 +4,7 @@ package com.kedacom.confinterface.h323;
 import com.kedacom.confadapter.IConferenceEventHandler;
 import com.kedacom.confadapter.common.ConferenceInfo;
 import com.kedacom.confadapter.common.ConferencePresentParticipant;
+import com.kedacom.confadapter.common.ServerErrorEnum;
 import com.kedacom.confadapter.media.MediaDescription;
 import com.kedacom.confadapter.media.MediaDirectionEnum;
 import com.kedacom.confinterface.LogService.LogOutputTypeEnum;
@@ -533,6 +534,15 @@ public class H323TerminalManageService extends TerminalManageService implements 
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "DualStreamRequestFail, closeDualStreamChannel failed!");
             System.out.println("DualStreamRequestFail, closeDualStreamChannel failed!");
         }
+    }
+
+    @Override
+    @Async("confTaskExecutor")
+    public void OnRegisterationStateChanged(String particpantId, boolean isRegistered, ServerErrorEnum err){
+
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "H323, On Registeration State Changed, terminal: " + particpantId + " is Registered: " + isRegistered +" , ServerErrorEnum : " + err.name());
+        System.out.println("H323, On Registeration State Changed, terminal: " + particpantId + " is Registered: " + isRegistered +" , ServerErrorEnum : " + err.name());
+        processRegisterationStateChanged(particpantId, isRegistered,err);
     }
 
     private final org.slf4j.Logger logger = LoggerFactory.getLogger(this.getClass());

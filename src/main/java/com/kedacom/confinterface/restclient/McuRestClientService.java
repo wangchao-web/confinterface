@@ -2,15 +2,13 @@ package com.kedacom.confinterface.restclient;
 
 import com.kedacom.confinterface.LogService.LogOutputTypeEnum;
 import com.kedacom.confinterface.LogService.LogTools;
+import com.kedacom.confinterface.dao.ComponentStatusErrorEnum;
 import com.kedacom.confinterface.dto.*;
 import com.kedacom.confinterface.inner.*;
 import com.kedacom.confinterface.dao.Terminal;
 import com.kedacom.confinterface.restclient.mcu.*;
 import com.kedacom.confinterface.restclient.mcu.ConfsCascadesMtsRspInfo;
-import com.kedacom.confinterface.service.ConfInterfaceService;
-import com.kedacom.confinterface.service.TerminalManageService;
-import com.kedacom.confinterface.service.TerminalMediaSourceService;
-import com.kedacom.confinterface.service.TerminalService;
+import com.kedacom.confinterface.service.*;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
@@ -83,6 +81,7 @@ public class McuRestClientService {
         if (null == result) {
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "get token failed!!!!!!!!!!!!");
             System.out.println("get token failed!!!!!!!!!!!!");
+            mcuStatusError = ComponentStatusErrorEnum.TOKENFAILED;
             return false;
         }
 
@@ -90,7 +89,9 @@ public class McuRestClientService {
             int errorCode = result.getBody().getError_code();
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "get token failed! errCode:" + errorCode + ", errMsg:" + McuStatus.resolve(errorCode).getDescription());
             System.out.println("get token failed! errCode:" + errorCode + ", errMsg:" + McuStatus.resolve(errorCode).getDescription());
+            mcuStatusError = ComponentStatusErrorEnum.TOKENFAILED;
             return false;
+
         }
 
         accountToken = result.getBody().getAccount_token();
@@ -120,7 +121,7 @@ public class McuRestClientService {
             int errorCode = loginResult.getBody().getError_code();
             LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "login fail, errCode:" + errorCode + ", errMsg:" + McuStatus.resolve(errorCode).getDescription());
             System.out.println("login fail, errCode:" + errorCode + ", errMsg:" + McuStatus.resolve(errorCode).getDescription());
-
+            mcuStatusError = ComponentStatusErrorEnum.LOGINFAILED;
             loginSuccess = false;
             return false;
         }
@@ -836,7 +837,6 @@ public class McuRestClientService {
         if (null == response || response.getStatusCode().is4xxClientError() || response.getStatusCode().is5xxServerError()) {
             //尝试重新登陆
             loginSuccess = false;
-
             /*处理点对点呼叫的终端状态发布及呼叫挂断*/
             Map<String, P2PCallGroup> p2pCallGroupMap = ConfInterfaceService.p2pCallGroupMap;
             if (null != p2pCallGroupMap) {
@@ -1979,6 +1979,7 @@ public class McuRestClientService {
     private final long monitorsHeartbeatInterval = 10000L;
     //private volatile boolean loginSuccess;
     public volatile boolean loginSuccess = false;
+    public volatile ComponentStatusErrorEnum mcuStatusError = ComponentStatusErrorEnum.UNKNOWN;
     private Map<String, List<String>> confSubcribeChannelMap;
     private static String activeProf = "dev";
 

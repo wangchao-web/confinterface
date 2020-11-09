@@ -181,7 +181,7 @@ public class McuRestConfig {
     private String softwareKey;
     private String secretKey;
     private String username;
-    private String password;
+    private String password ;
     private String mcuIp;
     private int mcuRestPort;
     private String mcuRestApiVersion;

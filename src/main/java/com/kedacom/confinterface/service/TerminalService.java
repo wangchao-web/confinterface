@@ -1054,9 +1054,21 @@ public abstract class TerminalService {
             }
 
             remoteParticipantInfo.setAddress(netAddress);
-        } else {
+        } else if(p2PCallParam.getAccountType() == 2){
             //e164号呼叫
             remoteParticipantInfo.setParticipantId(account);
+        }else if(p2PCallParam.getAccountType() == 3){
+            //会议Id加终端别名号呼叫
+            if (!account.contains("/")){
+                remoteParticipantInfo.setParticipantId(account);
+            }else{
+                String[] split = account.split("/", 2);
+                remoteParticipantInfo.setParticipantId(split[0]);
+                remoteParticipantInfo.setSubUnit(split[1]);
+                LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, " callMt vmtE164 conferenceParticipant account:" + split[0] +", alias :"+ split[1]);
+                System.out.println( " callMt vmtE164 conferenceParticipant account:" + split[0] +", alias :"+ split[1]);
+            }
+
         }
 
         synchronized (this) {
@@ -1209,8 +1221,13 @@ public abstract class TerminalService {
             p2PCallResult.setVidoeCodec(p2PCallMediaCap);
         }
 
-        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "translateCall OK! proxyMT: " + proxyMTE164 + ", GroupId :" + groupId + ", videoCodec: " + p2PCallResult.getVidoeCodec());
-        System.out.println("translateCall OK! proxyMT: " + proxyMTE164 + ", GroupId :" + groupId + ", videoCodec: " + p2PCallResult.getVidoeCodec());
+        if (jsonObject.containsKey("DeviceName")) {
+            String deviceName = jsonObject.getString("DeviceName");
+            p2PCallResult.setDeviceName(deviceName);
+        }
+
+        LogTools.info(LogOutputTypeEnum.LOG_OUTPUT_TYPE_FILE, "translateCall OK! proxyMT: " + proxyMTE164 + ", GroupId :" + groupId + ", videoCodec: " + p2PCallResult.getVidoeCodec() +", deviceName :" +p2PCallResult.getDeviceName());
+        System.out.println("translateCall OK! proxyMT: " + proxyMTE164 + ", GroupId :" + groupId + ", videoCodec: " + p2PCallResult.getVidoeCodec()+", deviceName :" +p2PCallResult.getDeviceName());
 
         this.groupId = groupId;
 
@@ -2104,7 +2121,9 @@ public abstract class TerminalService {
         TerminalManageService.publishStatus(dualAccount, groupId, TerminalOnlineStatusEnum.DUALSTREAM.getCode());
     }
 
-    public void acceptInvited(P2PVideoCallMediaCap p2PCallMediaCap, P2PAudioCallMediaCap audioCallMediaCap) {
+    public void acceptInvited(P2PVideoCallMediaCap p2PCallMediaCap, P2PAudioCallMediaCap audioCallMediaCap, String deviceName) {
+
+        CallParameterEx callParameterEx = new CallParameterEx();
         MediaCodec mediaCodec = new MediaCodec();
         VideoCodecCapability videoCodecCapability = new VideoCodecCapability();
 
@@ -2114,7 +2133,9 @@ public abstract class TerminalService {
         videoCodecCapability.setFramerate(p2PCallMediaCap.getFramerate());
         mediaCodec.setVideoCapability(videoCodecCapability);
 
-        conferenceParticipant.AcceptInvitation(true, mediaCodec);
+        callParameterEx.setLocalName(deviceName);
+        callParameterEx.setCodec(mediaCodec);
+        conferenceParticipant.AcceptInvitation(true, callParameterEx);
     }
 
     protected boolean removeMediaResource(boolean forwardResource, List<String> resourceIds) {
